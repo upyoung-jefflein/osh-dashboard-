@@ -64,8 +64,8 @@ SOURCES = [
 
 LAW_XML_URL = "https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CF"
 
-REG_SOURCE = "https://laws.mol.gov.tw/FLAWQRY01.aspx?fcode=A005"
-REG_SOURCE_EN = "https://laws.mol.gov.tw/Eng/FLAWQRY01.aspx?fcode=A005"
+REG_SOURCE = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
+REG_SOURCE_EN = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
 
 STATIC_REGISTRY = [
     {"name": "職業安全衛生法", "tier": "act", "cat": "管理制度", "date": "2025-12-19", "source": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060001", "note": "全國法規資料庫已驗證"},
@@ -109,12 +109,12 @@ STATIC_REGISTRY = [
 ]
 
 STATIC_DIRECTIVES = [
-    {"name": "勞動部補助授權勞動檢查機構督促事業單位遵守職業安全衛生法令計畫", "tier": "dir", "date": "2026-07-07", "source": "https://laws.mol.gov.tw/", "note": None},
-    {"name": "適用職業安全衛生法部分規定之事業範圍", "tier": "notice", "date": "2026-07-01", "source": "https://laws.mol.gov.tw/", "note": None},
-    {"name": "職業安全衛生法第24條第1項規定之其他特定機械之種類及應具之容量", "tier": "notice", "date": "2026-07-01", "source": "https://laws.mol.gov.tw/", "note": None},
-    {"name": "勞動檢查機構執行職業安全衛生法第46條第2項講習實施要點", "tier": "dir", "date": "2026-07-01", "source": "https://laws.mol.gov.tw/", "note": "訂定"},
-    {"name": "職業安全衛生管理系統績效審查及績效良好選拔作業要點", "tier": "dir", "date": "2026-07-01", "source": "https://laws.mol.gov.tw/", "note": "修正並改名"},
-    {"name": "違反職業安全衛生法及勞動檢查法案件處理要點", "tier": "dir", "date": "2026-06-30", "source": "https://laws.mol.gov.tw/", "note": None},
+    {"name": "勞動部補助授權勞動檢查機構督促事業單位遵守職業安全衛生法令計畫", "tier": "dir", "date": "2026-07-07", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": None},
+    {"name": "適用職業安全衛生法部分規定之事業範圍", "tier": "notice", "date": "2026-07-01", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": None},
+    {"name": "職業安全衛生法第24條第1項規定之其他特定機械之種類及應具之容量", "tier": "notice", "date": "2026-07-01", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": None},
+    {"name": "勞動檢查機構執行職業安全衛生法第46條第2項講習實施要點", "tier": "dir", "date": "2026-07-01", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": "訂定"},
+    {"name": "職業安全衛生管理系統績效審查及績效良好選拔作業要點", "tier": "dir", "date": "2026-07-01", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": "修正並改名"},
+    {"name": "違反職業安全衛生法及勞動檢查法案件處理要點", "tier": "dir", "date": "2026-06-30", "source": "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6", "note": None},
 ]
 
 TIER_LABEL = {"act": "法律", "reg": "法規命令", "dir": "行政規則", "notice": "公告"}
@@ -304,7 +304,7 @@ PRACTITIONER_HTML = """
     <div class="source-card">
       <div class="org">勞動部主管法規查詢系統－解釋令函</div>
       <div class="role">勞動部　·　法條抽象用語的實務認定依據，例如局限空間、共同作業之界定</div>
-      <div class="link"><a href="https://laws.mol.gov.tw/" target="_blank" rel="noopener">https://laws.mol.gov.tw/</a></div>
+      <div class="link"><a href="https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6" target="_blank" rel="noopener">https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6</a></div>
     </div>
     <div class="source-card">
       <div class="org">重大職業災害公開網</div>
