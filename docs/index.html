@@ -34,8 +34,20 @@
   .controls button{ font-size:13px; padding:5px 12px; border:1px solid var(--border);
     background:transparent; cursor:pointer; color:var(--ink); }
   .controls button.active{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }
+  #read-progress{position:fixed;top:0;left:0;height:3px;width:0%;background:var(--stamp);z-index:400;transition:width .1s linear;pointer-events:none;}
+  .view-toggle{display:flex;gap:4px;margin-bottom:12px;}
+  .view-toggle button{padding:4px 12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--ink-soft);border-radius:3px;}
+  .view-toggle button.active{border-color:var(--stamp);color:var(--stamp);background:rgba(156,43,34,.06);font-weight:600;}
+  .filter-badge{display:inline-block;background:var(--stamp);color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle;}
+  .skel-item{background:var(--card);border:1px solid var(--border);border-left:3px solid rgba(168,132,46,.2);padding:14px 16px;margin-bottom:10px;}
+  .skel-line{height:13px;border-radius:4px;margin-bottom:8px;background:linear-gradient(90deg,var(--border) 25%,rgba(168,132,46,.2) 50%,var(--border) 75%);background-size:400% 100%;animation:skel-shine 1.4s ease-in-out infinite;}
+  .skel-line.w40{width:40%;}.skel-line.w70{width:70%;}
+  @keyframes skel-shine{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  @keyframes item-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .swipe-save-hint{position:absolute;left:0;top:0;bottom:0;width:64px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;pointer-events:none;transform:translateX(-64px);transition:transform .15s;}
+  .item.will-save .swipe-save-hint{transform:translateX(0);}
   .item{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--brass);
-    padding:14px 16px; margin-bottom:10px; }
+    padding:14px 16px; margin-bottom:10px; position:relative; overflow:hidden; animation:item-in .22s ease; }
   .item.read{ opacity:.55; }
   .item .row{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .item .date{ font-size:12px; color:var(--ink-soft); white-space:nowrap; }
@@ -50,6 +62,14 @@
   .empty-state{ text-align:center; padding:56px 20px; color:var(--ink-soft); }
   .empty-state .icon{ font-size:36px; display:block; margin-bottom:14px; }
   .empty-state p{ font-size:13.5px; line-height:1.8; max-width:400px; margin:0 auto; }
+  #newsList.list-view .item{display:flex;align-items:center;padding:9px 14px;gap:10px;}
+  #newsList.list-view .item .row{flex-shrink:0;width:78px;flex-direction:column;gap:1px;flex-wrap:nowrap;}
+  #newsList.list-view .item .src{display:none;}
+  #newsList.list-view .item .date{font-size:11px;}
+  #newsList.list-view .item h3{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;font-size:13px;min-width:0;}
+  #newsList.list-view .item .also{display:none;}
+  #newsList.list-view .item .actions button[data-act="read"]{display:none;}
+  #newsList.list-view .item .actions{margin-top:0;}
   .reg-toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }
   .reg-toolbar input{ flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border);
     font-size:14px; background:var(--card); color:var(--ink); }
@@ -168,7 +188,7 @@
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：2026-09-25 01:19 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
+    <div class="meta">資料產生時間：2026-09-25 01:26 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
   </header>
 
   <nav class="tabs">
@@ -183,9 +203,13 @@
     <p class="section-note">從勞動部官方新聞稿擷取職安相關公告，自動去重後依日期排序。</p>
     <input class="search" id="newsSearch" placeholder="搜尋標題關鍵字…">
     <div class="controls">
-      <button data-filter="all" class="active">全部</button>
-      <button data-filter="unread">未讀</button>
-      <button data-filter="starred">已收藏</button>
+      <button data-filter="all" class="active">全部<span class="filter-badge" id="badge-all"></span></button>
+      <button data-filter="unread">未讀<span class="filter-badge" id="badge-unread"></span></button>
+      <button data-filter="starred">已收藏<span class="filter-badge" id="badge-starred"></span></button>
+    </div>
+    <div class="view-toggle">
+      <button id="vbtn-magazine" class="active">☰ 摘要</button>
+      <button id="vbtn-list">≡ 列表</button>
     </div>
     <div id="newsList"></div>
   </section>
@@ -328,6 +352,7 @@
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
   </footer>
 </div>
+<div id="read-progress"></div>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 <div id="law-drawer">
@@ -366,8 +391,64 @@
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
 
-  function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); updateBadges(); }
   function idOf(item) { return item.date + "|" + item.title; }
+
+  // ① 閱讀進度條
+  window.addEventListener("scroll", function() {
+    const el = document.getElementById("read-progress");
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    el.style.width = (max > 0 ? Math.round(window.scrollY / max * 100) : 0) + "%";
+  }, {passive: true});
+
+  // ② 視圖切換（摘要 / 列表）
+  let viewMode = localStorage.getItem("osh_view") || "magazine";
+  function applyView() {
+    const list = document.getElementById("newsList");
+    list.classList.toggle("list-view", viewMode === "list");
+    document.getElementById("vbtn-magazine").classList.toggle("active", viewMode === "magazine");
+    document.getElementById("vbtn-list").classList.toggle("active", viewMode === "list");
+    localStorage.setItem("osh_view", viewMode);
+  }
+  document.getElementById("vbtn-magazine").onclick = function() { viewMode = "magazine"; applyView(); };
+  document.getElementById("vbtn-list").onclick = function() { viewMode = "list"; applyView(); };
+
+  // ③ Badge 計數（未讀 / 已收藏 / 全部）
+  function updateBadges() {
+    var unread = NEWS.filter(function(n) { return !state.read[idOf(n)]; }).length;
+    var starred = NEWS.filter(function(n) { return !!state.starred[idOf(n)]; }).length;
+    document.getElementById("badge-all").textContent = NEWS.length || "";
+    document.getElementById("badge-unread").textContent = unread || "";
+    document.getElementById("badge-starred").textContent = starred || "";
+  }
+
+  // ④ Skeleton 骨架屏
+  function showSkeleton() {
+    document.getElementById("newsList").innerHTML =
+      '<div class="skel-item"><div class="skel-line w40"></div><div class="skel-line w70"></div><div class="skel-line"></div></div>'.repeat(3);
+  }
+
+  // ⑤ 滑動收藏（mobile touch swipe-right）
+  function addSwipe(el, item) {
+    var startX = 0, dx = 0;
+    el.addEventListener("touchstart", function(e) {
+      startX = e.touches[0].clientX; dx = 0;
+    }, {passive: true});
+    el.addEventListener("touchmove", function(e) {
+      dx = e.touches[0].clientX - startX;
+      if (dx > 0) el.style.transform = "translateX(" + Math.min(dx * 0.6, 64) + "px)";
+      if (dx > 72) el.classList.add("will-save"); else el.classList.remove("will-save");
+    }, {passive: true});
+    el.addEventListener("touchend", function() {
+      el.style.transform = "";
+      el.classList.remove("will-save");
+      if (dx > 72) {
+        state.starred[idOf(item)] = true;
+        save();
+        renderNews();
+      }
+    }, {passive: true});
+  }
 
   const GENERATED = new Date("2026-09-25");
   const cutoff12m = new Date(GENERATED);
@@ -406,6 +487,7 @@
       const also = (item.also_in && item.also_in.length)
         ? '<div class="also">同時見於：' + item.also_in.join("、") + '</div>' : "";
       el.innerHTML =
+        '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3><a href="' + item.link + '" target="_blank" rel="noopener">' + item.title + '</a></h3>' +
         also +
@@ -415,6 +497,7 @@
         '</div>';
       el.querySelector('[data-act="read"]').onclick = () => { state.read[id] = !state.read[id]; save(); renderNews(); };
       el.querySelector('[data-act="star"]').onclick = () => { state.starred[id] = !state.starred[id]; save(); renderNews(); };
+      addSwipe(el, item);
       list.appendChild(el);
     });
   }
@@ -633,7 +716,12 @@
   });
 
   buildCatFilters();
-  renderNews();
+  applyView();
+  showSkeleton();
+  setTimeout(function() {
+    renderNews();
+    updateBadges();
+  }, 300);
   renderRegistry();
   renderDirectives();
   renderScenarios();
