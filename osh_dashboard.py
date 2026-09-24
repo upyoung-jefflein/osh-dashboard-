@@ -580,7 +580,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
             if rec["法規網址"]:
                 entry["source"] = rec["法規網址"]
             if rec["沿革摘要"]:
-                entry["note"] = rec["沿革摘要"][:60]
+                entry["summary"] = rec["沿革摘要"]  # 保留完整沿革，不覆蓋原有 note
         else:
             merged.append({
                 "name": rec["name"],
@@ -686,6 +686,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .star-btn{{ background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px;
     color:#ccc; line-height:1; vertical-align:middle; }}
   .star-btn.on{{ color:#e6a817; }}
+  .summ-toggle{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer;
+    font-size:11px; padding:1px 5px; margin-left:6px; color:var(--ink-soft); vertical-align:middle;
+    line-height:1.6; white-space:nowrap; }}
+  .summ-toggle:hover{{ background:var(--hover); }}
+  .summ-row td{{ padding:0 !important; }}
+  .summ-body{{ background:#f9f9f7; border-left:3px solid var(--amber); padding:10px 14px;
+    font-size:12.5px; color:var(--ink-soft); line-height:1.8; white-space:pre-wrap; }}
+  .rname a{{ color:var(--ink); text-decoration:none; font-weight:500; }}
+  .rname a:hover{{ color:var(--blue); text-decoration:underline; }}
+  .src-link{{ font-size:12px; }}
   .table-footnote{{ font-size:12.5px; color:var(--ink-soft); line-height:1.75; margin:4px 0 22px; }}
   .reg-subhead{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
   .law-card{{ background:var(--card); border:1px solid var(--border); padding:18px; margin-bottom:8px; }}
@@ -908,7 +918,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById("registryMeta").textContent =
       "顯示 " + rows.length + " 筆（共 " + REGISTRY.length + " 筆），已確認修正日期 " + confirmed + " 筆";
 
-    document.getElementById("registryBody").innerHTML = rows.map(r => {{
+    document.getElementById("registryBody").innerHTML = rows.map((r, idx) => {{
       const recent = isRecent(r.date) && !isNewLaw(r);
       const isnew = isNewLaw(r);
       const badge = isnew ? '<span class="badge new-law">新訂</span>'
@@ -917,14 +927,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
       const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
       const starred = state.starredLaws[r.name];
+      const hasSummary = r.summary && r.summary.trim().length > 0;
+      const toggleBtn = hasSummary
+        ? '<button class="summ-toggle" data-idx="' + idx + '" title="展開沿革">▾ 沿革</button>'
+        : '';
+      const summaryRow = hasSummary
+        ? '<tr class="summ-row" id="summ-' + idx + '" style="display:none"><td colspan="6"><div class="summ-body">' +
+          r.summary.replace(/\n/g, '<br>') + '</div></td></tr>'
+        : '';
       return '<tr>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td class="rname">' + r.name + badge + '</td>' +
+        '<td class="rname"><a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + '</a>' + badge + toggleBtn + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
         '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
-        '<td><a href="' + r.source + '" target="_blank" rel="noopener">查看 ↗</a></td>' +
-        '</tr>';
+        '<td><a href="' + r.source + '" target="_blank" rel="noopener" class="src-link">全文 ↗</a></td>' +
+        '</tr>' + summaryRow;
     }}).join("");
 
     document.querySelectorAll(".star-btn").forEach(btn => {{
@@ -933,6 +951,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         if (state.starredLaws[name]) delete state.starredLaws[name];
         else state.starredLaws[name] = true;
         save(); renderRegistry();
+      }};
+    }});
+    document.querySelectorAll(".summ-toggle").forEach(btn => {{
+      btn.onclick = () => {{
+        const row = document.getElementById("summ-" + btn.dataset.idx);
+        if (!row) return;
+        const open = row.style.display !== "none";
+        row.style.display = open ? "none" : "table-row";
+        btn.textContent = open ? "▾ 沿革" : "▴ 收起";
       }};
     }});
   }}
