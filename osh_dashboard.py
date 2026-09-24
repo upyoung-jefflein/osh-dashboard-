@@ -62,7 +62,7 @@ SOURCES = [
     # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/...", "type": "rss"},
 ]
 
-LAW_XML_URL = "https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CF"
+LAW_XML_URL = "https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CM"
 
 REG_SOURCE = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
 REG_SOURCE_EN = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
@@ -360,7 +360,8 @@ def fetch_rss_source(source: dict, debug: bool = False) -> list[dict]:
     print(f"處理 RSS 來源：{name}（{url}）")
 
     try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15, verify=False)
         resp.raise_for_status()
     except Exception as e:
         print(f"  請求失敗：{e}", file=sys.stderr)
@@ -498,9 +499,10 @@ def roc_to_iso(roc_str: str) -> str | None:
 def _download_law_xml(dest: Path) -> bool:
     """從全國法規資料庫下載職安相關 XML（ZIP 格式），解壓後存至 dest。"""
     import zipfile, io
+    import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     print(f"下載法規 XML：{LAW_XML_URL}")
     try:
-        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
+        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=30, verify=False)
         resp.raise_for_status()
     except Exception as e:
         print(f"  下載失敗：{e}", file=sys.stderr)
