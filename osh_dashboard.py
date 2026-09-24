@@ -888,8 +888,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const CATEGORIES = {categories_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"}};
   const STORE_KEY = "osh_state_v2";
-  let state = JSON.parse(localStorage.getItem(STORE_KEY) || '{{"read":{{}},"starred":{{}},"starredLaws":{{}}}}');
-  if (!state.starredLaws) state.starredLaws = {{}};
+  let state;
+  try {{
+    state = JSON.parse(localStorage.getItem(STORE_KEY) || '{{"read":{{}},"starred":{{}},"starredLaws":{{}}}}');
+  }} catch(e) {{
+    state = {{"read":{{}},"starred":{{}},"starredLaws":{{}}}};
+  }}
+  if (!state || typeof state !== "object") state = {{"read":{{}},"starred":{{}},"starredLaws":{{}}}};
+  if (!state.read || typeof state.read !== "object") state.read = {{}};
+  if (!state.starred || typeof state.starred !== "object") state.starred = {{}};
+  if (!state.starredLaws || typeof state.starredLaws !== "object") state.starredLaws = {{}};
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
 
@@ -903,6 +911,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function isNewLaw(r) {{ return !!(r.note && r.note.includes("新訂定")); }}
 
   function renderNews() {{
+    try {{ _renderNews(); }} catch(e) {{
+      const list = document.getElementById("newsList");
+      if (list) list.innerHTML = '<div class="empty-state"><p style="color:red">JS錯誤：' + e.message + '</p></div>';
+    }}
+  }}
+  function _renderNews() {{
     const q = document.getElementById("newsSearch").value.trim();
     const filtered = NEWS.filter(item => {{
       const id = idOf(item);
