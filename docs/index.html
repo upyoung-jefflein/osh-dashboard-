@@ -168,7 +168,7 @@
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：2026-09-25 00:51 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
+    <div class="meta">資料產生時間：2026-09-25 01:04 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
   </header>
 
   <nav class="tabs">
@@ -526,8 +526,7 @@
     // 沿革摘要
     if (r.summary) {
       html += '<div class="drawer-section"><h3>沿革摘要</h3>' +
-        '<div class="drawer-summary">' + r.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/
-/g,'<br>') + '</div>' +
+        '<div class="drawer-summary">' + r.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</div>' +
         '</div>';
     }
 

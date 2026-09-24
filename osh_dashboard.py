@@ -1068,7 +1068,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // 沿革摘要
     if (r.summary) {{
       html += '<div class="drawer-section"><h3>沿革摘要</h3>' +
-        '<div class="drawer-summary">' + r.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</div>' +
+        '<div class="drawer-summary">' + r.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\n/g,'<br>') + '</div>' +
         '</div>';
     }}
 
