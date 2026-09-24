@@ -56,10 +56,13 @@ USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
-    {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/1607/1632/1633/"},
-    # 如需新增職安署新聞稿，請填入實際列表頁網址：
-    # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/..."},
+    # type="rss"：解析 RSS feed（結構穩定，不需要 BeautifulSoup）
+    # type="html"：HTML 爬蟲（備用，需確認 robots.txt 允許）
+    {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/2578/2582/3271/post", "type": "rss"},
+    # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/...", "type": "rss"},
 ]
+
+LAW_XML_URL = "https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CF"
 
 REG_SOURCE = "https://laws.mol.gov.tw/FLAWQRY01.aspx?fcode=A005"
 REG_SOURCE_EN = "https://laws.mol.gov.tw/Eng/FLAWQRY01.aspx?fcode=A005"
@@ -319,21 +322,8 @@ PRACTITIONER_HTML = """
 
 
 # ============================================================
-# 新聞：robots.txt 檢查、抓取、去重
+# 新聞：RSS 抓取、HTML 備用、去重
 # ============================================================
-
-def allowed_by_robots(url: str) -> bool:
-    parsed = urlparse(url)
-    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-    rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robots_url)
-    try:
-        rp.read()
-    except Exception as e:
-        print(f"  無法讀取 {robots_url}（{e}），保守起見視為不允許", file=sys.stderr)
-        return False
-    return rp.can_fetch(USER_AGENT, url)
-
 
 def normalize_title(title: str) -> str:
     return re.sub(r"[「」『』()（）\[\]【】\s　！!，,、。.？?：:；;—－\-~～]", "", title).strip()
@@ -350,11 +340,78 @@ def extract_date(text: str) -> str | None:
         return None
 
 
-def fetch_source(source: dict, debug: bool = False) -> list[dict]:
-    name, org, url = source["name"], source["org"], source["url"]
-    print(f"處理來源：{name}（{url}）")
+def parse_rss_date(pub_date: str) -> str | None:
+    """將 RSS pubDate（RFC 822 格式）轉為 ISO 日期。"""
+    if not pub_date:
+        return None
+    try:
+        from email.utils import parsedate
+        t = parsedate(pub_date.strip())
+        if t:
+            return date(t[0], t[1], t[2]).isoformat()
+    except Exception:
+        pass
+    return extract_date(pub_date)
 
-    if not allowed_by_robots(url):
+
+def fetch_rss_source(source: dict, debug: bool = False) -> list[dict]:
+    """解析 RSS 2.0 feed，不需要 robots.txt 檢查（RSS 設計上供訂閱使用）。"""
+    name, org, url = source["name"], source["org"], source["url"]
+    print(f"處理 RSS 來源：{name}（{url}）")
+
+    try:
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"  請求失敗：{e}", file=sys.stderr)
+        return []
+
+    try:
+        root = ET.fromstring(resp.content)
+    except ET.ParseError as e:
+        print(f"  RSS 解析失敗：{e}", file=sys.stderr)
+        return []
+
+    items = []
+    for item in root.iter("item"):
+        title = _text(item.find("title"))
+        link_el = item.find("link")
+        link = _text(link_el) if link_el is not None else ""
+        if not link and link_el is not None:
+            link = link_el.get("href", "")
+        pub_date = _text(item.find("pubDate"))
+        description = _text(item.find("description"))
+
+        if not title or not link:
+            continue
+
+        date_str = parse_rss_date(pub_date) or extract_date(description) or extract_date(title)
+        if not date_str:
+            continue
+
+        if debug:
+            print(f"    RSS item: {date_str}  {title[:50]}")
+
+        items.append({"title": title.strip(), "link": link.strip(), "date": date_str, "source": name, "org": org})
+
+    print(f"  RSS 解析出 {len(items)} 筆項目。")
+    return items
+
+
+def fetch_html_source(source: dict, debug: bool = False) -> list[dict]:
+    """HTML 爬蟲備用方案（需先確認 robots.txt 允許）。"""
+    name, org, url = source["name"], source["org"], source["url"]
+    print(f"處理 HTML 來源：{name}（{url}）")
+
+    rp = urllib.robotparser.RobotFileParser()
+    parsed = urlparse(url)
+    rp.set_url(f"{parsed.scheme}://{parsed.netloc}/robots.txt")
+    try:
+        rp.read()
+    except Exception as e:
+        print(f"  無法讀取 robots.txt（{e}），保守起見視為不允許", file=sys.stderr)
+        return []
+    if not rp.can_fetch(USER_AGENT, url):
         print("  robots.txt 不允許存取，跳過此來源。")
         return []
 
@@ -368,14 +425,12 @@ def fetch_source(source: dict, debug: bool = False) -> list[dict]:
     soup = BeautifulSoup(resp.text, "html.parser")
     if debug:
         print(f"  [debug] 回應長度：{len(resp.text)} 字元")
-        print(f"  [debug] 頁面標題：{soup.title.string if soup.title else '(無)'}")
 
     items = []
     for a in soup.find_all("a", href=True):
         link_text = a.get_text(strip=True)
         if len(link_text) < 8 or link_text in ("回首頁", "網站導覽", "常見問答", "English"):
             continue
-
         date_str = None
         node = a
         for _ in range(6):
@@ -388,7 +443,6 @@ def fetch_source(source: dict, debug: bool = False) -> list[dict]:
                 break
         if not date_str:
             continue
-
         items.append({"title": link_text, "link": urljoin(url, a["href"]), "date": date_str, "source": name, "org": org})
 
     if debug:
@@ -396,6 +450,12 @@ def fetch_source(source: dict, debug: bool = False) -> list[dict]:
         for it in items[:5]:
             print(f"    - {it['date']}  {it['title'][:40]}")
     return items
+
+
+def fetch_source(source: dict, debug: bool = False) -> list[dict]:
+    if source.get("type") == "rss":
+        return fetch_rss_source(source, debug)
+    return fetch_html_source(source, debug)
 
 
 def dedupe_and_filter_news(all_items: list[dict]) -> list[dict]:
@@ -433,6 +493,40 @@ def roc_to_iso(roc_str: str) -> str | None:
         return date(y, m, d).isoformat()
     except ValueError:
         return None
+
+
+def _download_law_xml(dest: Path) -> bool:
+    """從全國法規資料庫下載職安相關 XML（ZIP 格式），解壓後存至 dest。"""
+    import zipfile, io
+    print(f"下載法規 XML：{LAW_XML_URL}")
+    try:
+        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=60)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"  下載失敗：{e}", file=sys.stderr)
+        return False
+
+    content_type = resp.headers.get("Content-Type", "")
+    raw = resp.content
+
+    # 伺服器回應可能是 ZIP 或純 XML
+    if b"PK\x03\x04" in raw[:4] or "zip" in content_type.lower():
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+                xml_name = next((n for n in zf.namelist() if n.lower().endswith(".xml")), None)
+                if not xml_name:
+                    print("  ZIP 內無 XML 檔案。", file=sys.stderr)
+                    return False
+                dest.write_bytes(zf.read(xml_name))
+                print(f"  解壓縮 {xml_name} → {dest}")
+        except Exception as e:
+            print(f"  ZIP 解壓縮失敗：{e}", file=sys.stderr)
+            return False
+    else:
+        dest.write_bytes(raw)
+        print(f"  已儲存 XML → {dest}")
+
+    return True
 
 
 def parse_law_xml(xml_path: Path) -> list[dict]:
@@ -946,6 +1040,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
 def main():
     parser = argparse.ArgumentParser(description="產生職安法規觀測站儀表板")
     parser.add_argument("--law-xml", type=Path, help="全國法規資料庫公開資料的 XML 檔路徑（選填）")
+    parser.add_argument("--fetch-xml", action="store_true", help="自動從全國法規資料庫下載最新 XML（優先於 --law-xml）")
     parser.add_argument("-o", "--output", type=Path, default=Path("osh_dashboard.html"))
     parser.add_argument("--debug", action="store_true", help="印出每個新聞來源實際抓到的內容")
     parser.add_argument("--news-only", action="store_true", help="跳過法規 XML 解析，只更新新聞")
@@ -958,16 +1053,26 @@ def main():
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
 
     registry = STATIC_REGISTRY
-    if args.law_xml and not args.news_only:
-        if args.law_xml.exists():
-            xml_records = parse_law_xml(args.law_xml)
+    if not args.news_only:
+        xml_path: Path | None = None
+
+        if args.fetch_xml:
+            auto_xml = Path("law_data_auto.xml")
+            if _download_law_xml(auto_xml):
+                xml_path = auto_xml
+            else:
+                print("自動下載失敗，改用 --law-xml 或靜態清單。", file=sys.stderr)
+                xml_path = args.law_xml if args.law_xml and args.law_xml.exists() else None
+        elif args.law_xml:
+            xml_path = args.law_xml if args.law_xml.exists() else None
+            if xml_path is None:
+                print(f"找不到 {args.law_xml}，法規區塊維持靜態清單。", file=sys.stderr)
+
+        if xml_path:
+            xml_records = parse_law_xml(xml_path)
             registry = merge_registry(STATIC_REGISTRY, xml_records)
             confirmed = sum(1 for r in registry if r["date"])
             print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
-        else:
-            print(f"找不到 {args.law_xml}，法規區塊維持靜態清單。", file=sys.stderr)
-    elif args.law_xml and args.news_only:
-        print("注意：--news-only 已設定，--law-xml 被忽略。", file=sys.stderr)
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
