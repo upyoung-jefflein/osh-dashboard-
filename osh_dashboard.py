@@ -881,6 +881,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </div>
 
 <script>
+  window.onerror = function(msg, src, line, col, err) {{
+    var d = document.createElement("div");
+    d.style.cssText = "background:#c00;color:#fff;padding:12px 16px;position:fixed;top:0;left:0;right:0;z-index:9999;font-size:14px";
+    d.textContent = "JS 錯誤（第 " + line + " 行）：" + msg;
+    document.body && document.body.prepend(d);
+    return false;
+  }};
   const NEWS = {news_json};
   const REGISTRY = {registry_json};
   const DIRECTIVES = {directives_json};
