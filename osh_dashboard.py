@@ -815,6 +815,38 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .scenario-grid{{ grid-template-columns:1fr; }}
     .law-card dl{{ grid-template-columns:1fr; }}
   }}
+  /* ── 鍵盤快捷鍵 modal ── */
+  .kbd-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
+  .kbd-modal.open{{ display:flex; }}
+  .kbd-box{{ background:var(--card); border-radius:8px; padding:22px 28px; width:min(380px,90vw); }}
+  .kbd-box h3{{ margin-bottom:14px; font-size:16px; }}
+  .kbd-row{{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }}
+  .kbd-row:last-of-type{{ border:none; padding-bottom:0; }}
+  kbd{{ background:var(--paper); border:1px solid var(--border); border-radius:3px; padding:1px 6px; font-size:11px; font-family:monospace; }}
+  .kbd-hint-btn{{ font-size:11.5px; color:var(--ink-soft); cursor:pointer; border:1px solid var(--border); background:transparent; padding:3px 8px; border-radius:3px; margin-left:auto; }}
+  .kbd-hint-btn:hover{{ color:var(--ink); }}
+  .item.focused{{ box-shadow:0 0 0 2px var(--stamp); outline:none; }}
+  /* ── Boards 版板 ── */
+  .board-area{{ margin:-4px 0 10px; }}
+  .board-pills{{ display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center; }}
+  .board-pill{{ padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:transparent; cursor:pointer; font-size:12px; color:var(--ink-soft); }}
+  .board-pill.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
+  .board-pill-wrap{{ display:inline-flex; align-items:center; gap:1px; }}
+  .board-del{{ background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:13px; padding:2px 3px; line-height:1; }}
+  .board-del:hover{{ color:var(--stamp); }}
+  .board-add-btn{{ padding:3px 10px; border-radius:99px; border:1px dashed var(--border); background:transparent; cursor:pointer; font-size:12px; color:var(--ink-soft); }}
+  .board-dropdown{{ position:absolute; right:0; bottom:calc(100% + 4px); background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:100; min-width:155px; padding:4px 0; }}
+  .board-dropdown button{{ display:block; width:100%; text-align:left; padding:7px 14px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--ink); white-space:nowrap; }}
+  .board-dropdown button:hover{{ background:var(--hover); }}
+  /* ── AI 摘要 modal ── */
+  .ai-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
+  .ai-modal.open{{ display:flex; }}
+  .ai-box{{ background:var(--card); border-radius:8px; padding:22px 26px; width:min(460px,92vw); }}
+  .ai-box h3{{ font-size:15px; margin-bottom:6px; line-height:1.5; }}
+  /* ── 通知 toast ── */
+  .notif-toast{{ position:fixed; top:10px; right:14px; background:var(--stamp); color:#fff; padding:10px 16px; border-radius:6px; font-size:13px; z-index:600; display:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.22); }}
+  .notif-toast.show{{ display:block; animation:fadeInDown .3s; }}
+  @keyframes fadeInDown{{ from{{transform:translateY(-10px);opacity:0}} to{{transform:translateY(0);opacity:1}} }}
 </style>
 </head>
 <body>
@@ -841,9 +873,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-filter="unread">未讀<span class="filter-badge" id="badge-unread"></span></button>
       <button data-filter="starred">已收藏<span class="filter-badge" id="badge-starred"></span></button>
     </div>
+    <div class="board-area" id="board-area" style="display:none">
+      <span style="font-size:11.5px;color:var(--ink-soft)">版板：</span>
+      <div class="board-pills" id="board-pills"></div>
+    </div>
     <div class="view-toggle">
       <button id="vbtn-magazine" class="active">☰ 摘要</button>
       <button id="vbtn-list">≡ 列表</button>
+      <button class="kbd-hint-btn" onclick="document.getElementById('kbd-modal').classList.add('open')">? 快捷鍵</button>
     </div>
     <div id="newsList"></div>
   </section>
@@ -897,6 +934,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
   </footer>
 </div>
+<div id="kbd-modal" class="kbd-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="kbd-box">
+    <h3>鍵盤快捷鍵</h3>
+    <div class="kbd-row"><span><kbd>j</kbd> / <kbd>↓</kbd></span><span>下一篇</span></div>
+    <div class="kbd-row"><span><kbd>k</kbd> / <kbd>↑</kbd></span><span>上一篇</span></div>
+    <div class="kbd-row"><span><kbd>o</kbd> / <kbd>Enter</kbd></span><span>開啟文章</span></div>
+    <div class="kbd-row"><span><kbd>s</kbd></span><span>收藏 / 取消收藏</span></div>
+    <div class="kbd-row"><span><kbd>m</kbd></span><span>標記已讀</span></div>
+    <div class="kbd-row"><span><kbd>?</kbd></span><span>顯示此說明</span></div>
+    <div class="kbd-row"><span><kbd>Esc</kbd></span><span>關閉</span></div>
+    <button onclick="document.getElementById('kbd-modal').classList.remove('open')" style="margin-top:16px;padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;">關閉</button>
+  </div>
+</div>
+<div id="ai-modal" class="ai-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="ai-box">
+    <h3 id="ai-title"></h3>
+    <p id="ai-source" style="font-size:12px;color:var(--ink-soft);margin-bottom:14px"></p>
+    <div id="ai-content"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <a id="ai-claude-link" href="#" target="_blank" rel="noopener" style="padding:7px 14px;background:var(--stamp);color:#fff;text-decoration:none;border-radius:4px;font-size:13px">以 Claude 摘要 ↗</a>
+      <button id="ai-copy-btn" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">複製連結</button>
+      <button onclick="document.getElementById('ai-modal').classList.remove('open')" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">關閉</button>
+    </div>
+  </div>
+</div>
+<div id="notif-toast" class="notif-toast"></div>
 <div id="read-progress"></div>
 
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
@@ -933,8 +996,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.read || typeof state.read !== "object") state.read = {{}};
   if (!state.starred || typeof state.starred !== "object") state.starred = {{}};
   if (!state.starredLaws || typeof state.starredLaws !== "object") state.starredLaws = {{}};
+  if (!state.boards || !Array.isArray(state.boards)) state.boards = [];
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
+  var currentBoard = null;
 
   function save() {{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); updateBadges(); }}
   function idOf(item) {{ return item.date + "|" + item.title; }}
@@ -1012,7 +1077,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     const filtered = NEWS.filter(item => {{
       const id = idOf(item);
       if (newsFilter === "unread" && state.read[id]) return false;
-      if (newsFilter === "starred" && !state.starred[id]) return false;
+      if (newsFilter === "starred") {{
+        if (currentBoard !== null) {{
+          var board = state.boards.find(function(b) {{ return b.id === currentBoard; }});
+          if (!board || board.items.indexOf(id) < 0) return false;
+        }} else {{
+          if (!state.starred[id]) return false;
+        }}
+      }}
       if (q && !item.title.includes(q)) return false;
       return true;
     }});
@@ -1036,15 +1108,160 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3><a href="' + item.link + '" target="_blank" rel="noopener">' + item.title + '</a></h3>' +
         also +
-        '<div class="actions">' +
+        '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
           '<button data-act="star" class="' + (state.starred[id] ? "on" : "") + '">' + (state.starred[id] ? "★ 已收藏" : "☆ 收藏") + '</button>' +
+          '<button data-act="board">版板 ▾</button>' +
+          '<button data-act="ai">✦ AI摘要</button>' +
         '</div>';
       el.querySelector('[data-act="read"]').onclick = () => {{ state.read[id] = !state.read[id]; save(); renderNews(); }};
       el.querySelector('[data-act="star"]').onclick = () => {{ state.starred[id] = !state.starred[id]; save(); renderNews(); }};
+      el.querySelector('[data-act="board"]').onclick = function(e) {{ showBoardDropdown(e.currentTarget, item); }};
+      el.querySelector('[data-act="ai"]').onclick = function() {{ openAISummary(item); }};
       addSwipe(el, item);
       list.appendChild(el);
     }});
+  }}
+
+  // ⑦ Boards 版板管理
+  function renderBoardArea() {{
+    var area = document.getElementById('board-area');
+    var pills = document.getElementById('board-pills');
+    area.style.display = (newsFilter === 'starred') ? '' : 'none';
+    pills.innerHTML = '';
+    var allPill = document.createElement('button');
+    allPill.className = 'board-pill' + (currentBoard === null ? ' active' : '');
+    allPill.textContent = '全部收藏';
+    allPill.onclick = function() {{ currentBoard = null; renderBoardArea(); renderNews(); }};
+    pills.appendChild(allPill);
+    state.boards.forEach(function(board) {{
+      var wrap = document.createElement('span');
+      wrap.className = 'board-pill-wrap';
+      var pill = document.createElement('button');
+      pill.className = 'board-pill' + (currentBoard === board.id ? ' active' : '');
+      pill.textContent = board.name + ' (' + board.items.length + ')';
+      pill.onclick = function() {{ currentBoard = board.id; renderBoardArea(); renderNews(); }};
+      var del = document.createElement('button');
+      del.className = 'board-del';
+      del.textContent = '×';
+      del.title = '刪除版板';
+      del.onclick = function(e) {{
+        e.stopPropagation();
+        if (!confirm('刪除版板「' + board.name + '」？')) return;
+        state.boards = state.boards.filter(function(b) {{ return b.id !== board.id; }});
+        if (currentBoard === board.id) currentBoard = null;
+        save(); renderBoardArea(); renderNews();
+      }};
+      wrap.appendChild(pill); wrap.appendChild(del);
+      pills.appendChild(wrap);
+    }});
+    var addBtn = document.createElement('button');
+    addBtn.className = 'board-add-btn';
+    addBtn.textContent = '＋ 新增版板';
+    addBtn.onclick = function() {{
+      var name = prompt('版板名稱：');
+      if (!name || !name.trim()) return;
+      state.boards.push({{id:'b_'+Date.now(), name:name.trim(), items:[]}});
+      save(); renderBoardArea();
+    }};
+    pills.appendChild(addBtn);
+  }}
+
+  function showBoardDropdown(btn, item) {{
+    document.querySelectorAll('.board-dropdown').forEach(function(d) {{ d.remove(); }});
+    var dd = document.createElement('div');
+    dd.className = 'board-dropdown';
+    var id = idOf(item);
+    if (state.boards.length === 0) {{
+      var hint = document.createElement('div');
+      hint.style.cssText = 'padding:8px 14px;font-size:12px;color:var(--ink-soft)';
+      hint.textContent = '尚無版板';
+      dd.appendChild(hint);
+    }}
+    state.boards.forEach(function(board) {{
+      var inBoard = board.items.indexOf(id) >= 0;
+      var bBtn = document.createElement('button');
+      bBtn.textContent = (inBoard ? '✓ ' : '') + board.name;
+      bBtn.onclick = function() {{
+        var idx = board.items.indexOf(id);
+        if (idx >= 0) board.items.splice(idx, 1); else board.items.push(id);
+        dd.remove(); save(); renderBoardArea(); renderNews();
+      }};
+      dd.appendChild(bBtn);
+    }});
+    var newBtn = document.createElement('button');
+    newBtn.style.borderTop = '1px solid var(--border)';
+    newBtn.textContent = '＋ 新增版板…';
+    newBtn.onclick = function() {{
+      dd.remove();
+      var name = prompt('版板名稱：');
+      if (!name || !name.trim()) return;
+      var newId = 'b_' + Date.now();
+      state.boards.push({{id:newId, name:name.trim(), items:[id]}});
+      save(); renderBoardArea(); renderNews();
+    }};
+    dd.appendChild(newBtn);
+    btn.parentElement.appendChild(dd);
+    setTimeout(function() {{
+      document.addEventListener('click', function close(e) {{
+        if (!dd.contains(e.target) && e.target !== btn) {{ dd.remove(); document.removeEventListener('click', close); }}
+      }});
+    }}, 0);
+  }}
+
+  // ⑧ AI 摘要
+  function openAISummary(item) {{
+    document.getElementById('ai-title').textContent = item.title;
+    document.getElementById('ai-source').textContent = item.org + ' · ' + item.date;
+    var claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent('請摘要以下文章的重點（繁體中文）：' + item.link);
+    document.getElementById('ai-claude-link').href = claudeUrl;
+    document.getElementById('ai-copy-btn').onclick = function() {{
+      navigator.clipboard.writeText(item.link).then(function() {{
+        document.getElementById('ai-copy-btn').textContent = '已複製 ✓';
+        setTimeout(function() {{ document.getElementById('ai-copy-btn').textContent = '複製連結'; }}, 2000);
+      }}).catch(function() {{
+        document.getElementById('ai-copy-btn').textContent = item.link;
+      }});
+    }};
+    document.getElementById('ai-content').innerHTML =
+      '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>' +
+      '<p style="margin-top:8px;font-size:12px;color:var(--ink-soft)">文章連結：<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
+    document.getElementById('ai-modal').classList.add('open');
+  }}
+
+  // ⑨ 通知推送（頁面載入時檢查新文章）
+  function checkNewArticles() {{
+    if (!NEWS.length) return;
+    var lastSeen = localStorage.getItem('osh_last_seen');
+    var newest = NEWS[0].date;
+    if (lastSeen && newest > lastSeen) {{
+      var count = NEWS.filter(function(n) {{ return n.date > lastSeen; }}).length;
+      showNotifToast(count);
+    }}
+    localStorage.setItem('osh_last_seen', newest);
+  }}
+
+  function showNotifToast(count) {{
+    var toast = document.getElementById('notif-toast');
+    toast.textContent = '🔔 有 ' + count + ' 則新動態，點此查看未讀';
+    toast.classList.add('show');
+    toast.onclick = function() {{
+      toast.classList.remove('show');
+      document.querySelectorAll('[data-filter]').forEach(function(b) {{
+        b.classList.toggle('active', b.dataset.filter === 'unread');
+      }});
+      newsFilter = 'unread';
+      currentBoard = null;
+      renderBoardArea(); renderNews(); updateBadges();
+      if ('Notification' in window && Notification.permission === 'default') {{
+        Notification.requestPermission().then(function(perm) {{
+          if (perm === 'granted') {{
+            new Notification('職安法規觀測站', {{body: '有 ' + count + ' 則新的職安動態'}});
+          }}
+        }});
+      }}
+    }};
+    setTimeout(function() {{ toast.classList.remove('show'); }}, 10000);
   }}
 
   function buildCatFilters() {{
@@ -1186,7 +1403,39 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.body.style.overflow = "";
   }}
 
-  document.addEventListener("keydown", e => {{ if (e.key === "Escape") closeDrawer(); }});
+  // ⑥ 鍵盤快捷鍵（j/k 上下、s 收藏、o 開啟、m 已讀、? 說明、Esc 關閉）
+  var focusedItemIdx = -1;
+  function getFocusItems() {{ return [...document.querySelectorAll('#newsList .item')]; }}
+  function setItemFocus(idx) {{
+    var items = getFocusItems();
+    if (!items.length) return;
+    focusedItemIdx = Math.max(0, Math.min(idx, items.length - 1));
+    items.forEach(function(el, i) {{ el.classList.toggle('focused', i === focusedItemIdx); }});
+    items[focusedItemIdx].scrollIntoView({{behavior:'smooth', block:'nearest'}});
+  }}
+  document.addEventListener("keydown", function(e) {{
+    var tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    var kbdModal = document.getElementById('kbd-modal');
+    var aiModal = document.getElementById('ai-modal');
+    if (e.key === 'Escape') {{
+      kbdModal.classList.remove('open');
+      aiModal.classList.remove('open');
+      closeDrawer();
+      document.querySelectorAll('.board-dropdown').forEach(function(d) {{ d.remove(); }});
+      return;
+    }}
+    if (e.key === '?') {{ kbdModal.classList.add('open'); return; }}
+    var items = getFocusItems();
+    if (!items.length) return;
+    if (e.key === 'j' || e.key === 'ArrowDown') {{ e.preventDefault(); setItemFocus(focusedItemIdx + 1); return; }}
+    if (e.key === 'k' || e.key === 'ArrowUp') {{ e.preventDefault(); setItemFocus(Math.max(0, focusedItemIdx - 1)); return; }}
+    if (focusedItemIdx < 0) return;
+    var cur = items[focusedItemIdx];
+    if (e.key === 's') {{ var sb = cur.querySelector('[data-act="star"]'); if (sb) sb.click(); }}
+    else if (e.key === 'o' || e.key === 'Enter') {{ var a = cur.querySelector('h3 a'); if (a) window.open(a.href, '_blank'); }}
+    else if (e.key === 'm') {{ var rb = cur.querySelector('[data-act="read"]'); if (rb) rb.click(); }}
+  }});
 
   function renderDirectives() {{
     document.getElementById("directiveBody").innerHTML = DIRECTIVES.map(r => {{
@@ -1233,7 +1482,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   document.querySelectorAll("[data-filter]").forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll("[data-filter]").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active"); newsFilter = btn.dataset.filter; renderNews();
+      btn.classList.add("active"); newsFilter = btn.dataset.filter;
+      currentBoard = null;
+      renderBoardArea();
+      renderNews();
     }};
   }});
   document.querySelectorAll("[data-lawfilter]").forEach(btn => {{
@@ -1262,10 +1514,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   buildCatFilters();
   applyView();
+  renderBoardArea();
   showSkeleton();
   setTimeout(function() {{
     renderNews();
     updateBadges();
+    checkNewArticles();
   }}, 300);
   renderRegistry();
   renderDirectives();
