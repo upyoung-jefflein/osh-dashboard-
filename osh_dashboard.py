@@ -58,7 +58,7 @@ DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 SOURCES = [
     # type="rss"：解析 RSS feed（結構穩定，不需要 BeautifulSoup）
     # type="html"：HTML 爬蟲（備用，需確認 robots.txt 允許）
-    {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/2578/2582/3271/post", "type": "rss"},
+    {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/1607/1632/1633/RssList", "type": "rss"},
     # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/...", "type": "rss"},
 ]
 
@@ -500,7 +500,7 @@ def _download_law_xml(dest: Path) -> bool:
     import zipfile, io
     print(f"下載法規 XML：{LAW_XML_URL}")
     try:
-        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=60)
+        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
         resp.raise_for_status()
     except Exception as e:
         print(f"  下載失敗：{e}", file=sys.stderr)
