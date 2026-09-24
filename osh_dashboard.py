@@ -491,12 +491,15 @@ def _text(el) -> str:
 
 def roc_to_iso(roc_str: str) -> str | None:
     digits = re.sub(r"\D", "", roc_str or "")
-    if len(digits) not in (6, 7):
-        return None
-    if len(digits) == 6:
+    if len(digits) == 8:
+        # 西元年 YYYYMMDD（XML 公開資料格式）
+        y, m, d = int(digits[:4]), int(digits[4:6]), int(digits[6:8])
+    elif len(digits) == 7:
+        y, m, d = int(digits[:3]) + 1911, int(digits[3:5]), int(digits[5:7])
+    elif len(digits) == 6:
         y, m, d = int(digits[:2]) + 1911, int(digits[2:4]), int(digits[4:6])
     else:
-        y, m, d = int(digits[:3]) + 1911, int(digits[3:5]), int(digits[5:7])
+        return None
     try:
         return date(y, m, d).isoformat()
     except ValueError:
