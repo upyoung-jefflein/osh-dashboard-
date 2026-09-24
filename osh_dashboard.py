@@ -553,14 +553,13 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         if not any(k in name for k in OSH_KEYWORDS):
             continue
 
-        # 條文索引（條號 + 首 80 字）
+        # 條文索引（只存條號，不存內文，避免 JSON 過大）
         articles = []
         for art in law.iter("條文"):
             raw_no = _text(art.find("條號"))
             art_no = raw_no.replace("第", "").replace("條", "").strip()
-            art_text = _text(art.find("條文內容"))[:80].strip()
-            if art_no and art_text:
-                articles.append({"no": art_no, "text": art_text})
+            if art_no:
+                articles.append(art_no)
 
         # 是否含附表（從條文內容判斷）
         full_text = " ".join(_text(a.find("條文內容")) for a in law.iter("條文"))
@@ -744,14 +743,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     text-transform:uppercase; letter-spacing:.04em; margin:0 0 8px; }}
   .drawer-summary{{ font-size:13px; line-height:1.9; color:var(--ink);
     border-left:3px solid var(--amber); padding-left:12px; white-space:pre-wrap; }}
-  .art-list{{ list-style:none; margin:0; padding:0; max-height:360px; overflow-y:auto; }}
-  .art-list li{{ display:flex; gap:8px; padding:5px 0;
-    border-bottom:1px solid var(--border); font-size:12.5px; line-height:1.5; }}
-  .art-list li:last-child{{ border-bottom:none; }}
-  .art-no{{ flex-shrink:0; font-weight:600; min-width:48px; }}
-  .art-no a{{ color:var(--blue); text-decoration:none; }}
-  .art-no a:hover{{ text-decoration:underline; }}
-  .art-preview{{ color:var(--ink-soft); }}
+  .art-chip{{ display:inline-block; padding:3px 9px; border-radius:4px;
+    background:var(--hover); font-size:12px; color:var(--ink); text-decoration:none;
+    border:1px solid var(--border); white-space:nowrap; }}
+  a.art-chip:hover{{ background:var(--blue); color:#fff; border-color:var(--blue); }}
   .drawer-fulllink{{ display:inline-block; margin-top:10px; padding:7px 16px;
     background:var(--blue); color:#fff; border-radius:5px; text-decoration:none;
     font-size:13px; font-weight:600; }}
@@ -1052,17 +1047,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '</div>';
     }}
 
-    // 條文索引
+    // 條文索引（只顯示條號連結，點擊跳到該條全文）
     if (r.articles && r.articles.length > 0) {{
-      html += '<div class="drawer-section"><h3>條文索引（共 ' + r.articles.length + ' 條）</h3><ul class="art-list">';
-      r.articles.forEach(a => {{
-        const noLink = artBase
-          ? '<a href="' + artBase + encodeURIComponent(a.no) + '" target="_blank" rel="noopener">第' + a.no + '條</a>'
-          : '第' + a.no + '條';
-        const preview = a.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        html += '<li><span class="art-no">' + noLink + '</span><span class="art-preview">' + preview + '…</span></li>';
+      html += '<div class="drawer-section"><h3>條文索引（共 ' + r.articles.length + ' 條）</h3>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow-y:auto;padding:2px 0">';
+      r.articles.forEach(no => {{
+        const chip = artBase
+          ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="art-chip">第' + no + '條</a>'
+          : '<span class="art-chip">第' + no + '條</span>';
+        html += chip;
       }});
-      html += '</ul></div>';
+      html += '</div></div>';
     }}
 
     // 全文按鈕
