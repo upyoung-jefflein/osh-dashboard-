@@ -26,7 +26,6 @@ if ($LASTEXITCODE -ne 0) {
 $status = git status --porcelain docs/index.html
 if ($status) {
     Log "偵測到 docs/index.html 變更，準備 commit..."
-    git add docs/index.html law_data_auto.xml 2>$null
     git add docs/index.html
     $date = Get-Date -Format "yyyy-MM-dd"
     git commit -m "chore: weekly law XML update $date"

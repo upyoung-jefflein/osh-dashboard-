@@ -62,7 +62,10 @@ SOURCES = [
     # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/...", "type": "rss"},
 ]
 
-LAW_XML_URL = "https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CM"
+LAW_XML_URLS = [
+    ("https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CM", "law_data_cmd.xml"),   # 命令（規則/辦法/標準）
+    ("https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CF", "law_data_act.xml"),   # 法律（職業安全衛生法等）
+]
 
 REG_SOURCE = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
 REG_SOURCE_EN = "https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?p=N&t=A1A2E3F6"
@@ -496,13 +499,13 @@ def roc_to_iso(roc_str: str) -> str | None:
         return None
 
 
-def _download_law_xml(dest: Path) -> bool:
-    """從全國法規資料庫下載職安相關 XML（ZIP 格式），解壓後存至 dest。"""
+def _download_law_xml(url: str, dest: Path) -> bool:
+    """從全國法規資料庫下載 XML（ZIP 格式），解壓後存至 dest。"""
     import zipfile, io
     import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    print(f"下載法規 XML：{LAW_XML_URL}")
+    print(f"下載法規 XML：{url}")
     try:
-        resp = requests.get(LAW_XML_URL, headers={"User-Agent": USER_AGENT}, timeout=30, verify=False)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=30, verify=False)
         resp.raise_for_status()
     except Exception as e:
         print(f"  下載失敗：{e}", file=sys.stderr)
@@ -511,7 +514,6 @@ def _download_law_xml(dest: Path) -> bool:
     content_type = resp.headers.get("Content-Type", "")
     raw = resp.content
 
-    # 伺服器回應可能是 ZIP 或純 XML
     if b"PK\x03\x04" in raw[:4] or "zip" in content_type.lower():
         try:
             with zipfile.ZipFile(io.BytesIO(raw)) as zf:
@@ -1056,25 +1058,33 @@ def main():
 
     registry = STATIC_REGISTRY
     if not args.news_only:
-        xml_path: Path | None = None
-
         if args.fetch_xml:
-            auto_xml = Path("law_data_auto.xml")
-            if _download_law_xml(auto_xml):
-                xml_path = auto_xml
+            all_xml_records: list[dict] = []
+            any_ok = False
+            for url, fname in LAW_XML_URLS:
+                dest = Path(fname)
+                if _download_law_xml(url, dest):
+                    any_ok = True
+                    all_xml_records.extend(parse_law_xml(dest))
+                else:
+                    print(f"  略過 {fname}，繼續下一個。", file=sys.stderr)
+            if any_ok:
+                registry = merge_registry(STATIC_REGISTRY, all_xml_records)
+                confirmed = sum(1 for r in registry if r["date"])
+                print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
             else:
-                print("自動下載失敗，改用 --law-xml 或靜態清單。", file=sys.stderr)
-                xml_path = args.law_xml if args.law_xml and args.law_xml.exists() else None
+                print("所有 XML 下載失敗，法規區塊維持靜態清單。", file=sys.stderr)
+                if args.law_xml and args.law_xml.exists():
+                    xml_records = parse_law_xml(args.law_xml)
+                    registry = merge_registry(STATIC_REGISTRY, xml_records)
         elif args.law_xml:
-            xml_path = args.law_xml if args.law_xml.exists() else None
-            if xml_path is None:
+            if args.law_xml.exists():
+                xml_records = parse_law_xml(args.law_xml)
+                registry = merge_registry(STATIC_REGISTRY, xml_records)
+                confirmed = sum(1 for r in registry if r["date"])
+                print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
+            else:
                 print(f"找不到 {args.law_xml}，法規區塊維持靜態清單。", file=sys.stderr)
-
-        if xml_path:
-            xml_records = parse_law_xml(xml_path)
-            registry = merge_registry(STATIC_REGISTRY, xml_records)
-            confirmed = sum(1 for r in registry if r["date"])
-            print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
