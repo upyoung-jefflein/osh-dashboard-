@@ -553,15 +553,35 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         if not any(k in name for k in OSH_KEYWORDS):
             continue
 
+        # 條文索引（條號 + 首 80 字）
+        articles = []
+        for art in law.iter("條文"):
+            raw_no = _text(art.find("條號"))
+            art_no = raw_no.replace("第", "").replace("條", "").strip()
+            art_text = _text(art.find("條文內容"))[:80].strip()
+            if art_no and art_text:
+                articles.append({"no": art_no, "text": art_text})
+
+        # 是否含附表（從條文內容判斷）
+        full_text = " ".join(_text(a.find("條文內容")) for a in law.iter("條文"))
+        has_table = "附表" in full_text or "附件" in full_text
+
+        # pcode
+        pcode_m = re.search(r"pcode=(\w+)", law_url)
+        pcode = pcode_m.group(1) if pcode_m else ""
+
         records.append({
             "name": name,
             "法規性質": _text(law.find("法規性質")),
             "法規類別": law_type,
             "最新異動日期_roc": _text(law.find("最新異動日期")),
             "生效日期_roc": _text(law.find("生效日期")),
-            "沿革摘要": _text(law.find("沿革內容"))[:200],
+            "沿革摘要": _text(law.find("沿革內容"))[:400],
             "英文法規名稱": _text(law.find("英文法規名稱")),
             "法規網址": law_url,
+            "pcode": pcode,
+            "articles": articles,
+            "has_table": has_table,
             "資料擷取日期": fetched_at,
         })
     return records
@@ -580,7 +600,13 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
             if rec["法規網址"]:
                 entry["source"] = rec["法規網址"]
             if rec["沿革摘要"]:
-                entry["summary"] = rec["沿革摘要"]  # 保留完整沿革，不覆蓋原有 note
+                entry["summary"] = rec["沿革摘要"]
+            if rec.get("pcode"):
+                entry["pcode"] = rec["pcode"]
+            if rec.get("articles"):
+                entry["articles"] = rec["articles"]
+            if rec.get("has_table"):
+                entry["has_table"] = rec["has_table"]
         else:
             merged.append({
                 "name": rec["name"],
@@ -589,6 +615,9 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "date": iso_date,
                 "source": rec["法規網址"] or REG_SOURCE,
                 "note": "XML 新增，未在原始清單中",
+                "pcode": rec.get("pcode", ""),
+                "articles": rec.get("articles", []),
+                "has_table": rec.get("has_table", False),
             })
     return merged
 
@@ -686,16 +715,49 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .star-btn{{ background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px;
     color:#ccc; line-height:1; vertical-align:middle; }}
   .star-btn.on{{ color:#e6a817; }}
-  .summ-toggle{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer;
-    font-size:11px; padding:1px 5px; margin-left:6px; color:var(--ink-soft); vertical-align:middle;
-    line-height:1.6; white-space:nowrap; }}
-  .summ-toggle:hover{{ background:var(--hover); }}
-  .summ-row td{{ padding:0 !important; }}
-  .summ-body{{ background:#f9f9f7; border-left:3px solid var(--amber); padding:10px 14px;
-    font-size:12.5px; color:var(--ink-soft); line-height:1.8; white-space:pre-wrap; }}
-  .rname a{{ color:var(--ink); text-decoration:none; font-weight:500; }}
-  .rname a:hover{{ color:var(--blue); text-decoration:underline; }}
+  .rname-btn{{ background:none; border:none; cursor:pointer; text-align:left; padding:0;
+    font-size:inherit; font-family:inherit; color:var(--ink); font-weight:500;
+    text-decoration:underline dotted; text-underline-offset:3px; }}
+  .rname-btn:hover{{ color:var(--blue); }}
   .src-link{{ font-size:12px; }}
+  /* ── Side Drawer ── */
+  #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .25s; }}
+  #drawer-overlay.open{{ opacity:1; pointer-events:auto; }}
+  #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh;
+    background:#fff; z-index:201; box-shadow:-4px 0 24px rgba(0,0,0,.15);
+    transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
+    display:flex; flex-direction:column; overflow:hidden; }}
+  #law-drawer.open{{ transform:translateX(0); }}
+  #drawer-header{{ padding:16px 18px 12px; border-bottom:1px solid var(--border);
+    display:flex; align-items:flex-start; gap:10px; flex-shrink:0; }}
+  #drawer-header h2{{ margin:0; font-size:15px; flex:1; line-height:1.5; }}
+  #drawer-header h2 a{{ color:var(--ink); text-decoration:none; }}
+  #drawer-header h2 a:hover{{ color:var(--blue); }}
+  #drawer-close{{ background:none; border:none; cursor:pointer; font-size:20px;
+    color:var(--ink-soft); padding:0; line-height:1; flex-shrink:0; margin-top:1px; }}
+  #drawer-body{{ flex:1; overflow-y:auto; padding:16px 18px 24px; }}
+  .drawer-meta{{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; font-size:12.5px; }}
+  .drawer-meta span{{ background:var(--hover); border-radius:3px; padding:2px 7px; }}
+  .drawer-section{{ margin-bottom:18px; }}
+  .drawer-section h3{{ font-size:13px; font-weight:700; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.04em; margin:0 0 8px; }}
+  .drawer-summary{{ font-size:13px; line-height:1.9; color:var(--ink);
+    border-left:3px solid var(--amber); padding-left:12px; white-space:pre-wrap; }}
+  .art-list{{ list-style:none; margin:0; padding:0; max-height:360px; overflow-y:auto; }}
+  .art-list li{{ display:flex; gap:8px; padding:5px 0;
+    border-bottom:1px solid var(--border); font-size:12.5px; line-height:1.5; }}
+  .art-list li:last-child{{ border-bottom:none; }}
+  .art-no{{ flex-shrink:0; font-weight:600; min-width:48px; }}
+  .art-no a{{ color:var(--blue); text-decoration:none; }}
+  .art-no a:hover{{ text-decoration:underline; }}
+  .art-preview{{ color:var(--ink-soft); }}
+  .drawer-fulllink{{ display:inline-block; margin-top:10px; padding:7px 16px;
+    background:var(--blue); color:#fff; border-radius:5px; text-decoration:none;
+    font-size:13px; font-weight:600; }}
+  .drawer-fulllink:hover{{ opacity:.88; }}
+  .drawer-table-note{{ font-size:12.5px; color:var(--amber); background:#fffbeb;
+    border:1px solid #fde68a; border-radius:4px; padding:7px 10px; }}
   .table-footnote{{ font-size:12.5px; color:var(--ink-soft); line-height:1.75; margin:4px 0 22px; }}
   .reg-subhead{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
   .law-card{{ background:var(--card); border:1px solid var(--border); padding:18px; margin-bottom:8px; }}
@@ -808,6 +870,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <footer>
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
   </footer>
+</div>
+
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="law-drawer">
+  <div id="drawer-header">
+    <h2 id="drawer-title"></h2>
+    <button id="drawer-close" onclick="closeDrawer()" title="關閉">✕</button>
+  </div>
+  <div id="drawer-body"></div>
 </div>
 
 <script>
@@ -927,22 +998,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
       const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
       const starred = state.starredLaws[r.name];
-      const hasSummary = r.summary && r.summary.trim().length > 0;
-      const toggleBtn = hasSummary
-        ? '<button class="summ-toggle" data-idx="' + idx + '" title="展開沿革">▾ 沿革</button>'
-        : '';
-      const summaryRow = hasSummary
-        ? '<tr class="summ-row" id="summ-' + idx + '" style="display:none"><td colspan="6"><div class="summ-body">' +
-          r.summary.replace(/\n/g, '<br>') + '</div></td></tr>'
-        : '';
+      const hasDetail = r.summary || (r.articles && r.articles.length > 0);
       return '<tr>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td class="rname"><a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + '</a>' + badge + toggleBtn + '</td>' +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
         '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
         '<td><a href="' + r.source + '" target="_blank" rel="noopener" class="src-link">全文 ↗</a></td>' +
-        '</tr>' + summaryRow;
+        '</tr>';
     }}).join("");
 
     document.querySelectorAll(".star-btn").forEach(btn => {{
@@ -953,16 +1017,70 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         save(); renderRegistry();
       }};
     }});
-    document.querySelectorAll(".summ-toggle").forEach(btn => {{
-      btn.onclick = () => {{
-        const row = document.getElementById("summ-" + btn.dataset.idx);
-        if (!row) return;
-        const open = row.style.display !== "none";
-        row.style.display = open ? "none" : "table-row";
-        btn.textContent = open ? "▾ 沿革" : "▴ 收起";
-      }};
+    document.querySelectorAll(".rname-btn").forEach(btn => {{
+      btn.onclick = () => openDrawer(rows[+btn.dataset.idx]);
     }});
   }}
+
+  function openDrawer(r) {{
+    const pcode = r.pcode || "";
+    const artBase = pcode ? "https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=" + pcode + "&flno=" : "";
+
+    // 標題
+    document.getElementById("drawer-title").innerHTML =
+      '<a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + ' ↗</a>';
+
+    // 主體
+    let html = '<div class="drawer-meta">' +
+      '<span>' + (TIER_LABEL[r.tier] || r.tier) + '</span>' +
+      (r.cat ? '<span>' + r.cat + '</span>' : '') +
+      (r.date ? '<span>最新修正 ' + r.date + '</span>' : '<span style="color:#aaa">日期待確認</span>') +
+      (r.has_table ? '<span style="background:#fffbeb;color:#b45309">含附表</span>' : '') +
+      '</div>';
+
+    // 附表提示
+    if (r.has_table) {{
+      html += '<div class="drawer-section"><div class="drawer-table-note">' +
+        '⚠ 本法規含附表／附件，請至全文頁面查看或下載。' +
+        '</div></div>';
+    }}
+
+    // 沿革摘要
+    if (r.summary) {{
+      html += '<div class="drawer-section"><h3>沿革摘要</h3>' +
+        '<div class="drawer-summary">' + r.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</div>' +
+        '</div>';
+    }}
+
+    // 條文索引
+    if (r.articles && r.articles.length > 0) {{
+      html += '<div class="drawer-section"><h3>條文索引（共 ' + r.articles.length + ' 條）</h3><ul class="art-list">';
+      r.articles.forEach(a => {{
+        const noLink = artBase
+          ? '<a href="' + artBase + encodeURIComponent(a.no) + '" target="_blank" rel="noopener">第' + a.no + '條</a>'
+          : '第' + a.no + '條';
+        const preview = a.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += '<li><span class="art-no">' + noLink + '</span><span class="art-preview">' + preview + '…</span></li>';
+      }});
+      html += '</ul></div>';
+    }}
+
+    // 全文按鈕
+    html += '<a href="' + r.source + '" target="_blank" rel="noopener" class="drawer-fulllink">開啟全文頁面 ↗</a>';
+
+    document.getElementById("drawer-body").innerHTML = html;
+    document.getElementById("law-drawer").classList.add("open");
+    document.getElementById("drawer-overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }}
+
+  function closeDrawer() {{
+    document.getElementById("law-drawer").classList.remove("open");
+    document.getElementById("drawer-overlay").classList.remove("open");
+    document.body.style.overflow = "";
+  }}
+
+  document.addEventListener("keydown", e => {{ if (e.key === "Escape") closeDrawer(); }});
 
   function renderDirectives() {{
     document.getElementById("directiveBody").innerHTML = DIRECTIVES.map(r => {{
