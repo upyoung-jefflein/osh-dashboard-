@@ -25,6 +25,10 @@ import json
 import re
 import sys
 import urllib.robotparser
+
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from pathlib import Path
@@ -1196,6 +1200,8 @@ def main():
     news = dedupe_and_filter_news(all_news)
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
 
+    XML_CACHE = Path("osh_xml_records.json")
+
     registry = STATIC_REGISTRY
     if not args.news_only:
         if args.fetch_xml:
@@ -1212,11 +1218,23 @@ def main():
                 registry = merge_registry(STATIC_REGISTRY, all_xml_records)
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
+                XML_CACHE.write_text(
+                    json.dumps(all_xml_records, ensure_ascii=False, separators=(",", ":")),
+                    encoding="utf-8",
+                )
+                print(f"已更新法規快取 {XML_CACHE}（{len(all_xml_records)} 筆，{XML_CACHE.stat().st_size // 1024} KB）。")
             else:
-                print("所有 XML 下載失敗，法規區塊維持靜態清單。", file=sys.stderr)
-                if args.law_xml and args.law_xml.exists():
+                print("所有 XML 下載失敗，嘗試讀取本機法規快取…", file=sys.stderr)
+                if XML_CACHE.exists():
+                    all_xml_records = json.loads(XML_CACHE.read_text(encoding="utf-8"))
+                    registry = merge_registry(STATIC_REGISTRY, all_xml_records)
+                    confirmed = sum(1 for r in registry if r["date"])
+                    print(f"法規：使用快取 {XML_CACHE}（{len(all_xml_records)} 筆），合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
+                elif args.law_xml and args.law_xml.exists():
                     xml_records = parse_law_xml(args.law_xml)
                     registry = merge_registry(STATIC_REGISTRY, xml_records)
+                else:
+                    print("無可用法規來源，法規區塊維持靜態清單。", file=sys.stderr)
         elif args.law_xml:
             if args.law_xml.exists():
                 xml_records = parse_law_xml(args.law_xml)

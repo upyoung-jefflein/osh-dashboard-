@@ -23,17 +23,17 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Git commit + push
-$status = git status --porcelain docs/index.html
-if ($status) {
-    Log "偵測到 docs/index.html 變更，準備 commit..."
-    git add docs/index.html
+$changed = git status --porcelain docs/index.html osh_xml_records.json
+if ($changed) {
+    Log "偵測到變更，準備 commit..."
+    git add docs/index.html osh_xml_records.json
     $date = Get-Date -Format "yyyy-MM-dd"
     git commit -m "chore: weekly law XML update $date"
     git pull --rebase origin main
     git push
     Log "Push 完成。"
 } else {
-    Log "docs/index.html 無變更，略過 commit。"
+    Log "docs/index.html 與 osh_xml_records.json 無變更，略過 commit。"
 }
 
 Log "===== 完成 ====="
