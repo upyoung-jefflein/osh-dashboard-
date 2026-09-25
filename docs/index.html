@@ -545,7 +545,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-26 00:35 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-26 00:56 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -878,8 +878,8 @@
   <div id="drawer-body"></div>
 </div>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
 <script>
   window.onerror = function(msg, src, line, col, err) {
     var d = document.createElement("div");
@@ -1672,8 +1672,8 @@
 
     document.getElementById("mainTableScroll").style.display = regViewMode === "table" ? "" : "none";
     document.getElementById("registryPager").style.display = regViewMode === "table" ? "" : "none";
-    document.getElementById("lawTimeline").style.display = regViewMode === "timeline" ? "" : "none";
-    document.getElementById("lawGraph").style.display = regViewMode === "graph" ? "" : "none";
+    document.getElementById("lawTimeline").style.display = regViewMode === "timeline" ? "block" : "none";
+    document.getElementById("lawGraph").style.display = regViewMode === "graph" ? "block" : "none";
 
     if (regViewMode === "timeline") {
       document.getElementById("registryMeta").textContent = "時間軸：顯示 " + rows.length + " 筆，依最新修正日期排列";
@@ -2233,11 +2233,16 @@
     var el = document.getElementById("lawGraph");
     if (!el) return;
     if (!window.d3) {
-      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-soft)">圖譜需要連線以載入 D3.js，請確認網路連線後重新整理。</div>';
+      el.innerHTML = '<div style="padding:60px 40px;text-align:center;color:var(--ink-soft);line-height:2">'
+        + '<div style="font-size:36px;margin-bottom:12px">🕸</div>'
+        + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">D3.js 圖形庫尚未載入</div>'
+        + '<div style="font-size:12px">瀏覽器可能封鎖了外部 CDN 腳本。<br>'
+        + '請嘗試：關閉 Tracking Prevention、或改用 Chrome / Firefox。</div>'
+        + '</div>';
       return;
     }
+    var W = el.offsetWidth || el.parentElement.offsetWidth || 760, H = 580;
     if (_graphSim) { _graphSim.stop(); _graphSim = null; }
-    var W = el.offsetWidth || 760, H = el.offsetHeight || 580;
     var allLaws = REGISTRY.filter(function(r) { return r.articles && r.articles.length > 0; });
     var nodes = allLaws.map(function(r) {
       return { id: r.name, arts: r.articles.length, cat: r.cat || '', tier: r.tier || 'dir',
