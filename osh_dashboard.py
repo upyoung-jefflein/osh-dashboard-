@@ -1441,6 +1441,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .drawer-tool-btn{{ padding:4px 11px; border:1px solid var(--border); background:transparent; border-radius:4px; cursor:pointer; font-size:12.5px; color:var(--ink-soft); }}
   .drawer-tool-btn:hover{{ color:var(--ink); border-color:var(--ink-soft); }}
   .drawer-tool-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); }}
+  /* ① 法規關係圖譜 */
+  #lawGraph {{ display:none; width:100%; height:580px; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }}
+  #lawGraph.active {{ display:block; }}
+  /* ② 修訂時間軸 */
+  #lawTimeline {{ display:none; margin-bottom:20px; }}
+  .tl-year-group {{ margin-bottom:20px; }}
+  .tl-year-label {{ font-size:15px; font-weight:700; color:var(--stamp); padding:5px 10px 5px 12px; border-left:3px solid var(--stamp); margin-bottom:10px; display:block; }}
+  .tl-items {{ display:flex; flex-wrap:wrap; gap:8px; }}
+  .tl-item {{ background:var(--card); border:1px solid var(--border); border-radius:5px; padding:8px 12px; cursor:pointer; transition:border-color .15s,box-shadow .15s; min-width:150px; max-width:210px; }}
+  .tl-item:hover {{ border-color:var(--stamp); box-shadow:0 2px 8px rgba(30,43,58,.1); }}
+  .tl-item-date {{ font-size:10px; color:var(--ink-soft); margin-bottom:3px; }}
+  .tl-item-name {{ font-size:11.5px; font-weight:600; color:var(--ink); line-height:1.4; margin-bottom:4px; }}
+  .tl-item-meta {{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; }}
+  /* ③ 罰則篩選 */
+  .penalty-filter-btn {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:3px 9px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }}
+  .penalty-filter-btn.active {{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
+  [data-theme="dark"] .penalty-filter-btn.active {{ background:rgba(185,28,28,.25); color:#fca5a5; border-color:#b91c1c; }}
+  /* 視圖切換 */
+  .reg-view-toggle {{ display:flex; gap:6px; margin:10px 0 8px; flex-wrap:wrap; }}
+  .reg-view-toggle button {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:4px 12px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }}
+  .reg-view-toggle button.active {{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
+  @media(max-width:640px) {{
+    .tl-item {{ min-width:130px; max-width:calc(50% - 4px); }}
+    #lawGraph {{ height:420px; }}
+    .reg-view-toggle button {{ padding:3px 9px; font-size:11px; }}
+  }}
 </style>
 </head>
 <body>
@@ -1527,9 +1553,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="sep"></div>
       <button onclick="openCompare()" style="font-size:12px">⚖ 並排對比</button>
       <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 適用判斷</button>
+      <div class="sep"></div>
+      <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 含罰則</button>
+    </div>
+    <div class="reg-view-toggle">
+      <button class="active" data-regview="table">📋 表格</button>
+      <button data-regview="timeline">📅 時間軸</button>
+      <button data-regview="graph">🕸 關係圖譜</button>
     </div>
     <div class="registry-meta" id="registryMeta"></div>
-    <div class="table-scroll">
+    <div id="lawTimeline"></div>
+    <div id="lawGraph"></div>
+    <div class="table-scroll" id="mainTableScroll">
       <table class="registry-table">
         <thead><tr><th></th><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
         <tbody id="registryBody"></tbody>
@@ -1686,6 +1721,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <div id="drawer-body"></div>
 </div>
 
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 <script>
   window.onerror = function(msg, src, line, col, err) {{
     var d = document.createElement("div");
@@ -1721,6 +1758,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
+  let regViewMode = "table", penaltyFilter = false;
+  let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
   var srcTypeFilter = new Set(["news", "notice"]); // 預設隱藏活動訊息
   var registryPage = 1;
@@ -2439,28 +2478,61 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
+    if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     const q = document.getElementById("lawSearch").value.trim();
-    if (q) rows = rows.filter(r => r.name.includes(q) || (r.scope && r.scope.includes(q)) || (r.note && r.note.includes(q)) || (r.authority && r.authority.includes(q)) || (r.search_text && r.search_text.includes(q)));
+    var fuseActive = false;
+    if (q) {{
+      if (q.length >= 2 && window.Fuse) {{
+        if (!_fuseIndex) _fuseIndex = new Fuse(REGISTRY, {{
+          keys:[{{name:'name',weight:3}},{{name:'scope',weight:1.5}},{{name:'authority',weight:1}},{{name:'cat',weight:.8}},{{name:'search_text',weight:.5}}],
+          includeScore:true, threshold:0.4, minMatchCharLength:2
+        }});
+        var hits = _fuseIndex.search(q, {{limit:200}});
+        var nameSet = new Set(rows.map(r => r.name));
+        rows = hits.filter(h => nameSet.has(h.item.name)).map(h => h.item);
+        fuseActive = true;
+      }} else {{
+        rows = rows.filter(r => r.name.includes(q)||(r.scope&&r.scope.includes(q))||(r.note&&r.note.includes(q))||(r.authority&&r.authority.includes(q))||(r.search_text&&r.search_text.includes(q)));
+      }}
+    }}
 
-    if (sortMode === "date") {{
-      rows.sort((a, b) => {{
-        if (!a.date && !b.date) return a.name.localeCompare(b.name, "zh-Hant");
-        if (!a.date) return 1; if (!b.date) return -1;
-        return b.date.localeCompare(a.date);
-      }});
-    }} else if (sortMode === "name") {{
-      rows.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
-    }} else {{
-      rows.sort((a, b) => {{
-        const ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
-        if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
-        const tierOrder = {{act:0,reg:1,dir:2,notice:3}};
-        if (a.tier !== b.tier) return (tierOrder[a.tier]||9) - (tierOrder[b.tier]||9);
-        return a.name.localeCompare(b.name, "zh-Hant");
-      }});
+    if (!fuseActive) {{
+      if (sortMode === "date") {{
+        rows.sort((a, b) => {{
+          if (!a.date && !b.date) return a.name.localeCompare(b.name, "zh-Hant");
+          if (!a.date) return 1; if (!b.date) return -1;
+          return b.date.localeCompare(a.date);
+        }});
+      }} else if (sortMode === "name") {{
+        rows.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+      }} else {{
+        rows.sort((a, b) => {{
+          const ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
+          if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
+          const tierOrder = {{act:0,reg:1,dir:2,notice:3}};
+          if (a.tier !== b.tier) return (tierOrder[a.tier]||9) - (tierOrder[b.tier]||9);
+          return a.name.localeCompare(b.name, "zh-Hant");
+        }});
+      }}
     }}
 
     const confirmed = rows.filter(r => r.date).length;
+
+    document.getElementById("mainTableScroll").style.display = regViewMode === "table" ? "" : "none";
+    document.getElementById("registryPager").style.display = regViewMode === "table" ? "" : "none";
+    document.getElementById("lawTimeline").style.display = regViewMode === "timeline" ? "" : "none";
+    document.getElementById("lawGraph").style.display = regViewMode === "graph" ? "" : "none";
+
+    if (regViewMode === "timeline") {{
+      document.getElementById("registryMeta").textContent = "時間軸：顯示 " + rows.length + " 筆，依最新修正日期排列";
+      _renderTimeline(rows); return;
+    }}
+    if (regViewMode === "graph") {{
+      var crossCount = REGISTRY.filter(r => r.cross_refs && Object.keys(r.cross_refs).length > 0).length;
+      document.getElementById("registryMeta").textContent = "關係圖譜：" + REGISTRY.filter(r => r.articles && r.articles.length).length + " 部法規，" + crossCount + " 部含交叉引用（拖曳移動節點，滾輪縮放）";
+      renderGraph(); return;
+    }}
+
     const totalPages = Math.max(1, Math.ceil(rows.length / REGISTRY_PAGE_SIZE));
     if (registryPage > totalPages) registryPage = totalPages;
     const pageStart = (registryPage - 1) * REGISTRY_PAGE_SIZE;
@@ -2498,10 +2570,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           artMatchBadge = '<span class="badge" style="background:#6d28d9;font-size:10px">條文符合：第' +
             matchedNos.slice(0,3).join('、') + (matchedNos.length > 3 ? '…' : '') + '條</span>';
       }}
+      var penBadge = (penaltyFilter && r.penalty_articles && r.penalty_articles.length > 0)
+        ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
       return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -2963,6 +3037,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       registryPage = 1; renderRegistry();
     }};
   }});
+  document.querySelectorAll("[data-regview]").forEach(btn => {{
+    btn.onclick = () => {{
+      regViewMode = btn.dataset.regview;
+      document.querySelectorAll("[data-regview]").forEach(b => b.classList.toggle("active", b.dataset.regview === regViewMode));
+      registryPage = 1; renderRegistry();
+    }};
+  }});
   var _newsDebounce, _lawDebounce;
   document.getElementById("newsSearch").addEventListener("input", function() {{
     clearTimeout(_newsDebounce);
@@ -2994,6 +3075,106 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       card.style.display = hit ? "" : "none";
     }});
   }});
+
+  // ① 法規關係圖譜（D3 force-directed）
+  function renderGraph() {{
+    var el = document.getElementById("lawGraph");
+    if (!el) return;
+    if (!window.d3) {{
+      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-soft)">圖譜需要連線以載入 D3.js，請確認網路連線後重新整理。</div>';
+      return;
+    }}
+    if (_graphSim) {{ _graphSim.stop(); _graphSim = null; }}
+    var W = el.offsetWidth || 760, H = el.offsetHeight || 580;
+    var allLaws = REGISTRY.filter(function(r) {{ return r.articles && r.articles.length > 0; }});
+    var nodes = allLaws.map(function(r) {{
+      return {{ id: r.name, arts: r.articles.length, cat: r.cat || '', tier: r.tier || 'dir',
+               cross: r.cross_refs ? Object.keys(r.cross_refs).length : 0, _r: r }};
+    }});
+    var nodeMap = {{}};
+    nodes.forEach(function(n) {{ nodeMap[n.id] = n; }});
+    var links = [];
+    allLaws.forEach(function(r) {{
+      if (!r.cross_refs) return;
+      Object.keys(r.cross_refs).forEach(function(target) {{
+        if (nodeMap[target] && target !== r.name) {{
+          links.push({{ source: r.name, target: target, val: r.cross_refs[target].length }});
+        }}
+      }});
+    }});
+    var catPal = {{'職安衛主要法規':'#dc4b4b','化學品管理':'#e07a2a','營造業':'#c99a1a','機械設備':'#4aaa52','電氣安全':'#2a72e0','防護具':'#6a52c0','職業衛生':'#b052c0','勞工行政':'#52a8b0','職業傷病':'#3aa0d0'}};
+    d3.select(el).selectAll("*").remove();
+    var svg = d3.select(el).append("svg").attr("width", W).attr("height", H);
+    var g = svg.append("g");
+    svg.call(d3.zoom().scaleExtent([0.1, 6]).on("zoom", function(e) {{ g.attr("transform", e.transform); }}));
+    var sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(function(d) {{ return d.id; }}).distance(85).strength(0.35))
+      .force("charge", d3.forceManyBody().strength(-200))
+      .force("center", d3.forceCenter(W / 2, H / 2))
+      .force("collide", d3.forceCollide(function(d) {{ return Math.sqrt(d.arts) * 2.2 + 9; }}));
+    _graphSim = sim;
+    var link = g.append("g").attr("stroke-opacity", 0.55).selectAll("line").data(links).join("line")
+      .attr("stroke", "var(--border)").attr("stroke-width", function(d) {{ return Math.min(3, Math.sqrt(d.val) + 0.4); }});
+    var node = g.append("g").selectAll("g").data(nodes).join("g").attr("cursor", "pointer");
+    node.call(d3.drag()
+      .on("start", function(e, d) {{ if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }})
+      .on("drag",  function(e, d) {{ d.fx = e.x; d.fy = e.y; }})
+      .on("end",   function(e, d) {{ if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }})
+    );
+    node.on("click", function(e, d) {{ openDrawer(d._r); }});
+    node.append("circle")
+      .attr("r", function(d) {{ return Math.sqrt(d.arts) * 2 + 7; }})
+      .attr("fill", function(d) {{ return catPal[d.cat] || '#888'; }})
+      .attr("opacity", 0.8).attr("stroke", "var(--card)").attr("stroke-width", 2);
+    node.append("text")
+      .text(function(d) {{ return d.id.length > 9 ? d.id.slice(0, 9) + '…' : d.id; }})
+      .attr("dy", function(d) {{ return Math.sqrt(d.arts) * 2 + 18; }})
+      .attr("text-anchor", "middle").attr("font-size", 9.5).attr("font-family", "inherit")
+      .attr("fill", "var(--ink)").attr("pointer-events", "none");
+    node.append("title").text(function(d) {{
+      return d.id + '\n條文數：' + d.arts + '\n交叉引用：' + d.cross + ' 部法規\n（點擊開啟抽屜）';
+    }});
+    sim.on("tick", function() {{
+      link.attr("x1", function(d) {{ return d.source.x; }}).attr("y1", function(d) {{ return d.source.y; }})
+          .attr("x2", function(d) {{ return d.target.x; }}).attr("y2", function(d) {{ return d.target.y; }});
+      node.attr("transform", function(d) {{ return "translate(" + d.x + "," + d.y + ")"; }});
+    }});
+  }}
+
+  // ② 修訂時間軸
+  function _renderTimeline(rows) {{
+    var byYear = {{}};
+    rows.forEach(function(r) {{
+      var yr = r.date ? r.date.slice(0, 4) : '待確認';
+      if (!byYear[yr]) byYear[yr] = [];
+      byYear[yr].push(r);
+    }});
+    var years = Object.keys(byYear).sort(function(a, b) {{ return b.localeCompare(a); }});
+    var html = years.map(function(yr) {{
+      var items = byYear[yr].map(function(r) {{
+        var tierCls = r.tier || 'dir';
+        var ridx = REGISTRY.indexOf(r);
+        var pen = r.penalty_articles && r.penalty_articles.length
+          ? '<span class="art-chip-penalty" style="font-size:9px;padding:1px 4px">罰則×' + r.penalty_articles.length + '</span>' : '';
+        return '<div class="tl-item" data-ridx="' + ridx + '" onclick="var _r=REGISTRY[+this.dataset.ridx];if(_r)openDrawer(_r);">'
+          + '<div class="tl-item-date">' + (r.date || '待確認') + '</div>'
+          + '<div class="tl-item-name">' + r.name + '</div>'
+          + '<div class="tl-item-meta"><span class="tier-tag ' + tierCls + '" style="font-size:9.5px">' + TIER_LABEL[tierCls] + '</span>' + pen + '</div>'
+          + '</div>';
+      }}).join('');
+      return '<div class="tl-year-group">'
+        + '<div class="tl-year-label">' + yr + '</div>'
+        + '<div class="tl-items">' + items + '</div></div>';
+    }}).join('');
+    document.getElementById("lawTimeline").innerHTML = html || '<div style="padding:20px;color:var(--ink-soft)">無符合條件的法規。</div>';
+  }}
+
+  // ③ 罰則篩選切換
+  function togglePenaltyFilter() {{
+    penaltyFilter = !penaltyFilter;
+    document.getElementById("penaltyFilterBtn").classList.toggle("active", penaltyFilter);
+    registryPage = 1; renderRegistry();
+  }}
 
   buildCatFilters();
   initTheme();
