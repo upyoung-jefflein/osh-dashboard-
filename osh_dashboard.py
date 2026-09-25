@@ -2178,12 +2178,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   // ─── 法規並排對比 ─────────────────────────────────────────────
-  function _fillCompareSelect(sel, filterQ) {{
+  function _fillCompareSelect(sel, filterQ, label) {{
     var cur = sel.value;
-    sel.innerHTML = '<option value="">— 選擇法規 —</option>';
+    sel.innerHTML = '<option value="">— 選擇' + (label||'法規') + ' —</option>';
     REGISTRY.forEach(function(r, i) {{
       if (r.articles && r.articles.length > 0) {{
-        if (filterQ && !r.name.includes(filterQ)) return;
+        if (filterQ) {{
+          var q = filterQ;
+          var hit = r.name.includes(q) ||
+                    (r.scope && r.scope.includes(q)) ||
+                    (r.search_text && r.search_text.includes(q)) ||
+                    (r.cat && r.cat.includes(q));
+          if (!hit) return;
+        }}
         var opt = document.createElement('option');
         opt.value = i; opt.textContent = r.name;
         if (String(i) === cur) opt.selected = true;
@@ -2197,13 +2204,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var selB = document.getElementById('compare-sel-b');
     var fA = document.getElementById('compare-filter-a');
     var fB = document.getElementById('compare-filter-b');
-    _fillCompareSelect(selA, fA ? fA.value : '');
-    _fillCompareSelect(selB, fB ? fB.value : '');
+    _fillCompareSelect(selA, fA ? fA.value : '', '法規 A');
+    _fillCompareSelect(selB, fB ? fB.value : '', '法規 B');
     if (fA) {{
-      fA.oninput = function() {{ _fillCompareSelect(selA, fA.value); renderCompare(); }};
+      fA.oninput = function() {{ _fillCompareSelect(selA, fA.value, '法規 A'); renderCompare(); }};
     }}
     if (fB) {{
-      fB.oninput = function() {{ _fillCompareSelect(selB, fB.value); renderCompare(); }};
+      fB.oninput = function() {{ _fillCompareSelect(selB, fB.value, '法規 B'); renderCompare(); }};
     }}
     modal.classList.add('open');
     renderCompare();
