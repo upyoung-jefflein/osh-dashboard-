@@ -75,15 +75,17 @@ LAW_XML_URLS = [
 REG_SOURCE = "https://law.moj.gov.tw/"
 REG_SOURCE_EN = "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx"
 
+_MOL = "勞動部"
+_OSHA = "勞動部職業安全衛生署"
 STATIC_REGISTRY = [
-    {"name": "職業安全衛生法", "tier": "act", "cat": "管理制度", "date": "2025-12-19", "source": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060001", "note": "全國法規資料庫已驗證"},
-    {"name": "職業安全衛生法施行細則", "tier": "reg", "cat": "管理制度", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "職業安全衛生設施規則", "tier": "reg", "cat": "作業環境", "date": "2026-06-30", "source": REG_SOURCE, "note": "全國法規資料庫鏡像尚顯示舊版，資料同步中"},
-    {"name": "職業安全衛生管理辦法", "tier": "reg", "cat": "管理制度", "date": "2026-06-30", "source": REG_SOURCE, "note": "修正條文已見流通，正式生效日待官方公告確認"},
-    {"name": "職業安全衛生教育訓練規則", "tier": "reg", "cat": "管理制度", "date": "2026-06-25", "source": REG_SOURCE_EN, "note": "附表一、附表二時數修正"},
-    {"name": "勞工健康保護規則", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "女性勞工母性健康保護實施辦法", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "勞工作業環境監測實施辦法", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None},
+    {"name": "職業安全衛生法", "tier": "act", "cat": "管理制度", "date": "2025-12-19", "source": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060001", "note": "全國法規資料庫已驗證", "authority": _MOL},
+    {"name": "職業安全衛生法施行細則", "tier": "reg", "cat": "管理制度", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "職業安全衛生設施規則", "tier": "reg", "cat": "作業環境", "date": "2026-06-30", "source": REG_SOURCE, "note": "全國法規資料庫鏡像尚顯示舊版，資料同步中", "authority": _OSHA},
+    {"name": "職業安全衛生管理辦法", "tier": "reg", "cat": "管理制度", "date": "2026-06-30", "source": REG_SOURCE, "note": "修正條文已見流通，正式生效日待官方公告確認", "authority": _OSHA},
+    {"name": "職業安全衛生教育訓練規則", "tier": "reg", "cat": "管理制度", "date": "2026-06-25", "source": REG_SOURCE_EN, "note": "附表一、附表二時數修正", "authority": _OSHA},
+    {"name": "勞工健康保護規則", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None, "authority": _MOL},
+    {"name": "女性勞工母性健康保護實施辦法", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None, "authority": _MOL},
+    {"name": "勞工作業環境監測實施辦法", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
     {"name": "職業安全衛生標示設置準則", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None},
     {"name": "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準", "tier": "reg", "cat": "職業衛生", "date": "2025-11-20", "source": REG_SOURCE, "note": None},
     {"name": "異常氣壓危害預防標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
@@ -129,6 +131,100 @@ TIER_LABEL = {"act": "法律", "reg": "法規命令", "dir": "行政規則", "no
 
 # 法規分類（決定顯示順序）
 CATEGORIES = ["管理制度", "作業環境", "職業衛生", "化學品安全", "機械設備", "特殊作業", "營造工程", "職業災害"]
+
+# 合規稽核 Checklist（每筆法規的可勾選稽核項目）
+CHECKLISTS = {
+    "職業安全衛生法": [
+        "已設置職業安全衛生委員會（§13，50人以上）",
+        "已置業務主管及管理員/師（§22）",
+        "已訂定安全衛生工作守則並報請備查（§23）",
+        "已辦理一般安全衛生教育訓練（§32）",
+        "已辦理特殊作業安全衛生教育訓練（§32）",
+        "已依規定施行體格及健康檢查（§21）",
+        "危險性工作場所已完成審查或檢查（§26）",
+        "已訂定承攬管理計畫並告知危害（§26）",
+        "共同作業已設協議組織（§27）",
+    ],
+    "職業安全衛生管理辦法": [
+        "已建立職業安全衛生管理系統（§12之1）",
+        "已制定安全衛生管理計畫（§12之2）",
+        "已依行業別設置安全衛生組織（附表一、二）",
+        "承攬管理：原事業單位已告知承攬人危害（§26）",
+        "已訂定承攬管理計畫（§27）",
+        "已舉辦安全衛生協議組織定期會議（§27）",
+        "已實施自動檢查（設備每年至少一次）（§14）",
+        "已訂定作業程序書（高風險作業）",
+        "職業安全衛生委員會每季召開（§11）",
+    ],
+    "職業安全衛生設施規則": [
+        "危險機械設備已取得合格證書（§23）",
+        "局限空間作業前已測定含氧量及有害氣體（§29之1）",
+        "高架作業已裝設安全防護設施（§224）",
+        "電氣設備有接地及漏電斷路器（§248）",
+        "個人防護具已依規提供且確認使用（§277）",
+        "緊急應變計畫已訂定並定期演練（§23）",
+        "防火設備定期維護（§164）",
+        "有害物質儲存區已設置緊急沖洗設備（§301）",
+    ],
+    "職業安全衛生管理辦法": [
+        "已建立職業安全衛生管理系統",
+        "已制定安全衛生管理計畫",
+        "已依行業別設置安全衛生組織",
+        "已訂定承攬管理計畫",
+        "已舉辦協議組織定期會議",
+        "已實施自動檢查",
+    ],
+    "危害性化學品標示及通識規則": [
+        "化學品已完成 GHS 分類（§5）",
+        "容器已貼附符合規定的 GHS 標示（§7）",
+        "已製作並更新安全資料表 SDS（§10）",
+        "SDS 已告知勞工並放置於作業現場（§13）",
+        "已建立危害性化學品清單（§16）",
+        "勞工已接受化學品危害 SDS 教育訓練（§17）",
+        "外文 SDS 已翻譯為中文版本（§12）",
+    ],
+    "勞工健康保護規則": [
+        "已完成一般體格/健康檢查（§10）",
+        "已完成特殊作業健康檢查（§14）",
+        "健康異常勞工已進行健康追蹤（§20）",
+        "50人以上已設置或委託健康服務機構（§4）",
+        "健康資料已建立並保存10年（§21）",
+        "女性勞工已實施母性健康保護評估（§31之1）",
+    ],
+    "勞工作業環境監測實施辦法": [
+        "高風險作業場所已辦理作業環境監測（§7）",
+        "已委託認可測定機構執行監測（§3）",
+        "監測結果已告知勞工（§12）",
+        "超標場所已採取改善措施（§13）",
+        "監測紀錄保存至少3年（§14）",
+    ],
+    "缺氧症預防規則": [
+        "已認定並標示缺氧危險場所（§4）",
+        "已選任缺氧作業主管（§5）",
+        "已訂定缺氧危險作業許可制度（§26之1）",
+        "進入前已測定氧氣及有害氣體濃度（§14）",
+        "已備置測氧儀、通風設備及防護具（§14）",
+        "已訂定緊急避難及搶救方法（§26之2）",
+        "勞工已接受缺氧症預防教育訓練（§22）",
+    ],
+    "營造安全衛生設施標準": [
+        "已訂定施工安全計畫（§5之1）",
+        "開挖作業已有擋土設施（§62）",
+        "高架作業已設置護欄或安全網（§19）",
+        "起重機械已取得合格證書（§155）",
+        "職安卡制度已落實（進場訓練記錄）",
+        "墜落防護設施符合標準（§17之1）",
+        "已指定工地負責人（§5之1）",
+    ],
+    "高溫作業勞工作息時間標準": [
+        "已量測作業場所綜合溫度熱指數（WBGT）（§3）",
+        "已依 WBGT 值調整作息時間（附表）",
+        "已提供防暑飲水及休息設施（§7）",
+        "勞工已接受熱危害預防教育訓練（§8）",
+        "高溫作業已辦理特殊健康檢查",
+    ],
+}
+
 
 # 情境快速查詢
 QUICK_SCENARIOS = [
@@ -551,6 +647,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
     root = tree.getroot()
     records = []
     fetched_at = date.today().isoformat()
+    today_str = date.today().strftime("%Y%m%d")
 
     for law in root.iter("法規"):
         name = _text(law.find("法規名稱"))
@@ -561,16 +658,54 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         if not any(k in name for k in OSH_KEYWORDS):
             continue
 
-        # 條文索引（只存條號，不存內文，避免 JSON 過大）
+        # 主管機關（此版本 XML 無此欄位，留空由靜態清單補充）
+        authority = ""
+
+        # 效力狀態：廢止註記 + 生效日期
+        abolish_note = _text(law.find("廢止註記"))
+        eff_date_roc = _text(law.find("生效日期"))
+        status = "現行"
+        if abolish_note:
+            status = "廢止"
+        elif eff_date_roc and len(eff_date_roc) >= 7:
+            # ROC date YYYMMDD → compare with today
+            try:
+                roc_y = int(eff_date_roc[:3])
+                roc_m = int(eff_date_roc[3:5])
+                roc_d = int(eff_date_roc[5:7])
+                eff_iso = f"{roc_y + 1911:04d}{roc_m:02d}{roc_d:02d}"
+                if eff_iso > today_str:
+                    status = "未生效"
+            except (ValueError, IndexError):
+                pass
+
+        # 條文全部（分析用）
+        all_arts = list(law.iter("條文"))
         articles = []
-        for art in law.iter("條文"):
+        scope_parts = []
+        penalty_articles = []
+
+        for art in all_arts:
             raw_no = _text(art.find("條號"))
             art_no = raw_no.replace("第", "").replace("條", "").strip()
-            if art_no:
-                articles.append(art_no)
+            if not art_no:
+                continue
+            articles.append(art_no)
+            content = _text(art.find("條文內容"))
+
+            # 適用範圍：前 3 條
+            try:
+                if int(art_no) <= 3 and content:
+                    scope_parts.append(f"第{art_no}條　{content[:200]}")
+            except ValueError:
+                pass
+
+            # 罰則條文
+            if content and ("罰鍰" in content or ("罰" in content and ("萬元" in content or "千元" in content))):
+                penalty_articles.append({"no": art_no, "text": content[:400]})
 
         # 是否含附表（從條文內容判斷）
-        full_text = " ".join(_text(a.find("條文內容")) for a in law.iter("條文"))
+        full_text = " ".join(_text(a.find("條文內容")) for a in all_arts)
         has_table = "附表" in full_text or "附件" in full_text
 
         # pcode
@@ -582,11 +717,15 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "法規性質": _text(law.find("法規性質")),
             "法規類別": law_type,
             "最新異動日期_roc": _text(law.find("最新異動日期")),
-            "生效日期_roc": _text(law.find("生效日期")),
+            "生效日期_roc": eff_date_roc,
             "沿革摘要": _text(law.find("沿革內容"))[:400],
             "英文法規名稱": _text(law.find("英文法規名稱")),
             "法規網址": law_url,
             "pcode": pcode,
+            "authority": authority,
+            "status": status,
+            "scope": "\n".join(scope_parts),
+            "penalty_articles": penalty_articles,
             "articles": articles,
             "has_table": has_table,
             "資料擷取日期": fetched_at,
@@ -614,6 +753,15 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["articles"] = rec["articles"]
             if rec.get("has_table"):
                 entry["has_table"] = rec["has_table"]
+            # 新增欄位
+            if rec.get("authority"):
+                entry["authority"] = rec["authority"]
+            if rec.get("status"):
+                entry["status"] = rec["status"]
+            if rec.get("scope"):
+                entry["scope"] = rec["scope"]
+            if rec.get("penalty_articles"):
+                entry["penalty_articles"] = rec["penalty_articles"]
         else:
             merged.append({
                 "name": rec["name"],
@@ -625,6 +773,10 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "pcode": rec.get("pcode", ""),
                 "articles": rec.get("articles", []),
                 "has_table": rec.get("has_table", False),
+                "authority": rec.get("authority", ""),
+                "status": rec.get("status", "現行"),
+                "scope": rec.get("scope", ""),
+                "penalty_articles": rec.get("penalty_articles", []),
             })
     return merged
 
@@ -918,6 +1070,73 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .notif-toast{{ position:fixed; top:10px; right:14px; background:var(--stamp); color:#fff; padding:10px 16px; border-radius:6px; font-size:13px; z-index:600; display:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.22); }}
   .notif-toast.show{{ display:block; animation:fadeInDown .3s; }}
   @keyframes fadeInDown{{ from{{transform:translateY(-10px);opacity:0}} to{{transform:translateY(0);opacity:1}} }}
+  /* ── 法規效力狀態 badge ── */
+  .status-now{{ background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
+  .status-off{{ background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
+  .status-pending{{ background:#fef9c3; color:#713f12; border:1px solid #fde047; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
+  /* ── 主管機關 ── */
+  .authority-row{{ font-size:12px; color:var(--ink-soft); margin-bottom:10px; display:flex; align-items:center; gap:6px; }}
+  .authority-row span{{ background:var(--hover); border-radius:3px; padding:2px 7px; color:var(--ink); }}
+  /* ── 適用範圍 ── */
+  .scope-section{{ margin-bottom:16px; }}
+  .scope-section h3{{ font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }}
+  .scope-text{{ font-size:12.5px; line-height:1.8; color:var(--ink); background:rgba(168,132,46,.06); border-left:3px solid var(--brass); padding:8px 12px; border-radius:0 4px 4px 0; white-space:pre-line; }}
+  /* ── 罰則條文 ── */
+  .penalty-section h3{{ font-size:13px; font-weight:600; margin-bottom:6px; color:#b91c1c; text-transform:uppercase; letter-spacing:.05em; }}
+  .penalty-art{{ background:#fff5f5; border:1px solid #fca5a5; border-radius:4px; padding:8px 12px; margin-bottom:7px; font-size:12.5px; line-height:1.75; }}
+  [data-theme="dark"] .penalty-art{{ background:rgba(185,28,28,.12); border-color:rgba(252,165,165,.25); }}
+  .penalty-art .art-no{{ font-weight:700; color:#b91c1c; margin-right:6px; }}
+  /* ── 訂閱法規按鈕 ── */
+  .sub-btn{{ border:none; background:transparent; cursor:pointer; font-size:15px; padding:0 2px; opacity:.5; transition:opacity .2s; }}
+  .sub-btn:hover{{ opacity:1; }}
+  .sub-btn.on{{ opacity:1; color:#f59e0b; }}
+  .sub-notice{{ background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:7px 12px; font-size:12.5px; color:#78350f; margin-bottom:12px; }}
+  [data-theme="dark"] .sub-notice{{ background:rgba(120,53,15,.2); color:#fcd34d; }}
+  /* ── 並排對比 modal ── */
+  .compare-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:600; display:none; align-items:flex-start; justify-content:center; padding:20px 10px; overflow-y:auto; }}
+  .compare-modal.open{{ display:flex; }}
+  .compare-box{{ background:var(--card); border-radius:8px; padding:22px 24px; width:min(960px,97vw); }}
+  .compare-header{{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }}
+  .compare-header h3{{ font-size:16px; }}
+  .compare-header button{{ background:none; border:none; cursor:pointer; font-size:20px; color:var(--ink-soft); }}
+  .compare-selects{{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }}
+  .compare-selects select{{ flex:1; min-width:220px; padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; }}
+  .compare-cols{{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }}
+  @media(max-width:640px){{ .compare-cols{{ grid-template-columns:1fr; }} }}
+  .compare-col{{ border:1px solid var(--border); border-radius:6px; padding:14px; max-height:60vh; overflow-y:auto; }}
+  .compare-col h4{{ font-size:13.5px; font-weight:700; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
+  .compare-art{{ font-size:12.5px; line-height:1.75; padding:6px 0; border-bottom:1px solid var(--border); }}
+  .compare-art:last-child{{ border:none; }}
+  .compare-art .art-no{{ font-weight:700; color:var(--stamp); margin-right:6px; }}
+  /* ── 適用性判斷 modal ── */
+  .guide-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:600; display:none; align-items:center; justify-content:center; }}
+  .guide-modal.open{{ display:flex; }}
+  .guide-box{{ background:var(--card); border-radius:8px; padding:24px 28px; width:min(500px,95vw); }}
+  .guide-box h3{{ font-size:16px; margin-bottom:18px; }}
+  .guide-q{{ margin-bottom:14px; }}
+  .guide-q label{{ display:block; font-size:13px; font-weight:600; margin-bottom:5px; }}
+  .guide-q select{{ width:100%; padding:7px 9px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; }}
+  .guide-checks{{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }}
+  .guide-checks label{{ display:flex; align-items:center; gap:5px; font-size:13px; font-weight:400; cursor:pointer; }}
+  .guide-result-item{{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:13px; }}
+  .guide-result-item:last-child{{ border:none; }}
+  .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:12px; text-decoration:underline; }}
+  /* ── 合規稽核 Checklist ── */
+  .checklist-section{{ margin-top:16px; }}
+  .checklist-section h3{{ font-size:13px; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
+  .checklist-section h3 span{{ font-size:11px; font-weight:400; color:var(--ink-soft); }}
+  .ck-item{{ display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12.5px; cursor:pointer; }}
+  .ck-item:last-child{{ border:none; }}
+  .ck-item input{{ margin-top:2px; flex-shrink:0; accent-color:var(--green); cursor:pointer; }}
+  .ck-item label{{ cursor:pointer; line-height:1.6; }}
+  .ck-item.done label{{ text-decoration:line-through; color:var(--ink-soft); }}
+  .ck-progress{{ height:4px; background:var(--border); border-radius:2px; margin:6px 0 10px; overflow:hidden; }}
+  .ck-progress-bar{{ height:100%; background:var(--green); border-radius:2px; transition:width .3s; }}
+  /* ── 法規抽屜工具列 ── */
+  .drawer-toolbar{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }}
+  .drawer-tool-btn{{ padding:4px 11px; border:1px solid var(--border); background:transparent; border-radius:4px; cursor:pointer; font-size:12.5px; color:var(--ink-soft); }}
+  .drawer-tool-btn:hover{{ color:var(--ink); border-color:var(--ink-soft); }}
+  .drawer-tool-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); }}
 </style>
 </head>
 <body>
@@ -974,17 +1193,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <span class="label">篩選：</span>
       <button data-lawfilter="all" class="active">全部</button>
       <button data-lawfilter="starred">已收藏</button>
+      <button data-lawfilter="subscribed">🔔 已訂閱</button>
       <button data-lawfilter="recent">近期修正</button>
       <div class="sep"></div>
       <span class="label">排序：</span>
       <button data-sort="cat" class="active">依分類</button>
       <button data-sort="date">依修正日期</button>
       <button data-sort="name">依名稱</button>
+      <div class="sep"></div>
+      <button onclick="openCompare()" style="font-size:12px">⚖ 並排對比</button>
+      <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 適用判斷</button>
     </div>
     <div class="registry-meta" id="registryMeta"></div>
     <div class="table-scroll">
       <table class="registry-table">
-        <thead><tr><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
+        <thead><tr><th></th><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
         <tbody id="registryBody"></tbody>
       </table>
     </div>
@@ -1042,6 +1265,55 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
 </div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
+
+<div id="compare-modal" class="compare-modal" onclick="if(event.target===this)closeCompare()">
+  <div class="compare-box">
+    <div class="compare-header">
+      <h3>⚖ 法規並排對比</h3>
+      <button onclick="closeCompare()">✕</button>
+    </div>
+    <div class="compare-selects">
+      <select id="compare-sel-a" onchange="renderCompare()"><option value="">— 選擇法規 A —</option></select>
+      <select id="compare-sel-b" onchange="renderCompare()"><option value="">— 選擇法規 B —</option></select>
+    </div>
+    <div class="compare-cols" id="compare-cols"></div>
+  </div>
+</div>
+
+<div id="guide-modal" class="guide-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="guide-box">
+    <h3>⚖ 法規適用性判斷</h3>
+    <div class="guide-q">
+      <label>事業類別</label>
+      <select id="guide-industry">
+        <option value="">— 請選擇 —</option>
+        <option value="管理制度">管理制度（通用）</option>
+        <option value="營造工程">營造業</option>
+        <option value="作業環境">製造業</option>
+        <option value="化學品安全">化學品相關</option>
+        <option value="職業衛生">辦公室 / 服務業</option>
+        <option value="機械設備">機械設備操作</option>
+      </select>
+    </div>
+    <div class="guide-q">
+      <label>主要危害類型（可複選）</label>
+      <div class="guide-checks" id="guide-hazards">
+        <label><input type="checkbox" value="高溫"> 高溫作業</label>
+        <label><input type="checkbox" value="高架"> 高架/墜落</label>
+        <label><input type="checkbox" value="局限空間"> 局限空間/缺氧</label>
+        <label><input type="checkbox" value="化學品"> 危害性化學品</label>
+        <label><input type="checkbox" value="機械"> 危險性機械</label>
+        <label><input type="checkbox" value="環境監測"> 作業環境監測</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="runGuide()" style="background:var(--stamp);color:#fff;border:none;padding:7px 20px;border-radius:4px;cursor:pointer;font-size:13px">判斷適用法規</button>
+      <button onclick="document.getElementById('guide-modal').classList.remove('open')" style="border:1px solid var(--border);background:transparent;padding:7px 14px;border-radius:4px;cursor:pointer;font-size:13px">關閉</button>
+    </div>
+    <div id="guide-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
 <div id="kbd-modal" class="kbd-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="kbd-box">
     <h3>鍵盤快捷鍵</h3>
@@ -1094,6 +1366,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const DIRECTIVES = {directives_json};
   const SCENARIOS = {scenarios_json};
   const CATEGORIES = {categories_json};
+  const CHECKLISTS = {checklists_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"}};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -1110,6 +1383,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.readLater || typeof state.readLater !== "object") state.readLater = {{}};
   if (!Array.isArray(state.mutedKeywords)) state.mutedKeywords = [];
   if (typeof state.autoMarkRead === "undefined") state.autoMarkRead = false;
+  if (!state.subscribedLaws || typeof state.subscribedLaws !== "object") state.subscribedLaws = {{}};
+  if (!state.lawLastSeen || typeof state.lawLastSeen !== "object") state.lawLastSeen = {{}};
+  if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
   var currentBoard = null;
@@ -1584,6 +1860,155 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }});
   }}
 
+  // ─── 法規訂閱 ────────────────────────────────────────────────
+  function toggleSubscribeLaw(name) {{
+    if (!state.subscribedLaws) state.subscribedLaws = {{}};
+    if (state.subscribedLaws[name]) {{
+      delete state.subscribedLaws[name];
+    }} else {{
+      state.subscribedLaws[name] = true;
+      if (!state.lawLastSeen) state.lawLastSeen = {{}};
+      // 記錄目前版本，之後才能偵測新修訂
+      var r = REGISTRY.find(function(x) {{ return x.name === name; }});
+      if (r && r.date) state.lawLastSeen[name] = r.date;
+    }}
+    save(); renderRegistry();
+  }}
+  function checkSubscriptionUpdates() {{
+    if (!state.subscribedLaws) return;
+    var updated = REGISTRY.filter(function(r) {{
+      return state.subscribedLaws[r.name] &&
+             state.lawLastSeen && state.lawLastSeen[r.name] &&
+             r.date && r.date > state.lawLastSeen[r.name];
+    }});
+    if (updated.length) {{
+      var msg = '🔔 ' + updated.length + ' 筆訂閱法規已更新：' + updated.map(function(r) {{ return r.name; }}).join('、');
+      var toast = document.getElementById('notif-toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      toast.onclick = function() {{
+        toast.classList.remove('show');
+        document.querySelectorAll("[data-lawfilter]").forEach(function(b) {{
+          b.classList.toggle("active", b.dataset.lawfilter === "subscribed");
+        }});
+        lawFilter = "subscribed"; renderRegistry();
+        document.querySelector('[data-tab="registry"]').click();
+      }};
+      setTimeout(function() {{ toast.classList.remove('show'); }}, 12000);
+    }}
+  }}
+
+  // ─── 合規 Checklist ───────────────────────────────────────────
+  function toggleCheck(lawName, idx, checked) {{
+    if (!state.checklists) state.checklists = {{}};
+    if (!state.checklists[lawName]) state.checklists[lawName] = {{}};
+    state.checklists[lawName][idx] = checked;
+    save();
+    // 即時更新 UI（不重新整個 drawer）
+    var row = document.getElementById('ckrow_' + idx);
+    if (row) row.classList.toggle('done', checked);
+    // 更新進度條
+    var ckItems = CHECKLISTS[lawName];
+    if (ckItems) {{
+      var ckState = state.checklists[lawName] || {{}};
+      var doneCount = Object.keys(ckState).filter(function(k) {{ return ckState[k]; }}).length;
+      var pct = Math.round(doneCount / ckItems.length * 100);
+      var bar = document.querySelector('.ck-progress-bar');
+      if (bar) bar.style.width = pct + '%';
+      var hTitle = document.querySelector('.checklist-section h3 span');
+      if (hTitle) hTitle.textContent = doneCount + '/' + ckItems.length + ' 完成 (' + pct + '%)';
+    }}
+  }}
+
+  // ─── 法規並排對比 ─────────────────────────────────────────────
+  function openCompare() {{
+    var modal = document.getElementById('compare-modal');
+    // 填入下拉選單
+    var selA = document.getElementById('compare-sel-a');
+    var selB = document.getElementById('compare-sel-b');
+    [selA, selB].forEach(function(sel) {{
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">— 選擇法規 —</option>';
+      REGISTRY.forEach(function(r, i) {{
+        if (r.articles && r.articles.length > 0) {{
+          var opt = document.createElement('option');
+          opt.value = i; opt.textContent = r.name;
+          if (String(i) === cur) opt.selected = true;
+          sel.appendChild(opt);
+        }}
+      }});
+    }});
+    modal.classList.add('open');
+    renderCompare();
+  }}
+  function closeCompare() {{
+    document.getElementById('compare-modal').classList.remove('open');
+  }}
+  function renderCompare() {{
+    var selA = document.getElementById('compare-sel-a');
+    var selB = document.getElementById('compare-sel-b');
+    var cols = document.getElementById('compare-cols');
+    if (!cols) return;
+    function colHtml(sel) {{
+      if (!sel.value) return '<div class="compare-col"><p style="color:var(--ink-soft);font-size:13px;padding:12px">請選擇法規</p></div>';
+      var r = REGISTRY[+sel.value];
+      if (!r) return '';
+      var pcode = r.pcode || '';
+      var artBase = pcode ? 'https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=' + pcode + '&flno=' : '';
+      var statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : 'status-now';
+      var h = '<div class="compare-col"><h4>' + r.name + ' <span class="' + statusCls + '">' + (r.status||'現行') + '</span></h4>';
+      if (r.scope) h += '<div class="scope-text" style="font-size:11.5px;margin-bottom:8px">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+      if (r.articles && r.articles.length) {{
+        r.articles.forEach(function(no) {{
+          h += artBase
+            ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no" style="color:var(--stamp)">第' + no + '條</a></div>'
+            : '<div class="compare-art"><span class="art-no">第' + no + '條</span></div>';
+        }});
+      }}
+      return h + '</div>';
+    }}
+    cols.innerHTML = colHtml(selA) + colHtml(selB);
+  }}
+
+  // ─── 適用性判斷助手 ───────────────────────────────────────────
+  function runGuide() {{
+    var industry = document.getElementById('guide-industry').value;
+    var hazards = [...document.querySelectorAll('#guide-hazards input:checked')].map(function(i) {{ return i.value; }});
+    var result = document.getElementById('guide-result');
+    var relevant = REGISTRY.filter(function(r) {{
+      if (industry && r.cat !== industry) return false;
+      return true;
+    }});
+    // 危害類型細篩
+    if (hazards.length) {{
+      var hazardMap = {{
+        '高溫': ['高溫', '熱危害'],
+        '高架': ['高架', '墜落', '營造'],
+        '局限空間': ['缺氧', '局限空間'],
+        '化學品': ['化學品', '有機溶劑', '危害性'],
+        '機械': ['機械', '鍋爐', '壓力容器', '起重'],
+        '環境監測': ['監測', '容許暴露', '作業環境'],
+      }};
+      relevant = relevant.filter(function(r) {{
+        return hazards.some(function(h) {{
+          var kws = hazardMap[h] || [h];
+          return kws.some(function(kw) {{ return r.name.includes(kw) || (r.cat||'').includes(kw); }});
+        }});
+      }});
+    }}
+    if (!relevant.length) {{
+      result.innerHTML = '<p style="color:var(--ink-soft);font-size:13px">找不到符合條件的法規，請放寬篩選條件。</p>';
+      return;
+    }}
+    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆適用法規：</p>' +
+      relevant.map(function(r) {{
+        return '<div class="guide-result-item">' +
+          '<span class="cat-tag">' + (r.cat||'') + '</span>' +
+          '<button onclick="document.getElementById(\'guide-modal\').classList.remove(\'open\');jumpToLaw(\'' + r.name.replace(/'/g,"\\'") + '\')">' + r.name + '</button>' +
+          '</div>';
+      }}).join('');
+  }}
+
   function buildCatFilters() {{
     const cf = document.getElementById("catFilters");
     function makeBtn(label, value) {{
@@ -1606,6 +2031,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     let rows = REGISTRY.slice();
     if (catFilter !== "all") rows = rows.filter(r => r.cat === catFilter);
     if (lawFilter === "starred") rows = rows.filter(r => state.starredLaws[r.name]);
+    if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
     if (lawFilter === "recent") rows = rows.filter(r => isRecent(r.date));
     const q = document.getElementById("lawSearch").value.trim();
     if (q) rows = rows.filter(r => r.name.includes(q));
@@ -1641,10 +2067,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
       const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
       const starred = state.starredLaws[r.name];
-      const hasDetail = r.summary || (r.articles && r.articles.length > 0);
-      return '<tr>' +
+      const isSub = !!(state.subscribedLaws && state.subscribedLaws[r.name]);
+      const hasUpdate = isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
+      const statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : '';
+      const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
+      return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + '</td>' +
+        '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
         '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
@@ -1660,6 +2090,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         save(); renderRegistry();
       }};
     }});
+    document.querySelectorAll(".sub-btn[data-sublaw]").forEach(btn => {{
+      btn.onclick = () => toggleSubscribeLaw(btn.dataset.sublaw);
+    }});
     document.querySelectorAll(".rname-btn").forEach(btn => {{
       btn.onclick = () => openDrawer(rows[+btn.dataset.idx]);
     }});
@@ -1668,24 +2101,47 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function openDrawer(r) {{
     const pcode = r.pcode || "";
     const artBase = pcode ? "https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=" + pcode + "&flno=" : "";
+    const isSub = !!(state.subscribedLaws && state.subscribedLaws[r.name]);
 
-    // 標題
+    // 標題 + 訂閱按鈕
     document.getElementById("drawer-title").innerHTML =
-      '<a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + ' ↗</a>';
+      '<a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + ' ↗</a>' +
+      '<button class="sub-btn' + (isSub ? ' on' : '') + '" id="sub-btn-drawer" title="' + (isSub ? '取消訂閱' : '訂閱此法規，修訂時提醒') + '" onclick="toggleSubscribeLaw(\'' + r.name.replace(/'/g,"\\'") + '\')">' + (isSub ? '🔔' : '🔕') + '</button>';
 
-    // 主體
-    let html = '<div class="drawer-meta">' +
+    // 法規訂閱異動通知
+    var noticeHtml = '';
+    if (isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name]) {{
+      noticeHtml = '<div class="sub-notice">⚠ 此法規自您上次查看後已於 ' + r.date + ' 修訂，請注意更新內容。</div>';
+    }}
+
+    // 主體 meta
+    var statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : 'status-now';
+    var statusLabel = r.status || '現行';
+    let html = noticeHtml + '<div class="drawer-meta">' +
       '<span>' + (TIER_LABEL[r.tier] || r.tier) + '</span>' +
+      '<span class="' + statusCls + '">' + statusLabel + '</span>' +
       (r.cat ? '<span>' + r.cat + '</span>' : '') +
       (r.date ? '<span>最新修正 ' + r.date + '</span>' : '<span style="color:#aaa">日期待確認</span>') +
       (r.has_table ? '<span style="background:#fffbeb;color:#b45309">含附表</span>' : '') +
       '</div>';
+
+    // 主管機關
+    if (r.authority) {{
+      html += '<div class="authority-row">主管機關：<span>' + r.authority + '</span></div>';
+    }}
 
     // 附表提示
     if (r.has_table) {{
       html += '<div class="drawer-section"><div class="drawer-table-note">' +
         '⚠ 本法規含附表／附件，請至全文頁面查看或下載。' +
         '</div></div>';
+    }}
+
+    // 適用範圍（前3條）
+    if (r.scope) {{
+      html += '<div class="drawer-section scope-section"><h3>適用範圍</h3>' +
+        '<div class="scope-text">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+        '</div>';
     }}
 
     // 沿革摘要
@@ -1695,12 +2151,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '</div>';
     }}
 
-    // 條文索引（只顯示條號連結，點擊跳到該條全文）
+    // 罰則條文
+    if (r.penalty_articles && r.penalty_articles.length > 0) {{
+      html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
+      r.penalty_articles.forEach(function(pa) {{
+        var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        // 高亮罰鍰金額
+        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>' + t + '</div>';
+      }});
+      html += '</div>';
+    }}
+
+    // 條文索引
     if (r.articles && r.articles.length > 0) {{
       html += '<div class="drawer-section"><h3>條文索引（共 ' + r.articles.length + ' 條）</h3>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow-y:auto;padding:2px 0">';
-      r.articles.forEach(no => {{
-        const chip = artBase
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:2px 0">';
+      r.articles.forEach(function(no) {{
+        var chip = artBase
           ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="art-chip">第' + no + '條</a>'
           : '<span class="art-chip">第' + no + '條</span>';
         html += chip;
@@ -1711,10 +2179,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // 全文按鈕
     html += '<a href="' + r.source + '" target="_blank" rel="noopener" class="drawer-fulllink">開啟全文頁面 ↗</a>';
 
+    // 合規稽核 Checklist
+    var ckItems = CHECKLISTS[r.name];
+    if (ckItems && ckItems.length > 0) {{
+      var ckState = (state.checklists && state.checklists[r.name]) || {{}};
+      var doneCount = Object.keys(ckState).filter(function(k) {{ return ckState[k]; }}).length;
+      var pct = Math.round(doneCount / ckItems.length * 100);
+      html += '<div class="drawer-section checklist-section">' +
+        '<h3>合規稽核 Checklist <span>' + doneCount + '/' + ckItems.length + ' 完成 (' + pct + '%)</span></h3>' +
+        '<div class="ck-progress"><div class="ck-progress-bar" style="width:' + pct + '%"></div></div>';
+      ckItems.forEach(function(item, idx) {{
+        var cid = 'ck_' + idx;
+        var done = !!ckState[idx];
+        html += '<div class="ck-item' + (done ? ' done' : '') + '" id="ckrow_' + idx + '">' +
+          '<input type="checkbox" id="' + cid + '"' + (done ? ' checked' : '') + ' onchange="toggleCheck(\'' + r.name.replace(/'/g,"\\'") + '\',' + idx + ',this.checked)">' +
+          '<label for="' + cid + '">' + item + '</label></div>';
+      }});
+      html += '</div>';
+    }}
+
     document.getElementById("drawer-body").innerHTML = html;
     document.getElementById("law-drawer").classList.add("open");
     document.getElementById("drawer-overlay").classList.add("open");
     document.body.style.overflow = "hidden";
+
+    // 記錄查看時間（供訂閱通知判斷）
+    if (!state.lawLastSeen) state.lawLastSeen = {{}};
+    if (r.date) {{ state.lawLastSeen[r.name] = r.date; save(); }}
   }}
 
   function closeDrawer() {{
@@ -1741,6 +2232,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (e.key === 'Escape') {{
       kbdModal.classList.remove('open');
       aiModal.classList.remove('open');
+      document.getElementById('compare-modal').classList.remove('open');
+      document.getElementById('guide-modal').classList.remove('open');
       closeDrawer();
       document.querySelectorAll('.board-dropdown').forEach(function(d) {{ d.remove(); }});
       return;
@@ -1845,6 +2338,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     renderNews();
     updateBadges();
     checkNewArticles();
+    checkSubscriptionUpdates();
   }}, 300);
   renderRegistry();
   renderDirectives();
@@ -2005,6 +2499,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         directives_json=json.dumps(directives, ensure_ascii=False),
         scenarios_json=json.dumps(QUICK_SCENARIOS, ensure_ascii=False),
         categories_json=json.dumps(CATEGORIES, ensure_ascii=False),
+        checklists_json=json.dumps(CHECKLISTS, ensure_ascii=False),
     )
     output_path.write_text(html, encoding="utf-8")
 
@@ -2079,6 +2574,12 @@ def main():
                 print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
             else:
                 print(f"找不到 {args.law_xml}，法規區塊維持靜態清單。", file=sys.stderr)
+        elif XML_CACHE.exists():
+            # 自動讀取本機快取（不需任何旗標）
+            all_xml_records = json.loads(XML_CACHE.read_text(encoding="utf-8"))
+            registry = merge_registry(STATIC_REGISTRY, all_xml_records)
+            confirmed = sum(1 for r in registry if r["date"])
+            print(f"法規：自動使用快取 {XML_CACHE}（{len(all_xml_records)} 筆），合併後共 {len(registry)} 筆。")
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
