@@ -1845,7 +1845,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (state.mutedKeywords && state.mutedKeywords.length) {{
         if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
-      if (srcTypeFilter.size > 0 && !srcTypeFilter.has(item.source_type || "news")) return false;
+      if (!srcTypeFilter.has(item.source_type || "news")) return false;
       if (q && !item.title.includes(q) && !(item.summary && item.summary.includes(q))) return false;
       return true;
     }});

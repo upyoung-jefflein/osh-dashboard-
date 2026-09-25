@@ -508,7 +508,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-25 23:15 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-25 23:25 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -993,7 +993,7 @@
       if (state.mutedKeywords && state.mutedKeywords.length) {
         if (state.mutedKeywords.some(function(kw) { return item.title.includes(kw); })) return false;
       }
-      if (srcTypeFilter.size > 0 && !srcTypeFilter.has(item.source_type || "news")) return false;
+      if (!srcTypeFilter.has(item.source_type || "news")) return false;
       if (q && !item.title.includes(q) && !(item.summary && item.summary.includes(q))) return false;
       return true;
     });
