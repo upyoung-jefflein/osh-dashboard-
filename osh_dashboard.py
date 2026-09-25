@@ -2004,9 +2004,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       relevant.map(function(r) {{
         return '<div class="guide-result-item">' +
           '<span class="cat-tag">' + (r.cat||'') + '</span>' +
-          '<button onclick="document.getElementById(\'guide-modal\').classList.remove(\'open\');jumpToLaw(\'' + r.name.replace(/'/g,"\\'") + '\')">' + r.name + '</button>' +
+          '<button class="guide-jump-btn" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + r.name + '</button>' +
           '</div>';
       }}).join('');
+    result.querySelectorAll('.guide-jump-btn').forEach(function(btn) {{
+      btn.onclick = function() {{
+        document.getElementById('guide-modal').classList.remove('open');
+        jumpToLaw(btn.dataset.law);
+      }};
+    }});
   }}
 
   function buildCatFilters() {{
@@ -2106,7 +2112,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // 標題 + 訂閱按鈕
     document.getElementById("drawer-title").innerHTML =
       '<a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + ' ↗</a>' +
-      '<button class="sub-btn' + (isSub ? ' on' : '') + '" id="sub-btn-drawer" title="' + (isSub ? '取消訂閱' : '訂閱此法規，修訂時提醒') + '" onclick="toggleSubscribeLaw(\'' + r.name.replace(/'/g,"\\'") + '\')">' + (isSub ? '🔔' : '🔕') + '</button>';
+      '<button class="sub-btn' + (isSub ? ' on' : '') + '" id="sub-btn-drawer" title="' + (isSub ? '取消訂閱' : '訂閱此法規，修訂時提醒') + '" data-sublaw="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + (isSub ? '🔔' : '🔕') + '</button>';
+    document.getElementById("sub-btn-drawer").onclick = function() {{ toggleSubscribeLaw(r.name); }};
 
     // 法規訂閱異動通知
     var noticeHtml = '';
@@ -2192,13 +2199,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         var cid = 'ck_' + idx;
         var done = !!ckState[idx];
         html += '<div class="ck-item' + (done ? ' done' : '') + '" id="ckrow_' + idx + '">' +
-          '<input type="checkbox" id="' + cid + '"' + (done ? ' checked' : '') + ' onchange="toggleCheck(\'' + r.name.replace(/'/g,"\\'") + '\',' + idx + ',this.checked)">' +
+          '<input type="checkbox" id="' + cid + '" class="ck-input" data-idx="' + idx + '"' + (done ? ' checked' : '') + '>' +
           '<label for="' + cid + '">' + item + '</label></div>';
       }});
       html += '</div>';
     }}
 
     document.getElementById("drawer-body").innerHTML = html;
+
+    // 綁定 checklist 事件（避免 onclick 字串的引號問題）
+    var ckInputs = document.querySelectorAll('#drawer-body .ck-input');
+    ckInputs.forEach(function(inp) {{
+      inp.onchange = function() {{ toggleCheck(r.name, +inp.dataset.idx, inp.checked); }};
+    }});
+
     document.getElementById("law-drawer").classList.add("open");
     document.getElementById("drawer-overlay").classList.add("open");
     document.body.style.overflow = "hidden";
