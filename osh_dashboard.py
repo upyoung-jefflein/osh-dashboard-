@@ -951,49 +951,59 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     --paper:#F4EFE2; --card:#FBF8EF; --ink:#1E2B3A; --ink-soft:#4C5A6B;
     --stamp:#9C2B22; --brass:#A8842E; --border:rgba(30,43,58,0.14);
     --green:#1a7340; --amber:#8c5e00; --hover:rgba(30,43,58,0.06);
-    --font-sz:14px;
+    --blue:#2563eb; --font-sz:14px;
+    --radius:4px; --shadow:0 1px 3px rgba(30,43,58,.08),0 1px 2px rgba(30,43,58,.04);
   }}
   [data-theme="dark"] {{
     --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
     --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
     --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
+    --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
   }}
   @media(prefers-color-scheme:dark){{
     :root:not([data-theme="light"]){{
       --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
       --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
       --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
+      --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
     }}
   }}
   *{{ box-sizing:border-box; margin:0; padding:0; }}
   body{{ font-family:"Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; font-size:var(--font-sz); transition:background .25s,color .25s; }}
   .wrap{{ max-width:960px; margin:0 auto; padding:32px 20px 90px; }}
   header{{ border-bottom:2px solid var(--border); padding-bottom:18px; margin-bottom:20px; }}
-  header h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:26px; margin-bottom:4px; }}
+  header h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:26px; margin-bottom:4px;
+    letter-spacing:-.01em; }}
   .subtitle{{ font-size:13px; color:var(--ink-soft); margin-bottom:6px; }}
   .meta{{ font-size:12px; color:var(--ink-soft); }}
   nav.tabs{{ display:flex; gap:2px; margin-bottom:24px; border-bottom:2px solid var(--border); flex-wrap:wrap; }}
   nav.tabs button{{ font-size:14px; padding:10px 18px; border:none; background:transparent; cursor:pointer;
-    color:var(--ink-soft); border-bottom:3px solid transparent; margin-bottom:-2px; transition:color .15s; }}
-  nav.tabs button.active{{ color:var(--stamp); border-bottom-color:var(--stamp); font-weight:700; }}
-  nav.tabs button:hover:not(.active){{ color:var(--ink); }}
+    color:var(--ink-soft); border-bottom:3px solid transparent; margin-bottom:-2px;
+    transition:color .15s, background .15s; border-radius:4px 4px 0 0; }}
+  nav.tabs button.active{{ color:var(--stamp); border-bottom-color:var(--stamp); font-weight:700;
+    background:rgba(156,43,34,.05); }}
+  nav.tabs button:hover:not(.active){{ color:var(--ink); background:var(--hover); }}
   .tabpanel{{ display:none; }}
   .tabpanel.active{{ display:block; }}
   h2{{ font-family:"Noto Serif TC",serif; font-size:20px; margin-bottom:6px; }}
   h3{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
   .section-note{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:18px; }}
-  .search{{ width:100%; padding:8px 10px; border:1px solid var(--border); font-size:14px;
-    background:var(--card); color:var(--ink); margin-bottom:10px; }}
+  .search{{ width:100%; padding:9px 12px; border:1px solid var(--border); font-size:14px;
+    background:var(--card); color:var(--ink); margin-bottom:10px;
+    border-radius:var(--radius); transition:border-color .15s; outline:none; }}
+  .search:focus{{ border-color:var(--stamp); }}
   .controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }}
   .controls button{{ font-size:13px; padding:5px 12px; border:1px solid var(--border);
-    background:transparent; cursor:pointer; color:var(--ink); }}
+    background:transparent; cursor:pointer; color:var(--ink);
+    border-radius:var(--radius); transition:all .15s; }}
+  .controls button:hover:not(.active){{ border-color:var(--ink-soft); }}
   .controls button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
   #read-progress{{position:fixed;top:0;left:0;height:3px;width:0%;background:var(--stamp);z-index:400;transition:width .1s linear;pointer-events:none;}}
   .view-toggle{{display:flex;gap:4px;margin-bottom:12px;}}
   .view-toggle button{{padding:4px 12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--ink-soft);border-radius:3px;}}
   .view-toggle button.active{{border-color:var(--stamp);color:var(--stamp);background:rgba(156,43,34,.06);font-weight:600;}}
   .filter-badge{{display:inline-block;background:var(--stamp);color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle;}}
-  .skel-item{{background:var(--card);border:1px solid var(--border);border-left:3px solid rgba(168,132,46,.2);padding:14px 16px;margin-bottom:10px;}}
+  .skel-item{{background:var(--card);border:1px solid var(--border);border-left:3px solid rgba(168,132,46,.2);padding:14px 16px;margin-bottom:10px;border-radius:0 4px 4px 0;}}
   .skel-line{{height:13px;border-radius:4px;margin-bottom:8px;background:linear-gradient(90deg,var(--border) 25%,rgba(168,132,46,.2) 50%,var(--border) 75%);background-size:400% 100%;animation:skel-shine 1.4s ease-in-out infinite;}}
   .skel-line.w40{{width:40%;}}.skel-line.w70{{width:70%;}}
   @keyframes skel-shine{{0%{{background-position:100% 0}}100%{{background-position:-100% 0}}}}
@@ -1001,7 +1011,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .swipe-save-hint{{position:absolute;left:0;top:0;bottom:0;width:64px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;pointer-events:none;transform:translateX(-64px);transition:transform .15s;}}
   .item.will-save .swipe-save-hint{{transform:translateX(0);}}
   .item{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--brass);
-    padding:14px 16px; margin-bottom:10px; position:relative; overflow:hidden; animation:item-in .22s ease; }}
+    padding:14px 16px; margin-bottom:10px; position:relative; overflow:hidden;
+    animation:item-in .22s ease; border-radius:0 4px 4px 0;
+    box-shadow:var(--shadow); transition:box-shadow .15s; }}
+  .item:hover{{ box-shadow:0 4px 12px rgba(30,43,58,.1); }}
   .item.read{{ opacity:.55; }}
   .item .row{{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }}
   .item .date{{ font-size:12px; color:var(--ink-soft); white-space:nowrap; }}
@@ -1010,7 +1023,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .item h3 a:hover{{ color:var(--stamp); text-decoration:underline; }}
   .item .src{{ font-size:12px; color:var(--ink-soft); }}
   .item .actions{{ display:flex; gap:8px; margin-top:8px; }}
-  .item .actions button{{ font-size:12px; padding:3px 9px; border:1px solid var(--border); background:transparent; cursor:pointer; }}
+  .item .actions button{{ font-size:12px; padding:3px 9px; border:1px solid var(--border);
+    background:transparent; cursor:pointer; border-radius:var(--radius); transition:all .15s; }}
   .item .actions button.on{{ border-color:var(--stamp); color:var(--stamp); }}
   .also{{ font-size:11px; color:var(--ink-soft); margin-top:4px; }}
   .empty-state{{ text-align:center; padding:56px 20px; color:var(--ink-soft); }}
@@ -1026,7 +1040,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #newsList.list-view .item .actions{{margin-top:0;}}
   .reg-toolbar{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }}
   .reg-toolbar input{{ flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border);
-    font-size:14px; background:var(--card); color:var(--ink); }}
+    font-size:14px; background:var(--card); color:var(--ink);
+    border-radius:var(--radius); transition:border-color .15s; outline:none; }}
+  .reg-toolbar input:focus{{ border-color:var(--stamp); }}
   .cat-filters{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }}
   .cat-btn{{ font-size:12px; padding:4px 12px; border:1px solid var(--border); background:var(--card);
     cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
@@ -1034,44 +1050,52 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .reg-controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }}
   .reg-controls .label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
   .reg-controls button{{ font-size:12.5px; padding:4px 11px; border:1px solid var(--border);
-    background:transparent; cursor:pointer; color:var(--ink); }}
+    background:transparent; cursor:pointer; color:var(--ink);
+    border-radius:var(--radius); transition:all .15s; }}
+  .reg-controls button:hover:not(.active){{ border-color:var(--ink-soft); }}
   .reg-controls button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
   .reg-controls .sep{{ width:1px; height:20px; background:var(--border); margin:0 4px; align-self:center; }}
   .registry-meta{{ font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }}
-  .table-scroll{{ overflow-x:auto; border:1px solid var(--border); margin-bottom:8px; }}
+  .table-scroll{{ overflow-x:auto; border:1px solid var(--border); margin-bottom:8px; border-radius:6px; box-shadow:var(--shadow); }}
   table.registry-table{{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:560px; }}
-  .registry-table th{{ text-align:left; font-weight:600; font-size:11.5px; color:var(--ink-soft);
-    padding:9px 12px; background:var(--card); border-bottom:1px solid var(--border); white-space:nowrap; }}
-  .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }}
+  .registry-table th{{ text-align:left; font-weight:700; font-size:11px; color:var(--ink-soft);
+    padding:9px 12px; background:var(--card); border-bottom:2px solid var(--border);
+    white-space:nowrap; text-transform:uppercase; letter-spacing:.06em; }}
+  .registry-table td{{ padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:middle; transition:background .12s; }}
   .registry-table tr:last-child td{{ border-bottom:none; }}
-  .registry-table tr:hover td{{ background:rgba(168,132,46,.05); }}
+  .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
+  .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
   .rname{{ font-weight:500; }}
   .rdate{{ white-space:nowrap; font-size:13px; }}
   .rdate.unconfirmed{{ color:var(--ink-soft); font-style:italic; }}
-  .tier-tag{{ display:inline-block; font-size:11px; padding:1px 7px; white-space:nowrap; border:1px solid currentColor; }}
+  .tier-tag{{ display:inline-block; font-size:10.5px; padding:2px 7px; white-space:nowrap;
+    border:1px solid currentColor; border-radius:3px; font-weight:600; }}
   .tier-tag.act{{ color:var(--stamp); }}
   .tier-tag.reg{{ color:var(--brass); }}
   .tier-tag.dir,.tier-tag.notice{{ color:var(--ink-soft); }}
-  .cat-tag{{ display:inline-block; font-size:11px; padding:1px 7px; border:1px solid var(--border);
-    color:var(--ink-soft); background:rgba(0,0,0,.03); }}
-  .badge{{ display:inline-block; font-size:10px; padding:1px 5px; border-radius:2px; margin-left:5px;
-    vertical-align:middle; white-space:nowrap; line-height:1.5; }}
+  .cat-tag{{ display:inline-block; font-size:10.5px; padding:2px 8px; border:1px solid var(--border);
+    color:var(--ink-soft); background:rgba(0,0,0,.03); border-radius:99px; }}
+  .badge{{ display:inline-block; font-size:10px; padding:2px 6px; border-radius:99px; margin-left:5px;
+    vertical-align:middle; white-space:nowrap; line-height:1.4; font-weight:600; }}
   .badge.recent{{ background:#fff3cd; color:var(--amber); border:1px solid #ffc107; }}
   .badge.new-law{{ background:#d1fae5; color:var(--green); border:1px solid #6ee7b7; }}
   .star-btn{{ background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px;
-    color:#ccc; line-height:1; vertical-align:middle; }}
+    color:#ccc; line-height:1; vertical-align:middle; transition:color .15s, transform .12s; }}
+  .star-btn:hover{{ transform:scale(1.2); }}
   .star-btn.on{{ color:#e6a817; }}
   .rname-btn{{ background:none; border:none; cursor:pointer; text-align:left; padding:0;
     font-size:inherit; font-family:inherit; color:var(--ink); font-weight:500;
-    text-decoration:underline dotted; text-underline-offset:3px; }}
-  .rname-btn:hover{{ color:var(--blue); }}
-  .src-link{{ font-size:12px; }}
+    text-decoration:underline dotted; text-underline-offset:3px; transition:color .15s; }}
+  .rname-btn:hover{{ color:var(--blue); text-decoration-style:solid; }}
+  .src-link{{ font-size:12px; color:var(--ink-soft); text-decoration:none; }}
+  .src-link:hover{{ color:var(--stamp); }}
   /* ── Side Drawer ── */
   #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
     opacity:0; pointer-events:none; transition:opacity .25s; }}
   #drawer-overlay.open{{ opacity:1; pointer-events:auto; }}
   #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh;
-    background:#fff; z-index:201; box-shadow:-4px 0 24px rgba(0,0,0,.15);
+    background:var(--card); z-index:201; box-shadow:-6px 0 32px rgba(0,0,0,.18);
+    border-left:1px solid var(--border);
     transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column; overflow:hidden; }}
   #law-drawer.open{{ transform:translateX(0); }}
@@ -1081,19 +1105,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #drawer-header h2 a{{ color:var(--ink); text-decoration:none; }}
   #drawer-header h2 a:hover{{ color:var(--blue); }}
   #drawer-close{{ background:none; border:none; cursor:pointer; font-size:20px;
-    color:var(--ink-soft); padding:0; line-height:1; flex-shrink:0; margin-top:1px; }}
+    color:var(--ink-soft); padding:3px 5px; line-height:1; flex-shrink:0; margin-top:1px;
+    border-radius:var(--radius); transition:color .15s, background .15s; }}
+  #drawer-close:hover{{ color:var(--ink); background:var(--hover); }}
   #drawer-body{{ flex:1; overflow-y:auto; padding:16px 18px 24px; }}
   .drawer-meta{{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; font-size:12.5px; }}
-  .drawer-meta span{{ background:var(--hover); border-radius:3px; padding:2px 7px; }}
-  .drawer-section{{ margin-bottom:18px; }}
-  .drawer-section h3{{ font-size:13px; font-weight:700; color:var(--ink-soft);
-    text-transform:uppercase; letter-spacing:.04em; margin:0 0 8px; }}
+  .drawer-meta span{{ background:var(--hover); border-radius:99px; padding:3px 9px;
+    border:1px solid var(--border); }}
+  .drawer-section{{ margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }}
+  .drawer-section:last-child{{ border-bottom:none; padding-bottom:0; }}
+  .drawer-section h3{{ font-size:11px; font-weight:700; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.08em; margin:0 0 10px;
+    display:flex; align-items:center; gap:6px; }}
+  .drawer-section h3::after{{ content:""; flex:1; height:1px; background:var(--border); }}
   .drawer-summary{{ font-size:13px; line-height:1.9; color:var(--ink);
-    border-left:3px solid var(--amber); padding-left:12px; white-space:pre-wrap; }}
+    border-left:3px solid var(--amber); padding:8px 12px;
+    background:rgba(168,132,46,.04); border-radius:0 4px 4px 0;
+    white-space:pre-wrap; }}
   .art-chip{{ display:inline-block; padding:3px 9px; border-radius:4px;
     background:var(--hover); font-size:12px; color:var(--ink); text-decoration:none;
-    border:1px solid var(--border); white-space:nowrap; }}
-  a.art-chip:hover{{ background:var(--blue); color:#fff; border-color:var(--blue); }}
+    border:1px solid var(--border); white-space:nowrap; transition:all .15s; }}
+  a.art-chip:hover{{ background:var(--blue); color:#fff; border-color:var(--blue); transform:translateY(-1px); box-shadow:0 2px 6px rgba(37,99,235,.3); }}
   .art-chip-deleted{{ text-decoration:line-through; color:var(--ink-soft); opacity:.6; }}
   .deleted-arts-toggle{{ cursor:pointer; font-size:12px; color:var(--ink-soft); user-select:none; list-style:none; }}
   .deleted-arts-toggle::-webkit-details-marker{{ display:none; }}
@@ -1105,8 +1137,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   a.art-chip-added:hover{{ background:#16a34a; color:#fff; border-color:#16a34a; }}
   .chg-summary{{ font-size:11px; color:var(--ink-soft); margin-top:2px; line-height:1.5; }}
   .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
-  .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:10px 12px; margin-bottom:8px; font-size:12.5px; }}
-  .latest-rev-block h4{{ font-size:12px; font-weight:700; color:var(--ink-soft); margin:0 0 6px; }}
+  .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:12px 14px;
+    margin-bottom:8px; font-size:12.5px; border:1px solid var(--border); }}
+  .latest-rev-block h4{{ font-size:11px; font-weight:700; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.06em; margin:0 0 8px; }}
   .latest-rev-row{{ display:flex; gap:8px; align-items:baseline; margin:3px 0; font-size:12px; }}
   .rev-label{{ min-width:3em; font-weight:600; }}
   .rev-arts{{ color:var(--ink-soft); word-break:break-all; }}
@@ -1133,22 +1167,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border:1px solid #fde68a; border-radius:4px; padding:7px 10px; }}
   .table-footnote{{ font-size:12.5px; color:var(--ink-soft); line-height:1.75; margin:4px 0 22px; }}
   .reg-subhead{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
-  .law-card{{ background:var(--card); border:1px solid var(--border); padding:18px; margin-bottom:8px; }}
+  .law-card{{ background:var(--card); border:1px solid var(--border); padding:18px; margin-bottom:8px; border-radius:6px; box-shadow:var(--shadow); }}
   .law-card dl{{ display:grid; grid-template-columns:110px 1fr; gap:8px 12px; margin:0; font-size:14px; }}
   .law-card dt{{ color:var(--ink-soft); font-size:13px; }}
   .law-card dd{{ margin:0; line-height:1.65; }}
   .stamp-badge{{ display:inline-block; margin-top:12px; font-size:12px; color:var(--stamp);
-    border:1px solid var(--stamp); padding:3px 10px; }}
+    border:1px solid var(--stamp); padding:3px 10px; border-radius:3px;
+    transition:background .15s; }}
+  .stamp-badge:hover{{ background:rgba(156,43,34,.08); }}
   .stamp-badge a{{ color:inherit; text-decoration:none; }}
   .source-grid{{ display:grid; gap:12px; }}
-  .source-card{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--stamp); padding:14px 16px; }}
+  .source-card{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--stamp); padding:14px 16px; border-radius:0 6px 6px 0; box-shadow:var(--shadow); }}
   .source-card .org{{ font-weight:600; font-size:14px; }}
   .source-card .role{{ font-size:12.5px; color:var(--ink-soft); margin:2px 0; }}
   .source-card .link{{ font-size:12px; margin-top:4px; }}
   .source-card .link a{{ color:var(--stamp); word-break:break-all; }}
   .scenario-intro{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:18px; }}
   .scenario-grid{{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; }}
-  .scenario-card{{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--brass); padding:16px; }}
+  .scenario-card{{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--brass); padding:16px; border-radius:0 0 6px 6px; box-shadow:var(--shadow); }}
   .sc-head{{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }}
   .sc-icon{{ font-size:20px; line-height:1; }}
   .sc-title{{ font-family:"Noto Serif TC",serif; font-size:15px; font-weight:700; }}
