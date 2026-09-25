@@ -22,6 +22,7 @@
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.robotparser
@@ -815,6 +816,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .scenario-grid{{ grid-template-columns:1fr; }}
     .law-card dl{{ grid-template-columns:1fr; }}
   }}
+  /* ── AI 摘要顯示（卡片內） ── */
+  .ai-summary{{ margin:6px 0 2px; font-size:12.5px; line-height:1.65; color:var(--ink-soft); }}
+  .ai-tag{{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.04em;
+    background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff;
+    padding:1px 5px; border-radius:3px; margin-right:5px; vertical-align:middle; }}
+  .ai-prebuilt{{ background:rgba(124,58,237,.06); border-left:3px solid #7c3aed;
+    padding:10px 14px; border-radius:0 4px 4px 0; font-size:13px; line-height:1.7;
+    color:var(--ink); margin-bottom:4px; }}
   /* ── 鍵盤快捷鍵 modal ── */
   .kbd-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .kbd-modal.open{{ display:flex; }}
@@ -1103,10 +1112,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       el.className = "item" + (state.read[id] ? " read" : "");
       const also = (item.also_in && item.also_in.length)
         ? '<div class="also">同時見於：' + item.also_in.join("、") + '</div>' : "";
+      const aiSummary = item.summary
+        ? '<div class="ai-summary"><span class="ai-tag">✦ AI</span>' + item.summary + '</div>'
+        : '';
       el.innerHTML =
         '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3><a href="' + item.link + '" target="_blank" rel="noopener">' + item.title + '</a></h3>' +
+        aiSummary +
         also +
         '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
@@ -1223,9 +1236,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         document.getElementById('ai-copy-btn').textContent = item.link;
       }});
     }};
-    document.getElementById('ai-content').innerHTML =
-      '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>' +
-      '<p style="margin-top:8px;font-size:12px;color:var(--ink-soft)">文章連結：<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
+    var contentHtml = '';
+    if (item.summary) {{
+      contentHtml =
+        '<div class="ai-prebuilt">' + item.summary + '</div>' +
+        '<p style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">✦ 由 Gemini AI 預先產生</p>';
+    }} else {{
+      contentHtml =
+        '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>';
+    }}
+    contentHtml +=
+      '<p style="margin-top:10px;font-size:12px;color:var(--ink-soft)">文章連結：' +
+      '<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
+    document.getElementById('ai-content').innerHTML = contentHtml;
     document.getElementById('ai-modal').classList.add('open');
   }}
 
@@ -1530,6 +1553,143 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 """
 
 
+SUMMARY_CACHE = Path("news_summaries.json")
+
+
+def fetch_article_text(url: str, session: requests.Session) -> str:
+    """抓取新聞原文頁面並提取正文文字（最多 3000 字）"""
+    try:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        resp = session.get(url, timeout=15, verify=False,
+                           headers={"User-Agent": "Mozilla/5.0 (compatible)"})
+        resp.encoding = resp.apparent_encoding or "utf-8"
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "header", "footer", "aside", "form",
+                         "noscript", "iframe"]):
+            tag.decompose()
+        # 優先找主文區塊
+        main = (soup.find("article")
+                or soup.find("div", class_=re.compile(r"content|article|main|body|news", re.I))
+                or soup.find("main")
+                or soup)
+        text = main.get_text(separator="\n", strip=True)
+        # 過濾短行（連結文字、選單等）
+        lines = [l.strip() for l in text.splitlines() if len(l.strip()) > 15]
+        return "\n".join(lines[:80])[:3000]
+    except Exception as e:
+        print(f"  無法抓取文章（{url[:60]}）：{e}", file=sys.stderr)
+        return ""
+
+
+def summarize_with_gemini(title: str, text: str, api_key: str) -> str:
+    """呼叫 Gemini 產生 2-3 句繁體中文摘要，失敗時最多重試 3 次"""
+    import time
+    endpoint = (
+        "https://generativelanguage.googleapis.com/v1beta/models"
+        f"/gemini-flash-lite-latest:generateContent?key={api_key}"
+    )
+    prompt = (
+        "你是一位台灣職業安全衛生領域的專業摘要助理。\n"
+        "以下是一篇台灣政府機關的新聞稿，請閱讀後用繁體中文完整寫出 2-3 句摘要。\n"
+        "摘要需包含：主要政策措施、適用對象或範圍、重要數字或日期（如有）。\n"
+        "重要：必須使用繁體中文，不得使用英文或簡體中文。只輸出摘要本身。\n\n"
+        f"標題：{title}\n\n"
+        f"內文：\n{text}"
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": 500, "temperature": 0.1},
+    }
+    for attempt in range(3):
+        try:
+            resp = requests.post(endpoint, json=payload, timeout=40)
+            if resp.status_code == 503:
+                wait = 10 * (attempt + 1)
+                print(f"  Gemini 服務忙碌，{wait}s 後重試…", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            if resp.status_code == 429:
+                wait = 60
+                print(f"  Gemini 達到速率限制，等待 {wait}s…", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                print(f"  Gemini 無回應（可能被安全篩選器攔截）", file=sys.stderr)
+                return ""
+            parts = candidates[0].get("content", {}).get("parts", [])
+            if not parts:
+                print(f"  Gemini 回應無 parts（finishReason: {candidates[0].get('finishReason')}）", file=sys.stderr)
+                return ""
+            # 過濾掉 thinking model 的 thought/thoughtSignature 部分
+            for part in parts:
+                if (not part.get("thought") and not part.get("thoughtSignature")
+                        and part.get("text")):
+                    return part["text"].strip()
+            return parts[-1].get("text", "").strip()
+        except Exception as e:
+            print(f"  Gemini 摘要失敗（第{attempt+1}次）：{e}", file=sys.stderr)
+            if attempt < 2:
+                time.sleep(5)
+    return ""
+
+
+def load_cached_summaries(news: list[dict]) -> None:
+    """從快取讀取已有的摘要並附加到 news（不呼叫任何 API）"""
+    if not SUMMARY_CACHE.exists():
+        return
+    try:
+        cache = json.loads(SUMMARY_CACHE.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    for item in news:
+        url = item.get("link", "")
+        if url and url in cache:
+            item["summary"] = cache[url]
+
+
+def enrich_news_summaries(news: list[dict], api_key: str) -> None:
+    """只對尚無摘要記錄的新文章呼叫 Gemini，更新快取檔"""
+    cache: dict = {}
+    if SUMMARY_CACHE.exists():
+        try:
+            cache = json.loads(SUMMARY_CACHE.read_text(encoding="utf-8"))
+        except Exception:
+            cache = {}
+
+    session = requests.Session()
+    updated = False
+
+    for item in news:
+        url = item.get("link", "")
+        if not url:
+            continue
+        if cache.get(url):  # 已有非空摘要 → 直接用
+            item["summary"] = cache[url]
+            continue
+        import time as _time; _time.sleep(3)  # 避免連續呼叫觸發速率限制
+        print(f"  AI摘要中：{item['title'][:45]}…")
+        text = fetch_article_text(url, session)
+        summary = summarize_with_gemini(item["title"], text, api_key) if text else ""
+        if summary:  # 只存非空摘要，空的下次重試
+            cache[url] = summary
+            item["summary"] = summary
+            updated = True
+        else:
+            print(f"  → 無法產生摘要（原文抓取失敗），下次重試。", file=sys.stderr)
+
+    if updated:
+        SUMMARY_CACHE.write_text(
+            json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"摘要快取已更新：{SUMMARY_CACHE}（{len(cache)} 筆）。")
+    else:
+        print("  所有新聞均有快取，未呼叫 Gemini API。")
+
+
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path):
     now = datetime.now()
     html = HTML_TEMPLATE.format(
@@ -1558,6 +1718,7 @@ def main():
     parser.add_argument("-o", "--output", type=Path, default=Path("osh_dashboard.html"))
     parser.add_argument("--debug", action="store_true", help="印出每個新聞來源實際抓到的內容")
     parser.add_argument("--news-only", action="store_true", help="跳過法規 XML 解析，只更新新聞")
+    parser.add_argument("--gemini-key", default="", help="Google Gemini API key（也可設定環境變數 GEMINI_API_KEY）")
     args = parser.parse_args()
 
     all_news = []
@@ -1565,6 +1726,13 @@ def main():
         all_news.extend(fetch_source(source, debug=args.debug))
     news = dedupe_and_filter_news(all_news)
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
+
+    load_cached_summaries(news)  # 永遠讀快取，不呼叫 API
+
+    gemini_key = args.gemini_key or os.environ.get("GEMINI_API_KEY", "")
+    if gemini_key:
+        print("AI摘要：為尚無記錄的新文章呼叫 Gemini…")
+        enrich_news_summaries(news, gemini_key)
 
     XML_CACHE = Path("osh_xml_records.json")
 

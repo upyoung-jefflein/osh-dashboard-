@@ -181,6 +181,14 @@
     .scenario-grid{ grid-template-columns:1fr; }
     .law-card dl{ grid-template-columns:1fr; }
   }
+  /* ── AI 摘要顯示（卡片內） ── */
+  .ai-summary{ margin:6px 0 2px; font-size:12.5px; line-height:1.65; color:var(--ink-soft); }
+  .ai-tag{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.04em;
+    background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff;
+    padding:1px 5px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+  .ai-prebuilt{ background:rgba(124,58,237,.06); border-left:3px solid #7c3aed;
+    padding:10px 14px; border-radius:0 4px 4px 0; font-size:13px; line-height:1.7;
+    color:var(--ink); margin-bottom:4px; }
   /* ── 鍵盤快捷鍵 modal ── */
   .kbd-modal{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }
   .kbd-modal.open{ display:flex; }
@@ -220,7 +228,7 @@
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：2026-09-25 01:38 ｜ 4 則職安動態 ｜ 38 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
+    <div class="meta">資料產生時間：2026-09-25 10:35 ｜ 4 則職安動態 ｜ 38 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
   </header>
 
   <nav class="tabs">
@@ -434,7 +442,7 @@
     document.body && document.body.prepend(d);
     return false;
   };
-  const NEWS = [{"title": "勞動部公告116年度勞動檢查方針 聚焦源頭防災、承攬管理及職場健康", "link": "https://www.mol.gov.tw/1607/1632/1633/96581/", "date": "2026-08-11", "source": "勞動部新聞稿", "org": "勞動部", "also_in": []}, {"title": "抗高溫 護勞工—勞動部熱危害觀摩會，展示熱危害防護、應變機制與科技減災應用", "link": "https://www.mol.gov.tw/1607/1632/1633/95558/", "date": "2026-07-17", "source": "勞動部新聞稿", "org": "勞動部", "also_in": []}, {"title": "配合職安法新制 勞動部公告新版《職場不法侵害預防指引》 強化職場內外部暴力預防機制", "link": "https://www.mol.gov.tw/1607/1632/1633/95463/", "date": "2026-07-15", "source": "勞動部新聞稿", "org": "勞動部", "also_in": []}, {"title": "職安法新修條文與11部子法7月1日同步上路！聚焦源頭防災及友善職場新制度", "link": "https://www.mol.gov.tw/1607/1632/1633/93216/", "date": "2026-07-01", "source": "勞動部新聞稿", "org": "勞動部", "also_in": []}];
+  const NEWS = [{"title": "勞動部公告116年度勞動檢查方針 聚焦源頭防災、承攬管理及職場健康", "link": "https://www.mol.gov.tw/1607/1632/1633/96581/", "date": "2026-08-11", "source": "勞動部新聞稿", "org": "勞動部", "also_in": [], "summary": "勞動部公告116年度勞動檢查方針，配合《職業安全衛生法》新制及「強化職場減災行動計畫」，聚焦源頭防災、承攬管理及職場霸凌防治三大主軸。適用範圍涵蓋全國事業單位與營造工地，並將於116年7月1日起新增查核營造工地進場勞工完成臺灣職安卡安全訓練及特定機械操作人員資格。政策旨在引導企業落實自主管理，朝向零重大職業災害與零容忍職場霸凌的目標邁進。"}, {"title": "抗高溫 護勞工—勞動部熱危害觀摩會，展示熱危害防護、應變機制與科技減災應用", "link": "https://www.mol.gov.tw/1607/1632/1633/95558/", "date": "2026-07-17", "source": "勞動部新聞稿", "org": "勞動部", "also_in": [], "summary": "勞動部於17日舉辦營造業熱危害及科技減災觀摩會，展示防暑措施、緊急應變演練與智慧防災技術，呼籲公私部門強化防護。新修正之職業安全衛生法相關規定已於7月1日上路，明確規範原事業單位與承攬廠商須共同負擔高氣溫作業風險之法定責任。勞動部同時提供補助資源，協助小微型企業及勞工提升高氣溫作業的危害預防能力。"}, {"title": "配合職安法新制 勞動部公告新版《職場不法侵害預防指引》 強化職場內外部暴力預防機制", "link": "https://www.mol.gov.tw/1607/1632/1633/95463/", "date": "2026-07-15", "source": "勞動部新聞稿", "org": "勞動部", "also_in": [], "summary": "勞動部配合今年7月1日施行的職業安全衛生法新制，於14日公告修正第五版《執行職務遭受不法侵害預防指引》，明確區分職場霸凌與其他不法侵害的適用範圍。新版指引適用於全體事業單位與第一線勞工，透過建立案件分流、強化高階主管責任、評估外部暴力風險及公開多元申訴管道等措施，全面強化職場內外部暴力預防與勞工保護機制。"}, {"title": "職安法新修條文與11部子法7月1日同步上路！聚焦源頭防災及友善職場新制度", "link": "https://www.mol.gov.tw/1607/1632/1633/93216/", "date": "2026-07-01", "source": "勞動部新聞稿", "org": "勞動部", "also_in": [], "summary": "《職業安全衛生法》修正條文及11部配套子法自7月1日起全面施行，聚焦源頭防災並建立職場霸凌防治法制。本次修法適用於全體企業與勞工，旨在強化工程源頭安全設計、企業自主管理與承攬管理責任。勞動部已備妥相關指引與資源，呼籲各事業單位儘速檢視並落實新制，以打造兼顧身心健康與尊嚴的友善職場。"}];
   const REGISTRY = [{"name": "職業安全衛生法", "tier": "act", "cat": "管理制度", "date": "2025-12-19", "source": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060001", "note": "全國法規資料庫已驗證"}, {"name": "職業安全衛生法施行細則", "tier": "reg", "cat": "管理制度", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "職業安全衛生設施規則", "tier": "reg", "cat": "作業環境", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": "全國法規資料庫鏡像尚顯示舊版，資料同步中"}, {"name": "職業安全衛生管理辦法", "tier": "reg", "cat": "管理制度", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": "修正條文已見流通，正式生效日待官方公告確認"}, {"name": "職業安全衛生教育訓練規則", "tier": "reg", "cat": "管理制度", "date": "2026-06-25", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": "附表一、附表二時數修正"}, {"name": "勞工健康保護規則", "tier": "reg", "cat": "職業衛生", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "女性勞工母性健康保護實施辦法", "tier": "reg", "cat": "職業衛生", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "勞工作業環境監測實施辦法", "tier": "reg", "cat": "作業環境", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "職業安全衛生標示設置準則", "tier": "reg", "cat": "作業環境", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準", "tier": "reg", "cat": "職業衛生", "date": "2025-11-20", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "異常氣壓危害預防標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "高架作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "高溫作業勞工作息時間標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "精密作業勞工視機能保護設施標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "重體力勞動作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "高壓氣體勞工安全規則", "tier": "reg", "cat": "機械設備", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "缺氧症預防規則", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "營造安全衛生設施標準", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "工程安全設計及整體工程統合管理辦法", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": "新訂定"}, {"name": "林場安全衛生設施規則", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "船舶清艙解體勞工安全規則", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "碼頭裝卸安全衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": "2025-09-10", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "礦場職業衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "鍋爐及壓力容器安全規則", "tier": "reg", "cat": "機械設備", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "起重升降機具安全規則", "tier": "reg", "cat": "機械設備", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "危險性機械及設備安全檢查規則", "tier": "reg", "cat": "機械設備", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "危害性化學品標示及通識規則", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "危害性化學品評估及分級管理辦法", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "特定化學物質危害預防標準", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "有機溶劑中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "鉛中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "粉塵危害預防標準", "tier": "reg", "cat": "化學品安全", "date": null, "source": "https://law.moj.gov.tw/", "note": null}, {"name": "勞工作業場所容許暴露標準", "tier": "reg", "cat": "化學品安全", "date": "2025-04-11", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": null}, {"name": "新化學物質登記管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2025-08-08", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": "新訂定"}, {"name": "優先管理化學品之指定及運作管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2024-06-06", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": null}, {"name": "職業災害預防及職業災害勞工重建補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-12-12", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": null}, {"name": "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法", "tier": "reg", "cat": "職業災害", "date": "2024-11-18", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": null}, {"name": "職業災害勞工職能復健專業機構認可管理及補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-01-30", "source": "https://law.moj.gov.tw/Eng/LawClass/LawAll.aspx", "note": null}];
   const DIRECTIVES = [{"name": "勞動部補助授權勞動檢查機構督促事業單位遵守職業安全衛生法令計畫", "tier": "dir", "date": "2026-07-07", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "適用職業安全衛生法部分規定之事業範圍", "tier": "notice", "date": "2026-07-01", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "職業安全衛生法第24條第1項規定之其他特定機械之種類及應具之容量", "tier": "notice", "date": "2026-07-01", "source": "https://law.moj.gov.tw/", "note": null}, {"name": "勞動檢查機構執行職業安全衛生法第46條第2項講習實施要點", "tier": "dir", "date": "2026-07-01", "source": "https://law.moj.gov.tw/", "note": "訂定"}, {"name": "職業安全衛生管理系統績效審查及績效良好選拔作業要點", "tier": "dir", "date": "2026-07-01", "source": "https://law.moj.gov.tw/", "note": "修正並改名"}, {"name": "違反職業安全衛生法及勞動檢查法案件處理要點", "tier": "dir", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": null}];
   const SCENARIOS = [{"icon": "🚧", "name": "局限空間作業", "desc": "非常規作業、通風不良、有缺氧或有害氣體風險之受限空間（如隧道、桶槽、溝渠、坑道）", "laws": ["職業安全衛生設施規則", "缺氧症預防規則", "危害性化學品標示及通識規則", "勞工作業場所容許暴露標準"]}, {"icon": "🏗️", "name": "高架作業", "desc": "離地面或樓板 2 公尺以上之高處從事作業，含施工架、鷹架、外牆等場合", "laws": ["高架作業勞工保護措施標準", "職業安全衛生設施規則", "營造安全衛生設施標準"]}, {"icon": "⚗️", "name": "危害性化學品管理", "desc": "化學品盤點、SDS 查核、GHS 標示製作、作業環境監測規劃", "laws": ["危害性化學品標示及通識規則", "危害性化學品評估及分級管理辦法", "勞工作業場所容許暴露標準", "特定化學物質危害預防標準", "勞工作業環境監測實施辦法"]}, {"icon": "⚙️", "name": "危險性機械設備", "desc": "起重機、鍋爐、壓力容器、高壓氣體等需定期檢查或領用許可之設備", "laws": ["危險性機械及設備安全檢查規則", "起重升降機具安全規則", "鍋爐及壓力容器安全規則", "高壓氣體勞工安全規則"]}, {"icon": "🏢", "name": "職安衛管理系統建置", "desc": "首次導入管理制度、釐清人員配置義務、規劃教育訓練計畫", "laws": ["職業安全衛生管理辦法", "職業安全衛生教育訓練規則", "勞工作業環境監測實施辦法", "勞工健康保護規則"]}, {"icon": "🚑", "name": "職業災害發生後處理", "desc": "重大職災 24 小時通報、調查報告、勞工職能復健補助申請", "laws": ["職業安全衛生法", "職業災害預防及職業災害勞工重建補助辦法", "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法"]}, {"icon": "👩‍⚕️", "name": "女性及特殊族群保護", "desc": "妊娠、分娩後勞工及未成年勞工之工作限制與健康保護措施", "laws": ["女性勞工母性健康保護實施辦法", "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準", "勞工健康保護規則"]}, {"icon": "🌡️", "name": "高溫熱危害作業", "desc": "戶外施工、鑄造、廚房等高溫環境，含熱中暑預防、作息時間規定", "laws": ["高溫作業勞工作息時間標準", "職業安全衛生設施規則", "勞工作業場所容許暴露標準"]}, {"icon": "🏭", "name": "營造工程安全管理", "desc": "建築工地、土木工程之施工安全計畫、危害評估及整體統合管理", "laws": ["營造安全衛生設施標準", "工程安全設計及整體工程統合管理辦法", "職業安全衛生管理辦法", "高架作業勞工保護措施標準"]}, {"icon": "🔬", "name": "作業環境監測", "desc": "定期監測義務、委託認可測定機構、結果記錄與改善", "laws": ["勞工作業環境監測實施辦法", "職業安全衛生管理辦法", "勞工作業場所容許暴露標準", "特定化學物質危害預防標準"]}];
@@ -558,10 +566,14 @@
       el.className = "item" + (state.read[id] ? " read" : "");
       const also = (item.also_in && item.also_in.length)
         ? '<div class="also">同時見於：' + item.also_in.join("、") + '</div>' : "";
+      const aiSummary = item.summary
+        ? '<div class="ai-summary"><span class="ai-tag">✦ AI</span>' + item.summary + '</div>'
+        : '';
       el.innerHTML =
         '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3><a href="' + item.link + '" target="_blank" rel="noopener">' + item.title + '</a></h3>' +
+        aiSummary +
         also +
         '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
@@ -678,9 +690,19 @@
         document.getElementById('ai-copy-btn').textContent = item.link;
       });
     };
-    document.getElementById('ai-content').innerHTML =
-      '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>' +
-      '<p style="margin-top:8px;font-size:12px;color:var(--ink-soft)">文章連結：<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
+    var contentHtml = '';
+    if (item.summary) {
+      contentHtml =
+        '<div class="ai-prebuilt">' + item.summary + '</div>' +
+        '<p style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">✦ 由 Gemini AI 預先產生</p>';
+    } else {
+      contentHtml =
+        '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>';
+    }
+    contentHtml +=
+      '<p style="margin-top:10px;font-size:12px;color:var(--ink-soft)">文章連結：' +
+      '<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
+    document.getElementById('ai-content').innerHTML = contentHtml;
     document.getElementById('ai-modal').classList.add('open');
   }
 
