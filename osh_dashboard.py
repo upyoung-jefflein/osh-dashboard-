@@ -2118,7 +2118,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   // ─── 字體大小 ─────────────────────────────────────────────────
   function initFontSize() {{
     var saved = localStorage.getItem("osh_font_sz") || "14";
-    document.documentElement.style.setProperty("--font-sz", saved + "px");
+    function applySize(sz) {{
+      document.documentElement.style.setProperty("--font-sz", sz + "px");
+      document.body.style.zoom = (parseFloat(sz) / 14).toFixed(3);
+    }}
+    applySize(saved);
     var range = document.getElementById("font-size-range");
     var label = document.getElementById("font-size-label");
     if (range) {{
@@ -2126,7 +2130,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (label) label.textContent = saved + "px";
       range.addEventListener("input", function() {{
         var sz = range.value;
-        document.documentElement.style.setProperty("--font-sz", sz + "px");
+        applySize(sz);
         if (label) label.textContent = sz + "px";
         localStorage.setItem("osh_font_sz", sz);
       }});
