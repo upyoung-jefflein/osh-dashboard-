@@ -169,6 +169,7 @@
   .latest-rev-row{ display:flex; gap:8px; align-items:baseline; margin:3px 0; font-size:12px; }
   .rev-label{ min-width:3em; font-weight:600; }
   .rev-arts{ color:var(--ink-soft); word-break:break-all; }
+  .rev-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
   .art-chip.art-selected{ background:var(--blue); color:#fff; border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,130,246,.3); }
   .art-index-toolbar{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
   .art-search{ flex:1; min-width:80px; font-size:12px; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); outline:none; }
@@ -218,6 +219,16 @@
     nav.tabs button{ font-size:13px; padding:8px 12px; }
     .scenario-grid{ grid-template-columns:1fr; }
     .law-card dl{ grid-template-columns:1fr; }
+    /* 手機：觸控目標放大 */
+    .art-chip{ padding:6px 12px; font-size:13px; }
+    .art-search{ padding:7px 10px; font-size:13px; }
+    .art-copy-btn{ padding:7px 14px; font-size:12px; }
+    /* 手機：chg-summary 可讀性 */
+    .chg-summary{ font-size:12px; line-height:1.7; }
+    /* 手機：最新修正 chip 區塊間距 */
+    .latest-rev-block .art-chip{ padding:5px 11px; font-size:12px; }
+    /* 手機：drawer 寬度佔滿 */
+    #law-drawer{ width:100vw; }
   }
   /* ── AI 摘要顯示（卡片內） ── */
   .ai-summary{ margin:6px 0 2px; font-size:12.5px; line-height:1.65; color:var(--ink-soft); }
@@ -400,7 +411,7 @@
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：2026-09-25 14:57 ｜ 149 則職安動態 ｜ 106 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器
+    <div class="meta">資料產生時間：2026-09-25 15:06 ｜ 149 則職安動態 ｜ 106 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器
       <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
     </div>
   </header>
@@ -837,15 +848,14 @@
       var rest = nos.length - max;
       return shown + (rest > 0 ? '…(+'+rest+')' : '');
     }
-    function _tip(nos) { return nos.map(function(n) { return '第'+n+'條'; }).join('、'); }
     var parts = [];
     if (lr.modified && lr.modified.length)
-      parts.push('<span class="chg-modified" title="'+_tip(lr.modified)+'">✏修正：' + _artList(lr.modified, 3) + '</span>');
+      parts.push('<span class="chg-modified">✏修正：' + _artList(lr.modified, 3) + '</span>');
     if (lr.added && lr.added.length)
-      parts.push('<span class="chg-added" title="'+_tip(lr.added)+'">➕增訂：' + _artList(lr.added, 5) + '</span>');
+      parts.push('<span class="chg-added">➕增訂：' + _artList(lr.added, 5) + '</span>');
     if (lr.deleted && lr.deleted.length)
-      parts.push('<span class="chg-deleted" title="'+_tip(lr.deleted)+'">✖刪除：' + _artList(lr.deleted, 3) + '</span>');
-    return parts.join('<br>');
+      parts.push('<span class="chg-deleted">✖刪除：' + _artList(lr.deleted, 3) + '</span>');
+    return parts.join(' ');
   }
 
   function renderNews() {
@@ -1617,29 +1627,29 @@
       } else {
         if (lr.modified && lr.modified.length) {
           html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 修正（' + lr.modified.length + '條）</span></div>';
-          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          html += '<div class="rev-chips">';
           lr.modified.forEach(function(no) {
             html += artBase
-              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip" style="font-size:11px">第'+no+'條</a>'
-              : '<span class="art-chip" style="font-size:11px">第'+no+'條</span>';
+              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip">第'+no+'條</a>'
+              : '<span class="art-chip">第'+no+'條</span>';
           });
           html += '</div>';
         }
         if (lr.added && lr.added.length) {
           html += '<div class="latest-rev-row"><span class="rev-label chg-added">➕ 增訂（' + lr.added.length + '條）</span></div>';
-          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          html += '<div class="rev-chips">';
           lr.added.forEach(function(no) {
             html += artBase
-              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip art-chip-added" style="font-size:11px">第'+no+'條</a>'
-              : '<span class="art-chip art-chip-added" style="font-size:11px">第'+no+'條</span>';
+              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip art-chip-added">第'+no+'條</a>'
+              : '<span class="art-chip art-chip-added">第'+no+'條</span>';
           });
           html += '</div>';
         }
         if (lr.deleted && lr.deleted.length) {
           html += '<div class="latest-rev-row"><span class="rev-label chg-deleted">✖ 刪除（' + lr.deleted.length + '條）</span></div>';
-          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          html += '<div class="rev-chips">';
           lr.deleted.forEach(function(no) {
-            html += '<span class="art-chip art-chip-deleted" style="font-size:11px">第'+no+'條</span>';
+            html += '<span class="art-chip art-chip-deleted">第'+no+'條</span>';
           });
           html += '</div>';
         }
