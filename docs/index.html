@@ -536,7 +536,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-25 23:51 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-26 00:14 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -980,7 +980,7 @@
     }, {passive: true});
   }
 
-  const GENERATED = new Date("2026-09-25");
+  const GENERATED = new Date("2026-09-26");
   const cutoff12m = new Date(GENERATED);
   cutoff12m.setMonth(cutoff12m.getMonth() - 12);
   const cutoff3m = new Date(GENERATED);
@@ -2280,10 +2280,7 @@
       .attr("text-anchor", "middle").attr("font-size", 9.5).attr("font-family", "inherit")
       .attr("fill", "var(--ink)").attr("pointer-events", "none");
     node.append("title").text(function(d) {
-      return d.id + '
-條文數：' + d.arts + '
-交叉引用：' + d.cross + ' 部法規
-（點擊開啟抽屜）';
+      return d.id + ' ｜ 條文數：' + d.arts + ' ｜ 交叉引用：' + d.cross + ' 部（點擊節點開啟抽屜）';
     });
     sim.on("tick", function() {
       link.attr("x1", function(d) { return d.source.x; }).attr("y1", function(d) { return d.source.y; })

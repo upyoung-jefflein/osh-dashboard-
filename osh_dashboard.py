@@ -3132,7 +3132,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       .attr("text-anchor", "middle").attr("font-size", 9.5).attr("font-family", "inherit")
       .attr("fill", "var(--ink)").attr("pointer-events", "none");
     node.append("title").text(function(d) {{
-      return d.id + '\n條文數：' + d.arts + '\n交叉引用：' + d.cross + ' 部法規\n（點擊開啟抽屜）';
+      return d.id + ' ｜ 條文數：' + d.arts + ' ｜ 交叉引用：' + d.cross + ' 部（點擊節點開啟抽屜）';
     }});
     sim.on("tick", function() {{
       link.attr("x1", function(d) {{ return d.source.x; }}).attr("y1", function(d) {{ return d.source.y; }})
