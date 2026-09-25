@@ -432,6 +432,372 @@ PRACTITIONER_HTML = """
 
 
 # ============================================================
+# 職業安全衛生專業數據表
+# ============================================================
+
+# ── 罰則金額解析工具 ──────────────────────────────────────────
+_ZH_DIGITS = {'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9}
+_ZH_MULTS  = {'十':10,'百':100,'千':1000}
+
+def _zh_to_num(s: str) -> int:
+    s = s.strip()
+    if re.match(r'^\d+$', s):
+        return int(s)
+    result, curr = 0, 0
+    for ch in s:
+        if ch in _ZH_DIGITS:
+            curr = _ZH_DIGITS[ch]
+        elif ch in _ZH_MULTS:
+            if curr == 0 and ch == '十':
+                curr = 1
+            result += curr * _ZH_MULTS[ch]
+            curr = 0
+    return result + curr
+
+def _parse_penalty_detail(art_no: str, content: str) -> dict:
+    """從條文內容萃取結構化罰則資訊（罰鍰金額、刑責、義務主體）"""
+    entry: dict = {
+        "no": art_no, "text": content[:400],
+        "fine_min": None, "fine_max": None,
+        "criminal": None, "liable": [], "repeated": False,
+    }
+    # X萬元以上Y萬元以下
+    m = re.search(
+        r'(?:新臺幣|處)\s*([零一二三四五六七八九十百千\d]+)萬元以上\s*([零一二三四五六七八九十百千\d]+)萬元以下罰鍰',
+        content)
+    if m:
+        entry["fine_min"] = _zh_to_num(m.group(1))
+        entry["fine_max"] = _zh_to_num(m.group(2))
+    else:
+        m2 = re.search(
+            r'(?:新臺幣|處|科)\s*([零一二三四五六七八九十百千\d]+)萬元以下罰鍰',
+            content)
+        if m2:
+            entry["fine_max"] = _zh_to_num(m2.group(1))
+        else:
+            m3 = re.search(
+                r'(?:新臺幣|處|科)\s*([零一二三四五六七八九十百千\d]+)千元以下罰鍰',
+                content)
+            if m3:
+                entry["fine_max"] = round(_zh_to_num(m3.group(1)) / 10, 1)
+    cm = re.search(r'([一二三四五六七八九十\d]+年?)以下有期徒刑', content)
+    if cm:
+        entry["criminal"] = f"有期徒刑 {cm.group(1)} 以下"
+    elif '拘役' in content:
+        entry["criminal"] = "拘役"
+    for party in ["雇主", "事業單位", "工作者", "勞工", "製造者", "供應者", "設計者", "輸入者", "負責人"]:
+        if party in content:
+            entry["liable"].append(party)
+    entry["repeated"] = bool(re.search(r'按次(?:連續)?處罰|得按次', content))
+    return entry
+
+
+# ── 適用對象資料表 ─────────────────────────────────────────────
+APPLICABILITY_DATA = {
+    "職業安全衛生法": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "適用所有事業單位（含承攬、派遣）；自營作業者另有規定",
+    },
+    "職業安全衛生法施行細則": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "隨母法（職安法）一併適用",
+    },
+    "職業安全衛生設施規則": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "一般作業場所安全設施通用標準",
+    },
+    "職業安全衛生管理辦法": {
+        "industries": ["全行業"], "min_workers": 1,
+        "risk_class": ["第一類事業", "第二類事業", "第三類事業"],
+        "notes": "人員配置依附表一、二分類；第一類（製造/營造）門檻最嚴",
+    },
+    "職業安全衛生教育訓練規則": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "特殊作業、管理人員時數依附表；115年6月25日新增丁種主管",
+    },
+    "勞工健康保護規則": {
+        "industries": ["全行業"], "min_workers": 50, "risk_class": [],
+        "notes": "50人以上設健康服務人員或委託；特殊作業不受人數限制",
+    },
+    "女性勞工母性健康保護實施辦法": {
+        "industries": ["全行業"], "min_workers": 100, "risk_class": [],
+        "notes": "100人以上強制；其他得自願辦理",
+    },
+    "勞工作業環境監測實施辦法": {
+        "industries": ["製造業", "化學工業", "礦業", "營造業", "電子業"],
+        "min_workers": None, "risk_class": ["甲種作業", "乙種作業"],
+        "notes": "有害物質暴露場所均適用，不設人數下限",
+    },
+    "職業安全衛生標示設置準則": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "危害場所皆須設置；配合危害通識規則使用",
+    },
+    "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "孕婦、產後一年、未滿18歲勞工，應進行工作適性評估",
+    },
+    "異常氣壓危害預防標準": {
+        "industries": ["營造業", "潛水業", "隧道工程"],
+        "min_workers": None, "risk_class": [],
+        "notes": "壓縮空氣作業（沉箱、潛水）或低壓環境",
+    },
+    "高架作業勞工保護措施標準": {
+        "industries": ["營造業", "電信業", "維修業", "製造業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "離地面或樓板2公尺以上作業即適用",
+    },
+    "高溫作業勞工作息時間標準": {
+        "industries": ["製造業", "營造業", "餐飲業", "農業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "WBGT≧25℃之作業環境；附表規定各溫度帶作息比例",
+    },
+    "精密作業勞工視機能保護設施標準": {
+        "industries": ["電子業", "製造業", "印刷業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "精密儀器操作、VDT作業超過一定時數",
+    },
+    "重體力勞動作業勞工保護措施標準": {
+        "industries": ["製造業", "倉儲業", "營造業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "搬運物重超過規定標準之作業",
+    },
+    "高壓氣體勞工安全規則": {
+        "industries": ["化學工業", "食品加工", "鋼鐵業", "醫療業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "製造、儲存、使用高壓氣體（依容量計）",
+    },
+    "缺氧症預防規則": {
+        "industries": ["營造業", "製造業", "污水處理", "食品業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "局限空間作業；密閉隧道、坑道、桶槽等",
+    },
+    "營造安全衛生設施標準": {
+        "industries": ["營造業"],
+        "min_workers": 1, "risk_class": ["甲種危險工作場所", "丙種危險工作場所"],
+        "notes": "所有建築/土木/設備工程適用",
+    },
+    "工程安全設計及整體工程統合管理辦法": {
+        "industries": ["營造業"],
+        "min_workers": None, "risk_class": ["甲種危險工作場所"],
+        "notes": "115年新訂；適用一定規模以上工程專案",
+    },
+    "林場安全衛生設施規則": {
+        "industries": ["林業"],
+        "min_workers": None, "risk_class": [], "notes": "林業作業專用",
+    },
+    "船舶清艙解體勞工安全規則": {
+        "industries": ["航運業", "拆船業"],
+        "min_workers": None, "risk_class": [], "notes": "船舶清艙、解體作業",
+    },
+    "碼頭裝卸安全衛生設施標準": {
+        "industries": ["倉儲業", "運輸業"],
+        "min_workers": None, "risk_class": [], "notes": "港口碼頭裝卸作業",
+    },
+    "礦場職業衛生設施標準": {
+        "industries": ["礦業"],
+        "min_workers": None, "risk_class": [], "notes": "礦場採掘作業專用",
+    },
+    "鍋爐及壓力容器安全規則": {
+        "industries": ["製造業", "能源業", "化學工業", "食品業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "設置鍋爐（第一種/第二種）或壓力容器即適用",
+    },
+    "起重升降機具安全規則": {
+        "industries": ["製造業", "營造業", "倉儲業", "港口業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "起重機、升降機、人字臂起重桿等",
+    },
+    "危險性機械及設備安全檢查規則": {
+        "industries": ["製造業", "營造業", "能源業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "鍋爐、壓力容器、起重機等危險性機械設備定期檢查",
+    },
+    "危害性化學品標示及通識規則": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "使用危害性化學品即適用（GHS標示+SDS）",
+    },
+    "危害性化學品評估及分級管理辦法": {
+        "industries": ["全行業"], "min_workers": 5, "risk_class": [],
+        "notes": "5人以上且使用危害化學品；依暴露及危害分級管理",
+    },
+    "特定化學物質危害預防標準": {
+        "industries": ["化學工業", "製造業", "電子業", "皮革業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "甲類（致癌）/乙類/丙類/丁類特定化學物質",
+    },
+    "有機溶劑中毒預防規則": {
+        "industries": ["製造業", "印刷業", "乾洗業", "電子業", "皮革業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "第一種/第二種/第三種有機溶劑作業",
+    },
+    "鉛中毒預防規則": {
+        "industries": ["電池製造", "印刷業", "金屬冶煉", "電子業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "鉛或其化合物之製造/處置/使用/廢棄作業",
+    },
+    "粉塵危害預防標準": {
+        "industries": ["礦業", "營造業", "石材加工", "陶瓷業", "製藥業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "產生粉塵之特定作業，含矽肺病預防",
+    },
+    "勞工作業場所容許暴露標準": {
+        "industries": ["全行業"], "min_workers": None, "risk_class": [],
+        "notes": "配合作業環境監測使用；規定各化學物質PEL/STEL",
+    },
+    "新化學物質登記管理辦法": {
+        "industries": ["化學工業", "製造業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "製造/輸入量≧100kg之新化學物質須登記",
+    },
+    "優先管理化學品之指定及運作管理辦法": {
+        "industries": ["化學工業", "製造業", "電子業"],
+        "min_workers": None, "risk_class": [],
+        "notes": "指定之優先管理化學品須申報運作情形",
+    },
+    "職業災害預防及職業災害勞工重建補助辦法": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "職災勞工補助申請；含預防補助、職能復健",
+    },
+    "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "職業傷病認定、醫療機構認可、職災通報義務",
+    },
+    "職業災害勞工職能復健專業機構認可管理及補助辦法": {
+        "industries": ["全行業"], "min_workers": 1, "risk_class": [],
+        "notes": "職能復健機構認可標準與補助申請",
+    },
+}
+
+# ── 稽查重點法規（依違規頻率排序）──────────────────────────────
+INSPECTION_FOCUS_LAWS = {
+    "職業安全衛生法": {
+        "rank": 1, "focus_articles": ["6", "21", "23", "32", "37"],
+        "common_violations": ["一般安全衛生教育訓練未落實", "未訂定安全衛生工作守則", "特殊作業未辦健康檢查", "重大職災未24小時通報"],
+        "note": "歷年勞動檢查違規件數最高，適用所有事業單位",
+    },
+    "職業安全衛生設施規則": {
+        "rank": 2, "focus_articles": ["19之1", "224", "228", "248", "277", "309"],
+        "common_violations": ["局限空間進入前未辦許可及氣體測定", "高架作業護欄不符規定", "電氣設備未接地或漏電斷路器", "個人防護具未提供或未確認使用"],
+        "note": "條文最多（超過300條），各類設施均有詳細規範",
+    },
+    "職業安全衛生管理辦法": {
+        "rank": 3, "focus_articles": ["11", "12之1", "14", "23", "27"],
+        "common_violations": ["職業安全衛生委員會未每季召開", "安全衛生管理計畫流於形式", "自動檢查記錄不完整", "承攬管理計畫未訂定"],
+        "note": "管理制度面違規，常與設施規則同時被裁罰",
+    },
+    "危害性化學品標示及通識規則": {
+        "rank": 4, "focus_articles": ["7", "10", "13", "16", "17"],
+        "common_violations": ["容器GHS標示不完整或未更新", "SDS未放置於作業現場", "危害性化學品清單未建立或未更新", "勞工未接受SDS教育訓練"],
+        "note": "製造業/化工業高頻違規，GHS標示常見格式錯誤",
+    },
+    "缺氧症預防規則": {
+        "rank": 5, "focus_articles": ["4", "5", "14", "22", "26之1"],
+        "common_violations": ["進入局限空間前未測定氧氣及有害氣體", "未選任缺氧作業主管", "未訂定緊急避難及搶救方法", "勞工未受缺氧症預防教育訓練"],
+        "note": "致死率高，稽查人員重點查核項目之一",
+    },
+    "勞工作業環境監測實施辦法": {
+        "rank": 6, "focus_articles": ["7", "12", "13", "14"],
+        "common_violations": ["定期監測未辦理或逾期", "監測結果未告知勞工", "超過容許暴露標準未採取改善措施", "監測紀錄未保存3年"],
+        "note": "化學品作業場所必查項目",
+    },
+    "營造安全衛生設施標準": {
+        "rank": 7, "focus_articles": ["5之1", "17之1", "19", "62", "155"],
+        "common_violations": ["未訂定施工安全計畫", "墜落防護設施不足（護欄/安全網）", "開挖作業無擋土支撐", "起重機械無合格證書"],
+        "note": "營造業職災比例最高，稽查頻率最高行業",
+    },
+    "高架作業勞工保護措施標準": {
+        "rank": 8, "focus_articles": ["3", "5", "6", "8"],
+        "common_violations": ["未提供安全帶及安全母索", "作業前未評估環境風險", "安全設施設置不符標準"],
+        "note": "墜落是營造業最主要死亡原因",
+    },
+    "特定化學物質危害預防標準": {
+        "rank": 9, "focus_articles": ["6", "7", "20", "38"],
+        "common_violations": ["密閉設備未達規定", "局部排氣裝置風速不足", "作業主管未選任", "定期實施自動檢查"],
+        "note": "致癌物（甲類）違規有最嚴裁罰",
+    },
+    "高溫作業勞工作息時間標準": {
+        "rank": 10, "focus_articles": ["3", "4", "7", "8"],
+        "common_violations": ["未量測WBGT值", "未依WBGT調整作息比例", "未提供防暑飲水", "勞工未接受熱危害預防訓練"],
+        "note": "夏季重點查核，職業性熱中暑為職業病",
+    },
+}
+
+# ── CNS / ISO / 國際標準對應 ──────────────────────────────────
+CNS_ISO_MAP = {
+    "職業安全衛生法": [
+        {"code": "ILO-OSH 2001", "title": "職業安全衛生管理系統指引"},
+    ],
+    "職業安全衛生管理辦法": [
+        {"code": "ISO 45001:2018", "title": "職業安全衛生管理系統"},
+        {"code": "CNS 45001:2019", "title": "職業安全衛生管理系統（臺灣國家標準）"},
+    ],
+    "危害性化學品標示及通識規則": [
+        {"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"},
+        {"code": "CNS 15030", "title": "化學品分類及標示"},
+    ],
+    "危害性化學品評估及分級管理辦法": [
+        {"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"},
+        {"code": "ISO 31000:2018", "title": "風險管理指引"},
+    ],
+    "勞工作業場所容許暴露標準": [
+        {"code": "ACGIH TLV-TWA/STEL", "title": "美國工業衛生師協會容許暴露值"},
+        {"code": "NIOSH REL", "title": "美國職業安全衛生研究所建議暴露值"},
+    ],
+    "勞工作業環境監測實施辦法": [
+        {"code": "ISO 11171", "title": "顆粒污染量測方法"},
+        {"code": "NIOSH Method Manual", "title": "美國NIOSH採樣分析方法手冊"},
+    ],
+    "鍋爐及壓力容器安全規則": [
+        {"code": "ASME BPVC", "title": "美國機械工程師學會鍋爐及壓力容器規範"},
+        {"code": "CNS 2160 系列", "title": "鍋爐及壓力容器相關國家標準"},
+    ],
+    "起重升降機具安全規則": [
+        {"code": "ISO 4301 系列", "title": "起重機分類與設計規範"},
+        {"code": "CNS 14253", "title": "吊掛用鋼索安全規範"},
+    ],
+    "缺氧症預防規則": [
+        {"code": "ANSI/ASSP Z117.1", "title": "局限空間安全要求"},
+        {"code": "OSHA 1910.146", "title": "受許可局限空間（美國參考）"},
+    ],
+    "異常氣壓危害預防標準": [
+        {"code": "EN 14153 系列", "title": "潛水作業安全歐洲標準"},
+        {"code": "ISO 11107", "title": "潛水呼吸氣體標準"},
+    ],
+    "高壓氣體勞工安全規則": [
+        {"code": "ISO 11114 系列", "title": "氣瓶閥門相容性標準"},
+        {"code": "CNS 4620", "title": "高壓氣體安全規則（臺灣）"},
+    ],
+    "特定化學物質危害預防標準": [
+        {"code": "IARC 致癌物分類", "title": "國際癌症研究機構致癌物分級"},
+        {"code": "ACGIH A1/A2", "title": "確定/疑似人類致癌物分類"},
+    ],
+    "有機溶劑中毒預防規則": [
+        {"code": "ACGIH TLV-TWA", "title": "各有機溶劑容許暴露值"},
+        {"code": "GHS Skin/Resp. Sensitizer", "title": "皮膚/呼吸道致敏標示"},
+    ],
+    "粉塵危害預防標準": [
+        {"code": "ISO 7708", "title": "空氣品質—粒徑分組採樣定義"},
+        {"code": "ACGIH TLV-TWA（可呼吸性粉塵）", "title": "可呼吸性粉塵濃度限值"},
+    ],
+    "缺氧症預防規則": [
+        {"code": "ANSI/ASSP Z117.1", "title": "局限空間安全要求"},
+    ],
+    "職業安全衛生設施規則": [
+        {"code": "ISO 45001:2018 §8.1", "title": "作業規劃與控制"},
+        {"code": "IEC 60364", "title": "建築物電氣裝置安全標準"},
+    ],
+    "高溫作業勞工作息時間標準": [
+        {"code": "ISO 7933:2004", "title": "熱環境—預測熱緊迫分析（PHS模型）"},
+        {"code": "ACGIH WBGT TLV", "title": "濕球黑球溫度容許暴露值"},
+    ],
+    "新化學物質登記管理辦法": [
+        {"code": "REACH (EU)", "title": "歐盟化學品登記、評估、授權及限制"},
+        {"code": "K-REACH (KR)", "title": "韓國化學物質登記及評估法"},
+    ],
+}
+
+
+# ============================================================
 # 新聞：RSS 抓取、HTML 備用、去重
 # ============================================================
 
@@ -794,9 +1160,9 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
                 except ValueError:
                     pass
 
-                # 罰則條文
+                # 罰則條文（結構化解析）
                 if content and ("罰鍰" in content or ("罰" in content and ("萬元" in content or "千元" in content))):
-                    penalty_articles.append({"no": art_no, "text": content[:400]})
+                    penalty_articles.append(_parse_penalty_detail(art_no, content))
 
         # 收尾最後一章
         if _cur_chap is not None and _cur_chap_arts:
@@ -1390,6 +1756,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .penalty-art{{ background:#fff5f5; border:1px solid #fca5a5; border-radius:4px; padding:8px 12px; margin-bottom:7px; font-size:12.5px; line-height:1.75; }}
   [data-theme="dark"] .penalty-art{{ background:rgba(185,28,28,.12); border-color:rgba(252,165,165,.25); }}
   .penalty-art .art-no{{ font-weight:700; color:#b91c1c; margin-right:6px; }}
+  /* ── 罰則結構化 ── */
+  .penalty-struct{{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; align-items:center; }}
+  .penalty-fine-label{{ font-size:11px; font-weight:700; color:#b91c1c; white-space:nowrap; }}
+  .penalty-fine-bar{{ flex:1; min-width:80px; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }}
+  .penalty-fine-fill{{ height:100%; background:linear-gradient(90deg,#f97316,#b91c1c); border-radius:4px; transition:width .4s; }}
+  .penalty-struct-tag{{ display:inline-flex; align-items:center; gap:3px; font-size:10.5px; padding:2px 7px; border-radius:99px; border:1px solid currentColor; font-weight:600; white-space:nowrap; }}
+  .pst-criminal{{ color:#7c3aed; background:rgba(124,58,237,.07); }}
+  .pst-repeat{{ color:#b45309; background:rgba(180,83,9,.07); }}
+  .pst-liable{{ color:#0369a1; background:rgba(3,105,161,.07); }}
+  /* ── 適用對象 ── */
+  .applicability-block{{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }}
+  .app-tag{{ display:inline-flex; align-items:center; font-size:11px; padding:2px 8px; border-radius:3px; font-weight:600; }}
+  .app-industry{{ background:rgba(37,99,235,.08); color:#1d4ed8; border:1px solid rgba(37,99,235,.2); }}
+  .app-size{{ background:rgba(5,150,105,.08); color:#065f46; border:1px solid rgba(5,150,105,.2); }}
+  .app-risk{{ background:rgba(180,83,9,.08); color:#92400e; border:1px solid rgba(180,83,9,.2); }}
+  .app-note{{ font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin-top:4px; }}
+  /* ── 稽查重點 ── */
+  .inspect-rank{{ display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; color:#b91c1c; margin-bottom:6px; }}
+  .inspect-rank-dot{{ width:8px; height:8px; border-radius:50%; background:#b91c1c; }}
+  .inspect-violations{{ margin:6px 0; list-style:none; padding:0; }}
+  .inspect-violations li{{ font-size:11.5px; color:var(--ink); padding:3px 0 3px 14px; position:relative; border-bottom:1px solid var(--border); }}
+  .inspect-violations li::before{{ content:"!"; position:absolute; left:0; color:#b91c1c; font-weight:700; font-size:10px; top:5px; }}
+  /* ── 標準對應 ── */
+  .std-chip{{ display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 9px; border-radius:3px; border:1px solid rgba(37,99,235,.25); background:rgba(37,99,235,.05); color:#1e40af; margin:2px; font-weight:600; }}
+  .std-chip-title{{ font-weight:400; color:var(--ink-soft); }}
+  /* ── 稽查重點badge（表格）── */
+  .inspect-badge{{ display:inline-flex; align-items:center; gap:2px; font-size:9.5px; font-weight:700; color:#b91c1c; background:#fee2e2; border:1px solid #fca5a5; border-radius:3px; padding:1px 5px; white-space:nowrap; }}
   /* ── 訂閱法規按鈕 ── */
   .sub-btn{{ border:none; background:transparent; cursor:pointer; font-size:15px; padding:0 2px; opacity:.5; transition:opacity .2s; }}
   .sub-btn:hover{{ opacity:1; }}
@@ -1564,6 +1957,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 適用判斷</button>
       <div class="sep"></div>
       <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 含罰則</button>
+      <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查重點</button>
     </div>
     <div class="reg-view-toggle">
       <button class="active" data-regview="table">📋 表格</button>
@@ -1746,6 +2140,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const SCENARIOS = {scenarios_json};
   const CATEGORIES = {categories_json};
   const CHECKLISTS = {checklists_json};
+  const APPLICABILITY = {applicability_json};
+  const INSPECTION_FOCUS = {inspection_focus_json};
+  const CNS_ISO = {cns_iso_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"}};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -1767,7 +2164,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
-  let regViewMode = "table", penaltyFilter = false;
+  let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
   var srcTypeFilter = new Set(["news", "notice"]); // 預設隱藏活動訊息
@@ -2487,6 +2884,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
+    if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
     const q = document.getElementById("lawSearch").value.trim();
     var fuseActive = false;
     if (q) {{
@@ -2580,10 +2978,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
       var penBadge = (penaltyFilter && r.penalty_articles && r.penalty_articles.length > 0)
         ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
+      var inspBadge = INSPECTION_FOCUS.hasOwnProperty(r.name)
+        ? '<span class="inspect-badge">🔍 稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
       return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -2740,16 +3140,84 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '</div>';
     }}
 
-    // 罰則條文
+    // ── 罰則條文（結構化）
     if (r.penalty_articles && r.penalty_articles.length > 0) {{
+      var maxFine = Math.max.apply(null, r.penalty_articles.map(function(pa) {{ return pa.fine_max || 0; }}));
       html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
       r.penalty_articles.forEach(function(pa) {{
         var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        // 高亮罰鍰金額
-        t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
-        html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>' + t + '</div>';
+        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>';
+        // 結構化資訊列
+        var hasMeta = pa.fine_max || pa.criminal || (pa.liable && pa.liable.length);
+        if (hasMeta) {{
+          html += '<div class="penalty-struct">';
+          if (pa.fine_max) {{
+            var fineLabel = (pa.fine_min ? pa.fine_min + '～' + pa.fine_max : '≤' + pa.fine_max) + ' 萬元';
+            var pct = maxFine > 0 ? Math.round((pa.fine_max / maxFine) * 100) : 50;
+            html += '<span class="penalty-fine-label">罰鍰 ' + fineLabel + '</span>'
+              + '<span class="penalty-fine-bar"><span class="penalty-fine-fill" style="width:' + pct + '%"></span></span>';
+          }}
+          if (pa.criminal) html += '<span class="penalty-struct-tag pst-criminal">⚖ ' + pa.criminal + '</span>';
+          if (pa.repeated) html += '<span class="penalty-struct-tag pst-repeat">↻ 按次處罰</span>';
+          if (pa.liable && pa.liable.length)
+            pa.liable.forEach(function(l) {{ html += '<span class="penalty-struct-tag pst-liable">' + l + '</span>'; }});
+          html += '</div>';
+        }}
+        html += t + '</div>';
       }});
       html += '</div>';
+    }}
+
+    // ── 適用對象
+    var appData = APPLICABILITY[r.name];
+    if (appData) {{
+      html += '<div class="drawer-section"><h3>適用對象</h3>';
+      html += '<div class="applicability-block">';
+      if (appData.industries && appData.industries.length)
+        appData.industries.forEach(function(ind) {{ html += '<span class="app-tag app-industry">🏭 ' + ind + '</span>'; }});
+      if (appData.min_workers != null)
+        html += '<span class="app-tag app-size">👥 ' + appData.min_workers + ' 人以上</span>';
+      if (appData.risk_class && appData.risk_class.length)
+        appData.risk_class.forEach(function(rc) {{ html += '<span class="app-tag app-risk">⚠ ' + rc + '</span>'; }});
+      html += '</div>';
+      if (appData.notes) html += '<div class="app-note">' + appData.notes + '</div>';
+      html += '</div>';
+    }}
+
+    // ── 稽查重點
+    var ifData = INSPECTION_FOCUS[r.name];
+    if (ifData) {{
+      html += '<div class="drawer-section"><h3>稽查重點</h3>';
+      html += '<div class="inspect-rank"><span class="inspect-rank-dot"></span>全行業稽查優先度 #' + ifData.rank + '　' + (ifData.note || '') + '</div>';
+      if (ifData.focus_articles && ifData.focus_articles.length) {{
+        var artBase2 = r.pcode ? 'https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=' + r.pcode + '&flno=' : '';
+        html += '<div style="margin:4px 0 8px;display:flex;flex-wrap:wrap;gap:4px">';
+        ifData.focus_articles.forEach(function(no) {{
+          html += artBase2
+            ? '<a href="' + artBase2 + encodeURIComponent(no) + '" target="_blank" class="art-chip art-chip-penalty" style="font-size:10.5px">第' + no + '條</a>'
+            : '<span class="art-chip art-chip-penalty" style="font-size:10.5px">第' + no + '條</span>';
+        }});
+        html += '</div>';
+      }}
+      if (ifData.common_violations && ifData.common_violations.length) {{
+        html += '<ul class="inspect-violations">';
+        ifData.common_violations.forEach(function(v) {{ html += '<li>' + v + '</li>'; }});
+        html += '</ul>';
+      }}
+      html += '</div>';
+    }}
+
+    // ── 對應標準（CNS/ISO）
+    var stdList = CNS_ISO[r.name];
+    if (stdList && stdList.length) {{
+      html += '<div class="drawer-section"><h3>對應國際標準</h3><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">';
+      stdList.forEach(function(s) {{
+        html += '<span class="std-chip"><strong>' + s.code + '</strong>'
+          + (s.title ? ' <span class="std-chip-title">· ' + s.title + '</span>' : '')
+          + '</span>';
+      }});
+      html += '</div></div>';
     }}
 
     // 條文索引（①章節分組 ②罰則標色 ③tooltip預覽 ④搜尋 ⑤多選複製）
@@ -3194,6 +3662,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById("penaltyFilterBtn").classList.toggle("active", penaltyFilter);
     registryPage = 1; renderRegistry();
   }}
+  function toggleInspectFilter() {{
+    inspectFilter = !inspectFilter;
+    document.getElementById("inspectFocusBtn").classList.toggle("active", inspectFilter);
+    registryPage = 1; renderRegistry();
+  }}
 
   buildCatFilters();
   initTheme();
@@ -3378,6 +3851,9 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         scenarios_json=json.dumps(QUICK_SCENARIOS, ensure_ascii=False),
         categories_json=json.dumps(CATEGORIES, ensure_ascii=False),
         checklists_json=json.dumps(CHECKLISTS, ensure_ascii=False),
+        applicability_json=json.dumps(APPLICABILITY_DATA, ensure_ascii=False),
+        inspection_focus_json=json.dumps(INSPECTION_FOCUS_LAWS, ensure_ascii=False),
+        cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
     )
     output_path.write_text(html, encoding="utf-8")
 
