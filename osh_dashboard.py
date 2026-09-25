@@ -677,40 +677,58 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             if eff_iso and eff_iso > date.today().isoformat():
                 status = "未生效"
 
-        # 條文全部（分析用）
-        all_arts = list(law.iter("條文"))
+        # 條文全部（按章節順序迭代，保留 編章節 結構）
+        law_content = law.find("法規內容")
         articles = []
         deleted_arts = []
         scope_parts = []
         penalty_articles = []
+        article_previews = {}
+        chapters = []
+        _cur_chap = None
+        _cur_chap_arts: list[str] = []
 
-        for art in all_arts:
-            raw_no = _text(art.find("條號"))
-            art_no = raw_no.replace("第", "").replace("條", "").strip()
-            if not art_no:
-                continue
-            content = _text(art.find("條文內容"))
+        for node in (list(law_content) if law_content is not None else []):
+            if node.tag == "編章節":
+                if _cur_chap is not None and _cur_chap_arts:
+                    chapters.append({"title": _cur_chap, "articles": _cur_chap_arts})
+                _cur_chap = _text(node).strip()
+                _cur_chap_arts = []
+            elif node.tag == "條文":
+                raw_no = _text(node.find("條號"))
+                art_no = raw_no.replace("第", "").replace("條", "").strip()
+                if not art_no:
+                    continue
+                content = _text(node.find("條文內容"))
 
-            # 已刪除條文單獨記錄，不加入有效條文清單
-            if content and content.strip() in ("（刪除）", "(刪除)"):
-                deleted_arts.append(art_no)
-                continue
+                # 已刪除條文單獨記錄
+                if content and content.strip() in ("（刪除）", "(刪除)"):
+                    deleted_arts.append(art_no)
+                    continue
 
-            articles.append(art_no)
+                articles.append(art_no)
+                if content:
+                    article_previews[art_no] = content[:80]
+                if _cur_chap is not None:
+                    _cur_chap_arts.append(art_no)
 
-            # 適用範圍：前 3 條
-            try:
-                if int(art_no) <= 3 and content:
-                    scope_parts.append(f"第{art_no}條　{content[:200]}")
-            except ValueError:
-                pass
+                # 適用範圍：前 3 條
+                try:
+                    if int(art_no) <= 3 and content:
+                        scope_parts.append(f"第{art_no}條　{content[:200]}")
+                except ValueError:
+                    pass
 
-            # 罰則條文
-            if content and ("罰鍰" in content or ("罰" in content and ("萬元" in content or "千元" in content))):
-                penalty_articles.append({"no": art_no, "text": content[:400]})
+                # 罰則條文
+                if content and ("罰鍰" in content or ("罰" in content and ("萬元" in content or "千元" in content))):
+                    penalty_articles.append({"no": art_no, "text": content[:400]})
+
+        # 收尾最後一章
+        if _cur_chap is not None and _cur_chap_arts:
+            chapters.append({"title": _cur_chap, "articles": _cur_chap_arts})
 
         # 是否含附表（從條文內容判斷）
-        full_text = " ".join(_text(a.find("條文內容")) for a in all_arts)
+        full_text = " ".join(_text(a.find("條文內容")) for a in law.iter("條文"))
         has_table = "附表" in full_text or "附件" in full_text
 
         # pcode
@@ -733,6 +751,8 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "penalty_articles": penalty_articles,
             "articles": articles,
             "deleted_articles": deleted_arts,
+            "chapters": chapters,
+            "article_previews": article_previews,
             "has_table": has_table,
             "資料擷取日期": fetched_at,
         })
@@ -770,6 +790,10 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["penalty_articles"] = rec["penalty_articles"]
             if rec.get("deleted_articles") is not None:
                 entry["deleted_articles"] = rec["deleted_articles"]
+            if rec.get("chapters") is not None:
+                entry["chapters"] = rec["chapters"]
+            if rec.get("article_previews"):
+                entry["article_previews"] = rec["article_previews"]
         else:
             merged.append({
                 "name": rec["name"],
@@ -781,6 +805,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "pcode": rec.get("pcode", ""),
                 "articles": rec.get("articles", []),
                 "deleted_articles": rec.get("deleted_articles", []),
+                "chapters": rec.get("chapters", []),
+                "article_previews": rec.get("article_previews", {}),
                 "has_table": rec.get("has_table", False),
                 "authority": rec.get("authority", ""),
                 "status": rec.get("status", "現行"),
@@ -954,6 +980,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .deleted-arts-toggle::-webkit-details-marker{{ display:none; }}
   .deleted-arts-toggle::before{{ content:"▶ "; font-size:9px; }}
   details.deleted-arts-section[open] .deleted-arts-toggle::before{{ content:"▼ "; }}
+  .art-chip-penalty{{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
+  a.art-chip-penalty:hover{{ background:#b91c1c; color:#fff; border-color:#b91c1c; }}
+  .art-chip.art-selected{{ background:var(--blue); color:#fff; border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,130,246,.3); }}
+  .art-index-toolbar{{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }}
+  .art-search{{ flex:1; min-width:80px; font-size:12px; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); outline:none; }}
+  .art-search:focus{{ border-color:var(--blue); }}
+  .art-copy-btn{{ font-size:11px; padding:3px 10px; border:1px solid var(--border); border-radius:4px; background:var(--card); cursor:pointer; color:var(--ink-soft); white-space:nowrap; }}
+  .art-copy-btn.active{{ background:var(--blue); color:#fff; border-color:var(--blue); }}
+  .art-chapter-hd{{ font-size:10.5px; font-weight:700; color:var(--ink-soft); margin:8px 0 3px; letter-spacing:.04em; border-bottom:1px solid var(--border); padding-bottom:2px; }}
+  .art-chapter-group:first-child .art-chapter-hd{{ margin-top:2px; }}
+  .toast-clip{{ position:fixed; bottom:24px; right:24px; background:#1e293b; color:#fff; font-size:13px; padding:8px 18px; border-radius:6px; z-index:9999; opacity:0; transition:opacity .25s; pointer-events:none; max-width:80vw; word-break:break-all; }}
   .drawer-fulllink{{ display:inline-block; margin-top:10px; padding:7px 16px;
     background:var(--blue); color:#fff; border-radius:5px; text-decoration:none;
     font-size:13px; font-weight:600; }}
@@ -1303,6 +1340,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="document.getElementById('settings-modal').classList.remove('open')" style="padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">關閉</button>
   </div>
 </div>
+<div id="clip-toast" class="toast-clip"></div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
 
 <div id="compare-modal" class="compare-modal" onclick="if(event.target===this)closeCompare()">
@@ -2023,12 +2061,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (r.scope) h += '<div class="scope-text" style="font-size:11.5px;margin-bottom:8px">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
       if (r.articles && r.articles.length) {{
         var delA = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
+        var penA = new Set((r.penalty_articles || []).map(function(pa) {{ return pa.no; }}));
+        var prevA = r.article_previews || {{}};
         h += '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px">' +
-          r.articles.length + ' 條有效' + (delA.length ? '・' + delA.length + ' 條已刪除' : '') + '</div>';
+          r.articles.length + ' 條有效' + (delA.length ? '・' + delA.length + ' 條已刪除' : '') +
+          (penA.size ? '・<span style="color:#b91c1c">' + penA.size + ' 罰則</span>' : '') + '</div>';
         r.articles.forEach(function(no) {{
+          var isPen = penA.has(no);
+          var prev = prevA[no] ? prevA[no].replace(/"/g,'&quot;') : '';
+          var ta = prev ? ' title="' + prev + '"' : '';
+          var style = isPen ? 'color:#b91c1c;font-weight:600' : 'color:var(--stamp)';
           h += artBase
-            ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no" style="color:var(--stamp)">第' + no + '條</a></div>'
-            : '<div class="compare-art"><span class="art-no">第' + no + '條</span></div>';
+            ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no" style="' + style + '"' + ta + '>第' + no + '條</a></div>'
+            : '<div class="compare-art"><span class="art-no" style="' + style + '"' + ta + '>第' + no + '條</span></div>';
         }});
         if (delA.length > 0) {{
           h += '<details class="deleted-arts-section" style="margin-top:6px">' +
@@ -2276,28 +2321,53 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '</div>';
     }}
 
-    // 條文索引
+    // 條文索引（①章節分組 ②罰則標色 ③tooltip預覽 ④搜尋 ⑤多選複製）
     if (r.articles && r.articles.length > 0) {{
       var delArts = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
+      var penaltySet = new Set((r.penalty_articles || []).map(function(pa) {{ return pa.no; }}));
+      var previews = r.article_previews || {{}};
       var cntLabel = r.articles.length + ' 條有效' + (delArts.length ? '（' + delArts.length + ' 條已刪除）' : '');
-      html += '<div class="drawer-section"><h3>條文索引（共 ' + cntLabel + '）</h3>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:2px 0">';
-      r.articles.forEach(function(no) {{
-        var chip = artBase
-          ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="art-chip">第' + no + '條</a>'
-          : '<span class="art-chip">第' + no + '條</span>';
-        html += chip;
-      }});
+      html += '<div class="drawer-section">';
+      html += '<h3>條文索引（共 ' + cntLabel + '）</h3>';
+      // ④ 搜尋工具列
+      html += '<div class="art-index-toolbar">';
+      html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號…" autocomplete="off">';
+      html += '<button class="art-copy-btn" id="art-ms-btn" title="切換多選模式後點擊條文可批次複製引用">☑ 多選</button>';
+      html += '<button class="art-copy-btn" id="art-cp-btn" style="display:none">複製引用（<span id="art-sel-cnt">0</span>）</button>';
+      html += '</div>';
+      // ②③ chip 產生函式
+      function _mkChip(no) {{
+        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : '');
+        var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
+        var ta = prev ? ' title="' + prev + '"' : '';
+        return artBase
+          ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</a>'
+          : '<span class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</span>';
+      }}
+      html += '<div id="art-chips-wrap">';
+      // ① 章節分組 or 平鋪
+      if (r.chapters && r.chapters.length > 0) {{
+        r.chapters.forEach(function(ch) {{
+          html += '<div class="art-chapter-group">';
+          html += '<div class="art-chapter-hd">' + ch.title + '</div>';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">';
+          ch.articles.forEach(function(no) {{ html += _mkChip(no); }});
+          html += '</div></div>';
+        }});
+      }} else {{
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:2px 0">';
+        r.articles.forEach(function(no) {{ html += _mkChip(no); }});
+        html += '</div>';
+      }}
       html += '</div>';
       if (delArts.length > 0) {{
-        html += '<details class="deleted-arts-section" style="margin-top:6px">' +
-          '<summary class="deleted-arts-toggle">已刪除條文（' + delArts.length + ' 條）</summary>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding:2px 0">';
+        html += '<details class="deleted-arts-section" style="margin-top:6px">';
+        html += '<summary class="deleted-arts-toggle">已刪除條文（' + delArts.length + ' 條）</summary>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding:2px 0">';
         delArts.forEach(function(no) {{
-          var chip = artBase
+          html += artBase
             ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="art-chip art-chip-deleted">第' + no + '條</a>'
             : '<span class="art-chip art-chip-deleted">第' + no + '條</span>';
-          html += chip;
         }});
         html += '</div></details>';
       }}
@@ -2333,6 +2403,69 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     ckInputs.forEach(function(inp) {{
       inp.onchange = function() {{ toggleCheck(r.name, +inp.dataset.idx, inp.checked); }};
     }});
+
+    // ─── 條文索引互動（①-⑤）────────────────────────────────────
+    (function() {{
+      var msBtn  = document.getElementById('art-ms-btn');
+      var cpBtn  = document.getElementById('art-cp-btn');
+      var srch   = document.getElementById('art-srch');
+      var wrap   = document.getElementById('art-chips-wrap');
+      var cntEl  = document.getElementById('art-sel-cnt');
+      var multiMode = false;
+      var sel = new Set();
+      function showToast(msg) {{
+        var t = document.getElementById('clip-toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(function() {{ t.classList.remove('show'); }}, 2200);
+      }}
+      // ⑤ 多選切換
+      if (msBtn) msBtn.onclick = function() {{
+        multiMode = !multiMode;
+        msBtn.classList.toggle('active', multiMode);
+        cpBtn.style.display = multiMode ? '' : 'none';
+        if (!multiMode) {{
+          sel.clear();
+          wrap && wrap.querySelectorAll('.art-chip.art-selected').forEach(function(c) {{ c.classList.remove('art-selected'); }});
+          if (cntEl) cntEl.textContent = '0';
+        }}
+      }};
+      // ⑤ 複製所選引用
+      if (cpBtn) cpBtn.onclick = function() {{
+        if (!sel.size) return;
+        var sorted = [...sel].sort(function(a,b) {{
+          var na = parseFloat(a), nb = parseFloat(b);
+          return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
+        }});
+        var txt = r.name + '第' + sorted.join('條、第') + '條';
+        navigator.clipboard.writeText(txt)
+          .then(function() {{ showToast('已複製 ' + sel.size + ' 條引用'); }})
+          .catch(function() {{ showToast('複製失敗，請手動選取'); }});
+      }};
+      // ⑤ 委派點擊（多選模式攔截，普通模式放行）
+      if (wrap) wrap.addEventListener('click', function(e) {{
+        if (!multiMode) return;
+        var chip = e.target.closest('.art-chip');
+        if (!chip || !chip.dataset.artno) return;
+        e.preventDefault();
+        var no = chip.dataset.artno;
+        if (sel.has(no)) {{ sel.delete(no); chip.classList.remove('art-selected'); }}
+        else {{ sel.add(no); chip.classList.add('art-selected'); }}
+        if (cntEl) cntEl.textContent = sel.size;
+      }});
+      // ④ 條號搜尋
+      if (srch) srch.addEventListener('input', function() {{
+        var q = srch.value.trim();
+        wrap && wrap.querySelectorAll('.art-chip').forEach(function(c) {{
+          c.style.display = (!q || (c.dataset.artno || '').includes(q)) ? '' : 'none';
+        }});
+        wrap && wrap.querySelectorAll('.art-chapter-group').forEach(function(g) {{
+          var vis = [...g.querySelectorAll('.art-chip')].filter(function(c) {{ return c.style.display !== 'none'; }}).length;
+          g.style.display = vis ? '' : 'none';
+        }});
+      }});
+    }})();
 
     document.getElementById("law-drawer").classList.add("open");
     document.getElementById("drawer-overlay").classList.add("open");
