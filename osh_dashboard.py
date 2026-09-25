@@ -1182,34 +1182,61 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .source-card .role{{ font-size:12.5px; color:var(--ink-soft); margin:2px 0; }}
   .source-card .link{{ font-size:12px; margin-top:4px; }}
   .source-card .link a{{ color:var(--stamp); word-break:break-all; }}
-  .scenario-intro{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:18px; }}
-  .scenario-grid{{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; }}
-  .scenario-card{{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--brass); padding:16px; border-radius:0 0 6px 6px; box-shadow:var(--shadow); }}
-  .sc-head{{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }}
-  .sc-icon{{ font-size:20px; line-height:1; }}
+  .scenario-search{{ width:100%; padding:9px 12px; border:1px solid var(--border);
+    border-radius:var(--radius); font-size:14px; background:var(--card); color:var(--ink);
+    margin-bottom:16px; transition:border-color .15s; outline:none; }}
+  .scenario-search:focus{{ border-color:var(--stamp); }}
+  .scenario-intro{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:14px; }}
+  .scenario-grid{{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }}
+  .scenario-card{{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--brass);
+    padding:16px; border-radius:0 0 6px 6px; box-shadow:var(--shadow);
+    cursor:pointer; transition:box-shadow .18s, transform .18s; }}
+  .scenario-card:hover{{ transform:translateY(-2px); box-shadow:0 6px 18px rgba(30,43,58,.12); }}
+  .scenario-card.open{{ border-top-color:var(--stamp); }}
+  .sc-head{{ display:flex; align-items:flex-start; gap:10px; }}
+  .sc-icon{{ font-size:22px; line-height:1.2; flex-shrink:0; padding-top:1px; }}
+  .sc-body{{ flex:1; min-width:0; }}
+  .sc-title-row{{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:5px; }}
   .sc-title{{ font-family:"Noto Serif TC",serif; font-size:15px; font-weight:700; }}
-  .sc-desc{{ font-size:12.5px; color:var(--ink-soft); line-height:1.65; margin-bottom:10px; }}
+  .sc-law-count{{ font-size:10.5px; color:var(--ink-soft); background:var(--hover);
+    border:1px solid var(--border); border-radius:99px; padding:1px 8px; white-space:nowrap; }}
+  .sc-chevron{{ margin-left:auto; font-size:11px; color:var(--ink-soft);
+    transition:transform .22s; flex-shrink:0; line-height:1.8; }}
+  .scenario-card.open .sc-chevron{{ transform:rotate(180deg); }}
+  .sc-desc{{ font-size:12.5px; color:var(--ink-soft); line-height:1.65; }}
+  .sc-laws-panel{{ max-height:0; overflow:hidden; transition:max-height .32s ease; }}
+  .scenario-card.open .sc-laws-panel{{ max-height:500px; }}
+  .sc-laws-inner{{ margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }}
   .scenario-laws{{ list-style:none; }}
-  .scenario-laws li{{ margin-bottom:5px; }}
+  .scenario-laws li{{ margin-bottom:7px; }}
   .law-link{{ color:var(--stamp); text-decoration:none; font-size:13px;
     cursor:pointer; background:none; border:none; padding:0; text-align:left; font-family:inherit; }}
   .law-link:hover{{ text-decoration:underline; }}
+  /* ── 底部導覽（手機） ── */
+  .bottom-nav{{ display:none; position:fixed; bottom:0; left:0; right:0;
+    background:var(--card); border-top:1px solid var(--border);
+    box-shadow:0 -2px 12px rgba(30,43,58,.08); z-index:150;
+    padding-bottom:env(safe-area-inset-bottom,0px); }}
+  .bottom-nav button{{ flex:1; display:flex; flex-direction:column; align-items:center;
+    gap:3px; padding:8px 4px 6px; border:none; background:transparent; cursor:pointer;
+    font-size:10px; color:var(--ink-soft); transition:color .15s, background .15s; }}
+  .bottom-nav button.active{{ color:var(--stamp); font-weight:700; }}
+  .bottom-nav button:hover{{ background:var(--hover); }}
+  .bn-icon{{ font-size:20px; line-height:1; }}
   footer{{ margin-top:34px; padding-top:16px; border-top:1px solid var(--border);
     font-size:12px; color:var(--ink-soft); line-height:1.8; }}
   @media(max-width:640px){{
     header h1{{ font-size:21px; }}
-    nav.tabs button{{ font-size:13px; padding:8px 12px; }}
+    nav.tabs{{ display:none; }}
+    .bottom-nav{{ display:flex; }}
+    .wrap{{ padding-bottom:80px; }}
     .scenario-grid{{ grid-template-columns:1fr; }}
     .law-card dl{{ grid-template-columns:1fr; }}
-    /* 手機：觸控目標放大 */
     .art-chip{{ padding:6px 12px; font-size:13px; }}
     .art-search{{ padding:7px 10px; font-size:13px; }}
     .art-copy-btn{{ padding:7px 14px; font-size:12px; }}
-    /* 手機：chg-summary 可讀性 */
     .chg-summary{{ font-size:12px; line-height:1.7; }}
-    /* 手機：最新修正 chip 區塊間距 */
     .latest-rev-block .art-chip{{ padding:5px 11px; font-size:12px; }}
-    /* 手機：drawer 寬度佔滿 */
     #law-drawer{{ width:100vw; }}
   }}
   /* ── AI 摘要顯示（卡片內） ── */
@@ -1404,6 +1431,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button data-tab="lookup">快速情境查詢</button>
     <button data-tab="practitioner">職安人員實用區</button>
   </nav>
+  <nav class="bottom-nav" id="bottomNav">
+    <button data-tab="news" class="active"><span class="bn-icon">📰</span><span>動態</span></button>
+    <button data-tab="registry"><span class="bn-icon">📋</span><span>法規</span></button>
+    <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
+    <button data-tab="practitioner"><span class="bn-icon">👷</span><span>實用</span></button>
+  </nav>
 
   <section class="tabpanel active" id="tab-news">
     <h2>最新動態</h2>
@@ -1480,7 +1513,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <section class="tabpanel" id="tab-lookup">
     <h2>快速情境查詢</h2>
-    <p class="scenario-intro">依作業類型或管理情境快速定位相關法規。點選法規名稱即可跳至「現行法規總覽」查看詳情與官方連結。</p>
+    <p class="scenario-intro">依作業類型或管理情境快速定位相關法規。點擊情境卡片展開相關法規，再點選法規名稱即可在右側抽屜查看詳情。</p>
+    <input type="text" id="scenarioSearch" class="scenario-search" placeholder="搜尋情境名稱、說明或法規…">
     <div class="scenario-grid" id="scenarioGrid"></div>
   </section>
 
@@ -2185,7 +2219,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           b.classList.toggle("active", b.dataset.lawfilter === "subscribed");
         }});
         lawFilter = "subscribed"; renderRegistry();
-        document.querySelector('[data-tab="registry"]').click();
+        switchTab("registry");
       }};
       setTimeout(function() {{ toast.classList.remove('show'); }}, 12000);
     }}
@@ -2814,14 +2848,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   function jumpToLaw(name) {{
-    document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tabpanel").forEach(p => p.classList.remove("active"));
-    document.querySelector('[data-tab="registry"]').classList.add("active");
-    document.getElementById("tab-registry").classList.add("active");
+    switchTab("registry");
     catFilter = "all"; lawFilter = "all"; sortMode = "cat";
-    document.querySelectorAll(".cat-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
-    document.querySelectorAll("[data-lawfilter]").forEach(b => b.classList.toggle("active", b.dataset.lawfilter === "all"));
-    document.querySelectorAll("[data-sort]").forEach(b => b.classList.toggle("active", b.dataset.sort === "cat"));
+    document.querySelectorAll(".cat-btn").forEach(function(b, i) {{ b.classList.toggle("active", i === 0); }});
+    document.querySelectorAll("[data-lawfilter]").forEach(function(b) {{ b.classList.toggle("active", b.dataset.lawfilter === "all"); }});
+    document.querySelectorAll("[data-sort]").forEach(function(b) {{ b.classList.toggle("active", b.dataset.sort === "cat"); }});
     document.getElementById("lawSearch").value = name;
     renderRegistry();
     window.scrollTo({{top: 0, behavior: "smooth"}});
@@ -2829,16 +2860,35 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   function renderScenarios() {{
     const grid = document.getElementById("scenarioGrid");
-    SCENARIOS.forEach(s => {{
+    SCENARIOS.forEach(function(s) {{
       const card = document.createElement("div");
       card.className = "scenario-card";
-      const lawItems = s.laws.map(l =>
-        '<li><button class="law-link" data-law="' + l.replace(/"/g, '&quot;') + '" onclick="jumpToLaw(this.dataset.law)">→ ' + l + '</button></li>'
-      ).join("");
+      const lawItems = s.laws.map(function(l) {{
+        return '<li><button class="law-link" data-law="' + l.replace(/"/g,'&quot;') +
+          '" onclick="event.stopPropagation();jumpToLaw(this.dataset.law)">→ ' + l + '</button></li>';
+      }}).join("");
       card.innerHTML =
-        '<div class="sc-head"><span class="sc-icon">' + s.icon + '</span><span class="sc-title">' + s.name + '</span></div>' +
-        '<div class="sc-desc">' + s.desc + '</div>' +
-        '<ul class="scenario-laws">' + lawItems + '</ul>';
+        '<div class="sc-head">' +
+          '<span class="sc-icon">' + s.icon + '</span>' +
+          '<div class="sc-body">' +
+            '<div class="sc-title-row">' +
+              '<span class="sc-title">' + s.name + '</span>' +
+              '<span class="sc-law-count">' + s.laws.length + ' 部法規</span>' +
+              '<span class="sc-chevron">▼</span>' +
+            '</div>' +
+            '<div class="sc-desc">' + s.desc + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sc-laws-panel">' +
+          '<div class="sc-laws-inner">' +
+            '<ul class="scenario-laws">' + lawItems + '</ul>' +
+          '</div>' +
+        '</div>';
+      card.addEventListener("click", function(e) {{
+        if (!e.target.closest(".sc-laws-panel")) {{
+          this.classList.toggle("open");
+        }}
+      }});
       grid.appendChild(card);
     }});
   }}
@@ -2888,13 +2938,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     registryPage = 1;
     _lawDebounce = setTimeout(renderRegistry, 200);
   }});
-  document.querySelectorAll("nav.tabs button").forEach(btn => {{
-    btn.onclick = () => {{
-      document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tabpanel").forEach(p => p.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    }};
+  function switchTab(tabName) {{
+    document.querySelectorAll("nav.tabs button, .bottom-nav button").forEach(function(b) {{
+      b.classList.toggle("active", b.dataset.tab === tabName);
+    }});
+    document.querySelectorAll(".tabpanel").forEach(function(p) {{
+      p.classList.remove("active");
+    }});
+    document.getElementById("tab-" + tabName).classList.add("active");
+  }}
+  document.querySelectorAll("nav.tabs button, .bottom-nav button").forEach(function(btn) {{
+    btn.addEventListener("click", function() {{ switchTab(this.dataset.tab); }});
+  }});
+  document.getElementById("scenarioSearch").addEventListener("input", function() {{
+    var q = this.value.trim();
+    document.querySelectorAll(".scenario-card").forEach(function(card, i) {{
+      var s = SCENARIOS[i];
+      var hit = !q || s.name.includes(q) || s.desc.includes(q) ||
+                s.laws.some(function(l) {{ return l.includes(q); }});
+      card.style.display = hit ? "" : "none";
+    }});
   }});
 
   buildCatFilters();
