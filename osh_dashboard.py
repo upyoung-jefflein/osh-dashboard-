@@ -64,11 +64,13 @@ USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
-    # type="rss"：解析 RSS feed；source_type：news/notice/event 決定前端預設顯示
-    {"name": "勞動部新聞稿",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/RssList",        "type": "rss", "source_type": "news"},
-    {"name": "職安署新聞稿",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",   "type": "rss", "source_type": "news"},
-    {"name": "職安署公布欄",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",   "type": "rss", "source_type": "notice"},
-    {"name": "職安署活動訊息","org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",   "type": "rss", "source_type": "event"},
+    # type="rss"：解析 RSS 2.0 / Atom feed；source_type：news/notice/event 決定前端預設顯示
+    {"name": "勞動部新聞稿",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/RssList",                          "type": "rss", "source_type": "news"},
+    {"name": "職安署新聞稿",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",                     "type": "rss", "source_type": "news"},
+    {"name": "職安署公布欄",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",                     "type": "rss", "source_type": "notice"},
+    {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",                     "type": "rss", "source_type": "event"},
+    {"name": "勞動部法規公告",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1634/RssList",                          "type": "rss", "source_type": "notice"},
+    {"name": "行政院電子公報",  "org": "行政院",              "url": "https://gazette.nat.gov.tw/rss?agencyId=A22000000E",                     "type": "rss", "source_type": "notice"},
 ]
 
 LAW_XML_URLS = [
@@ -463,7 +465,7 @@ def parse_rss_date(pub_date: str) -> str | None:
 
 
 def fetch_rss_source(source: dict, debug: bool = False) -> list[dict]:
-    """解析 RSS 2.0 feed，不需要 robots.txt 檢查（RSS 設計上供訂閱使用）。"""
+    """解析 RSS 2.0 / Atom feed，不需要 robots.txt 檢查（RSS 設計上供訂閱使用）。"""
     name, org, url = source["name"], source["org"], source["url"]
     print(f"處理 RSS 來源：{name}（{url}）")
 
@@ -482,26 +484,49 @@ def fetch_rss_source(source: dict, debug: bool = False) -> list[dict]:
         return []
 
     items = []
-    for item in root.iter("item"):
-        title = _text(item.find("title"))
-        link_el = item.find("link")
-        link = _text(link_el) if link_el is not None else ""
-        if not link and link_el is not None:
-            link = link_el.get("href", "")
-        pub_date = _text(item.find("pubDate"))
-        description = _text(item.find("description"))
+    # 偵測 Atom vs RSS：Atom 用 <entry>，RSS 用 <item>
+    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    atom_entries = root.findall(".//atom:entry", ns) or root.findall(".//{http://www.w3.org/2005/Atom}entry")
+    rss_items   = list(root.iter("item"))
+    entries     = atom_entries if atom_entries else rss_items
+
+    for entry in entries:
+        is_atom = (entry.tag == "{http://www.w3.org/2005/Atom}entry" or
+                   entry.tag == "entry")
+
+        if is_atom:
+            _ns = "http://www.w3.org/2005/Atom"
+            def _af(tag):
+                el = entry.find(f"{{{_ns}}}{tag}")
+                return el if el is not None else entry.find(tag)
+
+            title_el = _af("title")
+            title = _text(title_el) if title_el is not None else ""
+            link_el = _af("link")
+            link = (link_el.get("href", "") if link_el is not None else "")
+            date_raw = _text(_af("updated")) or _text(_af("published")) or ""
+            description = _text(_af("summary")) or _text(_af("content")) or ""
+            date_str = (date_raw[:10] if re.match(r"\d{4}-\d{2}-\d{2}", date_raw) else None) or extract_date(description) or extract_date(title)
+        else:
+            title = _text(entry.find("title"))
+            link_el = entry.find("link")
+            link = _text(link_el) if link_el is not None else ""
+            if not link and link_el is not None:
+                link = link_el.get("href", "")
+            pub_date = _text(entry.find("pubDate"))
+            description = _text(entry.find("description"))
+            date_str = parse_rss_date(pub_date) or extract_date(description) or extract_date(title)
 
         if not title or not link:
             continue
-
-        date_str = parse_rss_date(pub_date) or extract_date(description) or extract_date(title)
         if not date_str:
             continue
 
         if debug:
-            print(f"    RSS item: {date_str}  {title[:50]}")
+            print(f"    {'Atom' if is_atom else 'RSS'} entry: {date_str}  {title[:50]}")
 
-        items.append({"title": title.strip(), "link": link.strip(), "date": date_str, "source": name, "org": org, "source_type": source.get("source_type", "news")})
+        items.append({"title": title.strip(), "link": link.strip(), "date": date_str,
+                      "source": name, "org": org, "source_type": source.get("source_type", "news")})
 
     print(f"  RSS 解析出 {len(items)} 筆項目。")
     return items
@@ -732,6 +757,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         scope_parts = []
         penalty_articles = []
         article_previews = {}
+        _all_content: dict[str, str] = {}  # art_no → 完整條文（用於 search_text + cross_refs）
         chapters = []
         _cur_chap = None
         _cur_chap_arts: list[str] = []
@@ -756,7 +782,8 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
 
                 articles.append(art_no)
                 if content:
-                    article_previews[art_no] = content[:80]
+                    article_previews[art_no] = content[:200]  # 擴充至 200 字供 Drawer 顯示
+                    _all_content[art_no] = content
                 if _cur_chap is not None:
                     _cur_chap_arts.append(art_no)
 
@@ -775,8 +802,40 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         if _cur_chap is not None and _cur_chap_arts:
             chapters.append({"title": _cur_chap, "articles": _cur_chap_arts})
 
-        # 是否含附表（從條文內容判斷）
-        full_text = " ".join(_text(a.find("條文內容")) for a in law.iter("條文"))
+        # 全文搜尋索引（③ 前端 client-side 搜尋用，max 3000 字）
+        _st_parts, _st_total = [], 0
+        for _no, _c in _all_content.items():
+            chunk = f"第{_no}條 {_c} "
+            if _st_total + len(chunk) > 3000:
+                break
+            _st_parts.append(chunk)
+            _st_total += len(chunk)
+        search_text = "".join(_st_parts)
+
+        # 法規交叉引用（⑤ 解析條文中「依/準用/適用 + 法規名 + 第X條」的引用）
+        # 法規交叉引用（⑤）- 支援阿拉伯數字與中文數字條號
+        _cross_pat = re.compile(
+            r'(?:依據?|準用|適用|按照?|依照?)\s*'
+            r'([^\s，。、「」()（）\d第條據]{3,25}(?:法|條例|辦法|準則|規則|規程|標準))'
+            r'(?:[^\n第]{0,6}?)'
+            r'第\s*([\d一二三四五六七八九十百千]+(?:之\d+|-\d+)?)\s*條'
+        )
+        cross_refs: dict[str, list[str]] = {}
+        for _art_no, _content in _all_content.items():
+            for m in _cross_pat.finditer(_content):
+                ref_law = m.group(1).strip()
+                ref_art  = m.group(2).strip()
+                if ref_law == name or name in ref_law or len(ref_law) < 4:
+                    continue
+                if ref_law[:2] in ('本法', '本條', '本辦', '本規', '本準', '依本', '於依', '其他'):
+                    continue
+                if ref_law not in cross_refs:
+                    cross_refs[ref_law] = []
+                if ref_art not in cross_refs[ref_law]:
+                    cross_refs[ref_law].append(ref_art)
+
+        # 是否含附表
+        full_text = " ".join(_all_content.values())
         has_table = "附表" in full_text or "附件" in full_text
 
         # pcode
@@ -801,6 +860,8 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "deleted_articles": deleted_arts,
             "chapters": chapters,
             "article_previews": article_previews,
+            "search_text": search_text,
+            "cross_refs": cross_refs,
             "latest_revision": _parse_latest_revision(_text(law.find("沿革內容"))),
             "has_table": has_table,
             "資料擷取日期": fetched_at,
@@ -843,6 +904,10 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["chapters"] = rec["chapters"]
             if rec.get("article_previews"):
                 entry["article_previews"] = rec["article_previews"]
+            if rec.get("search_text"):
+                entry["search_text"] = rec["search_text"]
+            if rec.get("cross_refs"):
+                entry["cross_refs"] = rec["cross_refs"]
             if rec.get("latest_revision"):
                 entry["latest_revision"] = rec["latest_revision"]
         else:
@@ -858,6 +923,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "deleted_articles": rec.get("deleted_articles", []),
                 "chapters": rec.get("chapters", []),
                 "article_previews": rec.get("article_previews", {}),
+                "search_text": rec.get("search_text", ""),
+                "cross_refs": rec.get("cross_refs", {}),
                 "latest_revision": rec.get("latest_revision", {}),
                 "has_table": rec.get("has_table", False),
                 "authority": rec.get("authority", ""),
@@ -1044,6 +1111,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .rev-label{{ min-width:3em; font-weight:600; }}
   .rev-arts{{ color:var(--ink-soft); word-break:break-all; }}
   .rev-chips{{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }}
+  .cross-ref-list{{ display:flex; flex-direction:column; gap:6px; }}
+  .cross-ref-row{{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:12.5px; }}
+  .cross-ref-law{{ color:var(--blue); text-decoration:none; font-weight:600; white-space:nowrap; }}
+  .cross-ref-law:hover{{ text-decoration:underline; }}
+  .cross-ref-arts{{ color:var(--ink-soft); font-size:12px; }}
   .art-chip.art-selected{{ background:var(--blue); color:#fff; border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,130,246,.3); }}
   .art-index-toolbar{{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }}
   .art-search{{ flex:1; min-width:80px; font-size:12px; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); outline:none; }}
@@ -1333,7 +1405,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <h2>現行法規總覽</h2>
     <p class="section-note">職業安全衛生母法及附屬法規命令。<span style="color:var(--amber);font-weight:600">近期修正</span>標示為近12個月內有修正紀錄；<span style="color:var(--green);font-weight:600">新訂</span>為新制定法規；「待確認」表示尚未取得官方驗證日期。</p>
     <div class="reg-toolbar">
-      <input id="lawSearch" placeholder="搜尋法規名稱…" autocomplete="off">
+      <input id="lawSearch" placeholder="搜尋法規名稱或條文內容…" autocomplete="off">
     </div>
     <div class="cat-filters" id="catFilters"></div>
     <div class="reg-controls">
@@ -2256,7 +2328,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     const q = document.getElementById("lawSearch").value.trim();
-    if (q) rows = rows.filter(r => r.name.includes(q) || (r.scope && r.scope.includes(q)) || (r.note && r.note.includes(q)) || (r.authority && r.authority.includes(q)));
+    if (q) rows = rows.filter(r => r.name.includes(q) || (r.scope && r.scope.includes(q)) || (r.note && r.note.includes(q)) || (r.authority && r.authority.includes(q)) || (r.search_text && r.search_text.includes(q)));
 
     if (sortMode === "date") {{
       rows.sort((a, b) => {{
@@ -2304,10 +2376,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const hasUpdate = isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
       const statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : '';
       const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
+      // ③ 全文搜尋：標示透過條文內容命中的法規
+      var artMatchBadge = '';
+      if (q && !r.name.includes(q) && r.search_text && r.search_text.includes(q) && r.article_previews) {{
+        var matchedNos = (r.articles || []).filter(function(no) {{
+          return (r.article_previews[no] || '').includes(q);
+        }});
+        if (matchedNos.length)
+          artMatchBadge = '<span class="badge" style="background:#6d28d9;font-size:10px">條文符合：第' +
+            matchedNos.slice(0,3).join('、') + (matchedNos.length > 3 ? '…' : '') + '條</span>';
+      }}
       return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -2439,6 +2521,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           html += '</div>';
         }}
       }}
+      html += '</div></div>';
+    }}
+
+    // ⑤ 法規交叉引用
+    var cr = r.cross_refs;
+    if (cr && Object.keys(cr).length) {{
+      html += '<div class="drawer-section"><h3>條文引用其他法規</h3><div class="cross-ref-list">';
+      Object.keys(cr).sort().forEach(function(lawName) {{
+        var arts = cr[lawName];
+        var searchUrl = 'https://law.moj.gov.tw/LawClass/LawSearchContent.aspx?pc=&searchType=Keyword&searchField=law&searchContent=' + encodeURIComponent(lawName);
+        html += '<div class="cross-ref-row">';
+        html += '<a href="' + searchUrl + '" target="_blank" class="cross-ref-law">' + lawName + '</a>';
+        html += '<span class="cross-ref-arts">第' + arts.join('、') + '條</span>';
+        html += '</div>';
+      }});
       html += '</div></div>';
     }}
 
@@ -2976,6 +3073,21 @@ def main():
                 else:
                     print(f"  略過 {fname}，繼續下一個。", file=sys.stderr)
             if any_ok:
+                # ① 自動更新偵測：比對舊快取的異動日期，列出有變動的法規
+                if XML_CACHE.exists():
+                    try:
+                        _old = {r["name"]: r.get("最新異動日期_roc", "") for r in json.loads(XML_CACHE.read_text(encoding="utf-8"))}
+                        _changed = [r["name"] for r in all_xml_records if _old.get(r["name"]) != r.get("最新異動日期_roc", "")]
+                        _new_laws = [r["name"] for r in all_xml_records if r["name"] not in _old]
+                        if _changed:
+                            print(f"  ↑ 法規異動 {len(_changed)} 筆：{'、'.join(_changed[:6])}{'…' if len(_changed) > 6 else ''}")
+                        if _new_laws:
+                            print(f"  ★ 新增法規 {len(_new_laws)} 筆：{'、'.join(_new_laws[:4])}")
+                        if not _changed and not _new_laws:
+                            print("  法規：無異動，快取為最新狀態。")
+                    except Exception:
+                        pass
+
                 registry = merge_registry(STATIC_REGISTRY, all_xml_records)
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")

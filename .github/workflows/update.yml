@@ -1,9 +1,9 @@
-name: Update OSH Dashboard
+name: 定期更新職安法規觀測站
 
 "on":
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 1 * * 1'   # 每週一 UTC 01:00 = 台灣時間 09:00
+  workflow_dispatch:        # 允許手動從 GitHub 介面觸發
 
 permissions:
   contents: write
@@ -12,26 +12,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4
+        run: pip install -r requirements.txt
 
-      - name: Build dashboard
-        run: |
-          mkdir -p docs
-          python osh_dashboard.py --fetch-xml -o docs/index.html
+      - name: 下載最新法規 XML 並重建 Dashboard
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python osh_dashboard.py --fetch-xml -o docs/index.html
 
-      - name: Commit and push if changed
+      - name: 提交並推送更新
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
-          git diff --staged --quiet || git commit -m "Auto-update dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          git add docs/index.html osh_xml_records.json
+          if git diff --staged --quiet; then
+            echo "無法規或新聞異動，略過 commit。"
+          else
+            git commit -m "auto: 定期更新 $(date -u +%Y-%m-%d)"
+            git push
+          fi
