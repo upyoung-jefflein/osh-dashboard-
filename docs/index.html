@@ -357,7 +357,7 @@
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：2026-09-25 11:47 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器
+    <div class="meta">資料產生時間：2026-09-25 12:08 ｜ 4 則職安動態 ｜ 101 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器
       <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
     </div>
   </header>
@@ -1466,9 +1466,7 @@
       r.penalty_articles.forEach(function(pa) {
         var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
         // 高亮罰鍰金額
-        t = t.replace(/(罰(?:鍰|款)[^。；
-]*(?:萬|千)元[^。；
-]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>' + t + '</div>';
       });
       html += '</div>';

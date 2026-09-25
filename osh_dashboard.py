@@ -2164,7 +2164,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       r.penalty_articles.forEach(function(pa) {{
         var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
         // 高亮罰鍰金額
-        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>' + t + '</div>';
       }});
       html += '</div>';
