@@ -3160,6 +3160,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }});
     var years = Object.keys(byYear).sort(function(a, b) {{ return b.localeCompare(a); }});
     var html = years.map(function(yr) {{
+      byYear[yr].sort(function(a, b) {{
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.localeCompare(a.date);
+      }});
       var items = byYear[yr].map(function(r) {{
         var tierCls = r.tier || 'dir';
         var ridx = REGISTRY.indexOf(r);

@@ -545,7 +545,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-26 00:56 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-26 01:06 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -2308,6 +2308,12 @@
     });
     var years = Object.keys(byYear).sort(function(a, b) { return b.localeCompare(a); });
     var html = years.map(function(yr) {
+      byYear[yr].sort(function(a, b) {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.localeCompare(a.date);
+      });
       var items = byYear[yr].map(function(r) {
         var tierCls = r.tier || 'dir';
         var ridx = REGISTRY.indexOf(r);
