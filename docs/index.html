@@ -572,7 +572,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-26 01:42 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-26 01:46 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -1928,9 +1928,7 @@
       html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
       r.penalty_articles.forEach(function(pa) {
         var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        t = t.replace(/(罰(?:鍰|款)[^。；
-]*(?:萬|千)元[^。；
-]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>';
         // 結構化資訊列
         var hasMeta = pa.fine_max || pa.criminal || (pa.liable && pa.liable.length);

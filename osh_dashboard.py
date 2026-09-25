@@ -3146,7 +3146,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
       r.penalty_articles.forEach(function(pa) {{
         var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        t = t.replace(/(罰(?:鍰|款)[^。；\n]*(?:萬|千)元[^。；\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>';
         // 結構化資訊列
         var hasMeta = pa.fine_max || pa.criminal || (pa.liable && pa.liable.length);
