@@ -644,10 +644,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   :root {{
     --paper:#F4EFE2; --card:#FBF8EF; --ink:#1E2B3A; --ink-soft:#4C5A6B;
     --stamp:#9C2B22; --brass:#A8842E; --border:rgba(30,43,58,0.14);
-    --green:#1a7340; --amber:#8c5e00;
+    --green:#1a7340; --amber:#8c5e00; --hover:rgba(30,43,58,0.06);
+    --font-sz:14px;
+  }}
+  [data-theme="dark"] {{
+    --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
+    --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
+    --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
+  }}
+  @media(prefers-color-scheme:dark){{
+    :root:not([data-theme="light"]){{
+      --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
+      --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
+      --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
+    }}
   }}
   *{{ box-sizing:border-box; margin:0; padding:0; }}
-  body{{ font-family:"Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; }}
+  body{{ font-family:"Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; font-size:var(--font-sz); transition:background .25s,color .25s; }}
   .wrap{{ max-width:960px; margin:0 auto; padding:32px 20px 90px; }}
   header{{ border-bottom:2px solid var(--border); padding-bottom:18px; margin-bottom:20px; }}
   header h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:26px; margin-bottom:4px; }}
@@ -824,6 +837,55 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .ai-prebuilt{{ background:rgba(124,58,237,.06); border-left:3px solid #7c3aed;
     padding:10px 14px; border-radius:0 4px 4px 0; font-size:13px; line-height:1.7;
     color:var(--ink); margin-bottom:4px; }}
+  /* ── 深色/淺色主題切換 ── */
+  .theme-btn{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer; font-size:15px; padding:2px 7px; color:var(--ink-soft); margin-left:8px; vertical-align:middle; }}
+  .theme-btn:hover{{ color:var(--ink); }}
+  /* ── 僅標題視圖 ── */
+  #newsList.title-view .item{{ padding:7px 14px; }}
+  #newsList.title-view .item .row{{ display:none; }}
+  #newsList.title-view .item h3{{ margin:0; font-size:13.5px; font-weight:500; display:flex; align-items:center; gap:8px; }}
+  #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:11px; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; font-family:"Noto Sans TC",sans-serif; font-weight:400; }}
+  #newsList.title-view .item .ai-summary{{ display:none; }}
+  #newsList.title-view .item .also{{ display:none; }}
+  #newsList.title-view .item .actions{{ display:none; }}
+  #newsList.title-view .item:hover .actions{{ display:flex; margin-top:4px; }}
+  /* ── 設定面板 ── */
+  .settings-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
+  .settings-modal.open{{ display:flex; }}
+  .settings-box{{ background:var(--card); border-radius:8px; padding:22px 26px; width:min(420px,92vw); max-height:90vh; overflow-y:auto; }}
+  .settings-box h3{{ margin-bottom:16px; font-size:16px; }}
+  .settings-row{{ margin-bottom:18px; }}
+  .settings-row label{{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }}
+  .settings-row .hint{{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }}
+  input[type=range]{{ width:100%; accent-color:var(--stamp); }}
+  .toggle-row{{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }}
+  .toggle-row:last-child{{ border:none; }}
+  .toggle-label{{ font-size:13px; }}
+  .toggle-switch{{ position:relative; width:38px; height:22px; cursor:pointer; }}
+  .toggle-switch input{{ opacity:0; width:0; height:0; }}
+  .toggle-track{{ position:absolute; inset:0; background:var(--border); border-radius:11px; transition:.2s; }}
+  .toggle-switch input:checked+.toggle-track{{ background:var(--stamp); }}
+  .toggle-track::after{{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }}
+  .toggle-switch input:checked+.toggle-track::after{{ left:19px; }}
+  .mute-list{{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; min-height:24px; }}
+  .mute-chip{{ display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:rgba(156,43,34,.1); border:1px solid var(--stamp); border-radius:99px; font-size:12px; color:var(--stamp); }}
+  .mute-chip button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:13px; padding:0; line-height:1; }}
+  .mute-input-row{{ display:flex; gap:6px; margin-top:8px; }}
+  .mute-input-row input{{ flex:1; padding:5px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); font-size:13px; border-radius:3px; }}
+  .mute-input-row button{{ padding:5px 12px; background:var(--stamp); color:#fff; border:none; cursor:pointer; font-size:12px; border-radius:3px; }}
+  /* ── 右鍵/長按選單 ── */
+  .ctx-menu{{ position:fixed; background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); z-index:600; min-width:160px; padding:4px 0; }}
+  .ctx-menu button{{ display:block; width:100%; text-align:left; padding:8px 16px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--ink); white-space:nowrap; }}
+  .ctx-menu button:hover{{ background:var(--hover); }}
+  .ctx-menu .ctx-sep{{ height:1px; background:var(--border); margin:3px 0; }}
+  /* ── 稍後閱讀 ── */
+  .rl-badge{{ display:inline-block;background:#2563eb;color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle; }}
+  /* ── 搜尋高亮 ── */
+  mark{{ background:rgba(168,132,46,.25); color:var(--ink); padding:0 1px; border-radius:2px; }}
+  /* ── 設定與主題按鈕區 ── */
+  .tool-btns{{ display:flex; gap:4px; margin-left:auto; align-items:center; }}
+  .tool-btn{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer; font-size:13px; padding:3px 8px; color:var(--ink-soft); }}
+  .tool-btn:hover{{ color:var(--ink); border-color:var(--ink-soft); }}
   /* ── 鍵盤快捷鍵 modal ── */
   .kbd-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .kbd-modal.open{{ display:flex; }}
@@ -863,7 +925,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <header>
     <h1>職安法規觀測站</h1>
     <div class="subtitle">職業安全衛生法規查詢 · 最新動態 · 情境索引</div>
-    <div class="meta">資料產生時間：{generated_at} ｜ {news_count} 則職安動態 ｜ {registry_count} 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器</div>
+    <div class="meta">資料產生時間：{generated_at} ｜ {news_count} 則職安動態 ｜ {registry_count} 筆子法規 ｜ 收藏與讀取狀態僅存於本機瀏覽器
+      <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
+    </div>
   </header>
 
   <nav class="tabs">
@@ -881,6 +945,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-filter="all" class="active">全部<span class="filter-badge" id="badge-all"></span></button>
       <button data-filter="unread">未讀<span class="filter-badge" id="badge-unread"></span></button>
       <button data-filter="starred">已收藏<span class="filter-badge" id="badge-starred"></span></button>
+      <button data-filter="readlater">稍後閱讀<span class="rl-badge" id="badge-rl"></span></button>
     </div>
     <div class="board-area" id="board-area" style="display:none">
       <span style="font-size:11.5px;color:var(--ink-soft)">版板：</span>
@@ -889,7 +954,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="view-toggle">
       <button id="vbtn-magazine" class="active">☰ 摘要</button>
       <button id="vbtn-list">≡ 列表</button>
-      <button class="kbd-hint-btn" onclick="document.getElementById('kbd-modal').classList.add('open')">? 快捷鍵</button>
+      <button id="vbtn-title">— 標題</button>
+      <div class="tool-btns">
+        <button class="tool-btn" onclick="document.getElementById('settings-modal').classList.add('open')" title="設定">⚙</button>
+        <button class="kbd-hint-btn" onclick="document.getElementById('kbd-modal').classList.add('open')">? 快捷鍵</button>
+      </div>
     </div>
     <div id="newsList"></div>
   </section>
@@ -943,6 +1012,36 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
   </footer>
 </div>
+<div id="settings-modal" class="settings-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="settings-box">
+    <h3>⚙ 設定</h3>
+    <div class="settings-row">
+      <label>字體大小 <span id="font-size-label">14px</span></label>
+      <input type="range" id="font-size-range" min="12" max="20" value="14" step="1">
+      <div class="hint">調整全站文字大小</div>
+    </div>
+    <div class="settings-row">
+      <div class="toggle-row">
+        <span class="toggle-label">捲動自動標記已讀</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="auto-mark-toggle">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>靜音關鍵字</label>
+      <div class="mute-list" id="mute-list"></div>
+      <div class="mute-input-row">
+        <input type="text" id="mute-input" placeholder="輸入要屏蔽的關鍵字…">
+        <button onclick="addMuteKeyword()">新增</button>
+      </div>
+      <div class="hint">含有靜音關鍵字的新聞將不顯示</div>
+    </div>
+    <button onclick="document.getElementById('settings-modal').classList.remove('open')" style="padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">關閉</button>
+  </div>
+</div>
+<div id="ctx-menu" class="ctx-menu" style="display:none"></div>
 <div id="kbd-modal" class="kbd-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="kbd-box">
     <h3>鍵盤快捷鍵</h3>
@@ -950,6 +1049,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="kbd-row"><span><kbd>k</kbd> / <kbd>↑</kbd></span><span>上一篇</span></div>
     <div class="kbd-row"><span><kbd>o</kbd> / <kbd>Enter</kbd></span><span>開啟文章</span></div>
     <div class="kbd-row"><span><kbd>s</kbd></span><span>收藏 / 取消收藏</span></div>
+    <div class="kbd-row"><span><kbd>r</kbd></span><span>加入 / 移出稍後閱讀</span></div>
+    <div class="kbd-row"><span><kbd>S</kbd></span><span>分享文章</span></div>
     <div class="kbd-row"><span><kbd>m</kbd></span><span>標記已讀</span></div>
     <div class="kbd-row"><span><kbd>?</kbd></span><span>顯示此說明</span></div>
     <div class="kbd-row"><span><kbd>Esc</kbd></span><span>關閉</span></div>
@@ -1006,6 +1107,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.starred || typeof state.starred !== "object") state.starred = {{}};
   if (!state.starredLaws || typeof state.starredLaws !== "object") state.starredLaws = {{}};
   if (!state.boards || !Array.isArray(state.boards)) state.boards = [];
+  if (!state.readLater || typeof state.readLater !== "object") state.readLater = {{}};
+  if (!Array.isArray(state.mutedKeywords)) state.mutedKeywords = [];
+  if (typeof state.autoMarkRead === "undefined") state.autoMarkRead = false;
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
   var currentBoard = null;
@@ -1020,25 +1124,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     el.style.width = (max > 0 ? Math.round(window.scrollY / max * 100) : 0) + "%";
   }}, {{passive: true}});
 
-  // ② 視圖切換（摘要 / 列表）
+  // ② 視圖切換（摘要 / 列表 / 僅標題）
   let viewMode = localStorage.getItem("osh_view") || "magazine";
   function applyView() {{
     const list = document.getElementById("newsList");
     list.classList.toggle("list-view", viewMode === "list");
+    list.classList.toggle("title-view", viewMode === "title");
     document.getElementById("vbtn-magazine").classList.toggle("active", viewMode === "magazine");
     document.getElementById("vbtn-list").classList.toggle("active", viewMode === "list");
+    var vbtnTitle = document.getElementById("vbtn-title");
+    if (vbtnTitle) vbtnTitle.classList.toggle("active", viewMode === "title");
     localStorage.setItem("osh_view", viewMode);
   }}
   document.getElementById("vbtn-magazine").onclick = function() {{ viewMode = "magazine"; applyView(); }};
   document.getElementById("vbtn-list").onclick = function() {{ viewMode = "list"; applyView(); }};
+  document.getElementById("vbtn-title").onclick = function() {{ viewMode = "title"; applyView(); }};
 
-  // ③ Badge 計數（未讀 / 已收藏 / 全部）
+  // ③ Badge 計數（未讀 / 已收藏 / 稍後閱讀 / 全部）
   function updateBadges() {{
     var unread = NEWS.filter(function(n) {{ return !state.read[idOf(n)]; }}).length;
     var starred = NEWS.filter(function(n) {{ return !!state.starred[idOf(n)]; }}).length;
+    var rl = Object.keys(state.readLater).length;
     document.getElementById("badge-all").textContent = NEWS.length || "";
     document.getElementById("badge-unread").textContent = unread || "";
     document.getElementById("badge-starred").textContent = starred || "";
+    var rlBadge = document.getElementById("badge-rl");
+    if (rlBadge) rlBadge.textContent = rl || "";
   }}
 
   // ④ Skeleton 骨架屏
@@ -1083,9 +1194,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   function _renderNews() {{
     const q = document.getElementById("newsSearch").value.trim();
+    const qRe = q ? new RegExp(q.replace(/[.*+?^${{}}()|[\\]\\\\]/g,'\\\\$&'),'g') : null;
+    function hl(text) {{
+      return qRe ? text.replace(qRe,'<mark>$&</mark>') : text;
+    }}
     const filtered = NEWS.filter(item => {{
       const id = idOf(item);
       if (newsFilter === "unread" && state.read[id]) return false;
+      if (newsFilter === "readlater" && !state.readLater[id]) return false;
       if (newsFilter === "starred") {{
         if (currentBoard !== null) {{
           var board = state.boards.find(function(b) {{ return b.id === currentBoard; }});
@@ -1093,6 +1209,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }} else {{
           if (!state.starred[id]) return false;
         }}
+      }}
+      if (state.mutedKeywords && state.mutedKeywords.length) {{
+        if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
       if (q && !item.title.includes(q)) return false;
       return true;
@@ -1110,30 +1229,42 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const id = idOf(item);
       const el = document.createElement("div");
       el.className = "item" + (state.read[id] ? " read" : "");
+      el.dataset.id = id;
       const also = (item.also_in && item.also_in.length)
         ? '<div class="also">同時見於：' + item.also_in.join("、") + '</div>' : "";
       const aiSummary = item.summary
         ? '<div class="ai-summary"><span class="ai-tag">✦ AI</span>' + item.summary + '</div>'
         : '';
+      const rlLabel = state.readLater[id] ? "📌 已加入" : "📌 稍後閱讀";
+      const rlCls = state.readLater[id] ? " on" : "";
       el.innerHTML =
         '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
-        '<h3><a href="' + item.link + '" target="_blank" rel="noopener">' + item.title + '</a></h3>' +
+        '<h3 data-date="' + item.date + '"><a href="' + item.link + '" target="_blank" rel="noopener">' + hl(item.title) + '</a></h3>' +
         aiSummary +
         also +
         '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
           '<button data-act="star" class="' + (state.starred[id] ? "on" : "") + '">' + (state.starred[id] ? "★ 已收藏" : "☆ 收藏") + '</button>' +
+          '<button data-act="rl" class="' + rlCls + '">' + rlLabel + '</button>' +
           '<button data-act="board">版板 ▾</button>' +
           '<button data-act="ai">✦ AI摘要</button>' +
+          '<button data-act="share">分享</button>' +
         '</div>';
       el.querySelector('[data-act="read"]').onclick = () => {{ state.read[id] = !state.read[id]; save(); renderNews(); }};
       el.querySelector('[data-act="star"]').onclick = () => {{ state.starred[id] = !state.starred[id]; save(); renderNews(); }};
+      el.querySelector('[data-act="rl"]').onclick = () => {{
+        if (state.readLater[id]) delete state.readLater[id]; else state.readLater[id] = true;
+        save(); renderNews();
+      }};
       el.querySelector('[data-act="board"]').onclick = function(e) {{ showBoardDropdown(e.currentTarget, item); }};
       el.querySelector('[data-act="ai"]').onclick = function() {{ openAISummary(item); }};
+      el.querySelector('[data-act="share"]').onclick = function() {{ shareItem(item); }};
+      setupLongPress(el, item);
       addSwipe(el, item);
       list.appendChild(el);
     }});
+    if (state.autoMarkRead) setupAutoMark();
   }}
 
   // ⑦ Boards 版板管理
@@ -1285,6 +1416,172 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
     }};
     setTimeout(function() {{ toast.classList.remove('show'); }}, 10000);
+  }}
+
+  // ─── 深色 / 淺色主題 ───────────────────────────────────────────
+  function initTheme() {{
+    var saved = localStorage.getItem("osh_theme");
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = (document.documentElement.getAttribute("data-theme") === "dark") ? "☀️" : "🌙";
+  }}
+  function toggleTheme() {{
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("osh_theme", next);
+    var btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = next === "dark" ? "☀️" : "🌙";
+  }}
+
+  // ─── 字體大小 ─────────────────────────────────────────────────
+  function initFontSize() {{
+    var saved = localStorage.getItem("osh_font_sz") || "14";
+    document.documentElement.style.setProperty("--font-sz", saved + "px");
+    var range = document.getElementById("font-size-range");
+    var label = document.getElementById("font-size-label");
+    if (range) {{
+      range.value = saved;
+      if (label) label.textContent = saved + "px";
+      range.addEventListener("input", function() {{
+        var sz = range.value;
+        document.documentElement.style.setProperty("--font-sz", sz + "px");
+        if (label) label.textContent = sz + "px";
+        localStorage.setItem("osh_font_sz", sz);
+      }});
+    }}
+  }}
+
+  // ─── 靜音關鍵字 ───────────────────────────────────────────────
+  function renderMuteList() {{
+    var list = document.getElementById("mute-list");
+    if (!list) return;
+    list.innerHTML = "";
+    state.mutedKeywords.forEach(function(kw, idx) {{
+      var chip = document.createElement("span");
+      chip.className = "mute-chip";
+      chip.innerHTML = kw + '<button title="移除" onclick="removeMuteKeyword(' + idx + ')">×</button>';
+      list.appendChild(chip);
+    }});
+    var autoToggle = document.getElementById("auto-mark-toggle");
+    if (autoToggle) autoToggle.checked = !!state.autoMarkRead;
+  }}
+  function addMuteKeyword() {{
+    var input = document.getElementById("mute-input");
+    if (!input) return;
+    var kw = input.value.trim();
+    if (!kw || state.mutedKeywords.includes(kw)) {{ input.value = ""; return; }}
+    state.mutedKeywords.push(kw);
+    input.value = "";
+    save(); renderMuteList(); renderNews();
+  }}
+  function removeMuteKeyword(idx) {{
+    state.mutedKeywords.splice(idx, 1);
+    save(); renderMuteList(); renderNews();
+  }}
+  // Enter 鍵新增靜音關鍵字
+  var muteInput = document.getElementById("mute-input");
+  if (muteInput) muteInput.addEventListener("keydown", function(e) {{ if (e.key === "Enter") addMuteKeyword(); }});
+
+  // ─── 自動標已讀（IntersectionObserver）────────────────────────
+  var _autoMarkObserver = null;
+  function setupAutoMark() {{
+    if (_autoMarkObserver) _autoMarkObserver.disconnect();
+    if (!state.autoMarkRead) return;
+    _autoMarkObserver = new IntersectionObserver(function(entries) {{
+      entries.forEach(function(entry) {{
+        if (!entry.isIntersecting) {{
+          var id = entry.target.dataset.id;
+          if (id && !state.read[id]) {{
+            state.read[id] = true;
+            save();
+          }}
+        }}
+      }});
+    }}, {{threshold: 0.1}});
+    document.querySelectorAll('#newsList .item[data-id]').forEach(function(el) {{
+      _autoMarkObserver.observe(el);
+    }});
+  }}
+  function toggleAutoMark() {{
+    var cb = document.getElementById("auto-mark-toggle");
+    state.autoMarkRead = cb ? cb.checked : !state.autoMarkRead;
+    save();
+    if (state.autoMarkRead) setupAutoMark(); else if (_autoMarkObserver) _autoMarkObserver.disconnect();
+  }}
+  // 設定面板 toggle 事件
+  var amToggle = document.getElementById("auto-mark-toggle");
+  if (amToggle) amToggle.addEventListener("change", toggleAutoMark);
+
+  // ─── Web Share API ────────────────────────────────────────────
+  function shareItem(item) {{
+    if (navigator.share) {{
+      navigator.share({{title: item.title, url: item.link}}).catch(function() {{}});
+    }} else {{
+      navigator.clipboard.writeText(item.link).then(function() {{
+        var t = document.createElement("div");
+        t.textContent = "連結已複製 ✓";
+        t.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:6px 14px;border-radius:4px;font-size:13px;z-index:9999";
+        document.body.appendChild(t);
+        setTimeout(function() {{ t.remove(); }}, 2000);
+      }}).catch(function() {{ prompt("複製連結：", item.link); }});
+    }}
+  }}
+
+  // ─── 長按右鍵選單 ─────────────────────────────────────────────
+  var _ctxTimer = null;
+  function showCtxMenu(x, y, item) {{
+    var menu = document.getElementById("ctx-menu");
+    if (!menu) return;
+    var id = idOf(item);
+    menu.innerHTML = "";
+    function addBtn(label, fn) {{
+      var btn = document.createElement("button");
+      btn.textContent = label;
+      btn.onclick = function() {{ menu.style.display = "none"; fn(); }};
+      menu.appendChild(btn);
+    }}
+    addBtn("分享", function() {{ shareItem(item); }});
+    addBtn(state.readLater[id] ? "📌 移除稍後閱讀" : "📌 加入稍後閱讀", function() {{
+      if (state.readLater[id]) delete state.readLater[id]; else state.readLater[id] = true;
+      save(); renderNews();
+    }});
+    addBtn(state.starred[id] ? "★ 取消收藏" : "☆ 收藏", function() {{
+      state.starred[id] = !state.starred[id]; save(); renderNews();
+    }});
+    var sep = document.createElement("div"); sep.className = "ctx-sep"; menu.appendChild(sep);
+    addBtn(state.read[id] ? "標為未讀" : "標為已讀", function() {{
+      state.read[id] = !state.read[id]; save(); renderNews();
+    }});
+    // 定位
+    var vw = window.innerWidth, vh = window.innerHeight;
+    menu.style.display = "block";
+    var mw = menu.offsetWidth, mh = menu.offsetHeight;
+    menu.style.left = (x + mw > vw ? vw - mw - 8 : x) + "px";
+    menu.style.top = (y + mh > vh ? vh - mh - 8 : y) + "px";
+    setTimeout(function() {{
+      document.addEventListener("click", function _close() {{
+        menu.style.display = "none";
+        document.removeEventListener("click", _close);
+      }});
+    }}, 0);
+  }}
+  function setupLongPress(el, item) {{
+    var timer = null;
+    el.addEventListener("pointerdown", function(e) {{
+      if (e.button !== 0) return;
+      timer = setTimeout(function() {{
+        showCtxMenu(e.clientX, e.clientY, item);
+      }}, 500);
+    }});
+    el.addEventListener("pointerup", function() {{ clearTimeout(timer); }});
+    el.addEventListener("pointercancel", function() {{ clearTimeout(timer); }});
+    el.addEventListener("pointermove", function() {{ clearTimeout(timer); }});
+    // 右鍵也顯示選單
+    el.addEventListener("contextmenu", function(e) {{
+      e.preventDefault();
+      showCtxMenu(e.clientX, e.clientY, item);
+    }});
   }}
 
   function buildCatFilters() {{
@@ -1458,6 +1755,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (e.key === 's') {{ var sb = cur.querySelector('[data-act="star"]'); if (sb) sb.click(); }}
     else if (e.key === 'o' || e.key === 'Enter') {{ var a = cur.querySelector('h3 a'); if (a) window.open(a.href, '_blank'); }}
     else if (e.key === 'm') {{ var rb = cur.querySelector('[data-act="read"]'); if (rb) rb.click(); }}
+    else if (e.key === 'r') {{ var rlb = cur.querySelector('[data-act="rl"]'); if (rlb) rlb.click(); }}
+    else if (e.key === 'S') {{ var curItem = NEWS.find(function(n) {{ return idOf(n) === cur.dataset.id; }}); if (curItem) shareItem(curItem); }}
   }});
 
   function renderDirectives() {{
@@ -1536,8 +1835,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }});
 
   buildCatFilters();
+  initTheme();
+  initFontSize();
   applyView();
   renderBoardArea();
+  renderMuteList();
   showSkeleton();
   setTimeout(function() {{
     renderNews();
