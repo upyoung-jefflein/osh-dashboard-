@@ -590,6 +590,54 @@ def _text(el) -> str:
     return (el.text or "").strip() if el is not None else ""
 
 
+def _parse_latest_revision(history_text: str) -> dict:
+    """從沿革內容解析最後一筆修正的變動項目（修正/增訂/刪除條文）。
+    注意：沿革日期為中文數字，不解析，日期由 最新異動日期_roc 欄位提供。
+    """
+    if not history_text:
+        return {}
+    # 依序號分割各次修正（序號為阿拉伯數字）
+    entries = re.split(r'(?=\d+\.中華民國)', history_text.strip())
+    entries = [e.strip() for e in entries if e.strip()]
+    if not entries:
+        return {}
+    last = re.sub(r'\s+', ' ', entries[-1])  # 壓縮空白
+
+    def _arts(pattern: str) -> list[str]:
+        m = re.search(pattern, last)
+        if not m:
+            return []
+        raw = m.group(1)
+        parts = re.split(r'[、，,\s]+', raw.strip())
+        result = []
+        for p in parts:
+            p = p.strip()
+            if not p:
+                continue
+            # 處理範圍如 12～15
+            if '～' in p or '~' in p:
+                sides = re.split(r'[～~]', p)
+                result.extend(s.strip() for s in sides if s.strip())
+            else:
+                result.append(p)
+        return [x for x in result if re.match(r'^\d[\d\-]*$', x)]
+
+    is_full = bool(re.search(r'(?:修正|訂定)發布(?:名稱及)?全文\s*\d+\s*條', last))
+    modified = [] if is_full else _arts(r'修正(?:發布|公告)?(?:名稱及)?第\s*([\d\-~～、，,\s]+?)\s*條')
+    added    = _arts(r'增訂(?:發布|公告)?(?:第\s*)?([\d\-~～、，,\s]+?)\s*條')
+    deleted  = _arts(r'刪除第\s*([\d\-~～、，,\s]+?)\s*條')
+
+    if not (is_full or modified or added or deleted):
+        return {}
+
+    return {
+        "is_full": is_full,
+        "modified": modified,
+        "added": added,
+        "deleted": deleted,
+    }
+
+
 def roc_to_iso(roc_str: str) -> str | None:
     digits = re.sub(r"\D", "", roc_str or "")
     if len(digits) == 8:
@@ -753,6 +801,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "deleted_articles": deleted_arts,
             "chapters": chapters,
             "article_previews": article_previews,
+            "latest_revision": _parse_latest_revision(_text(law.find("沿革內容"))),
             "has_table": has_table,
             "資料擷取日期": fetched_at,
         })
@@ -794,6 +843,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["chapters"] = rec["chapters"]
             if rec.get("article_previews"):
                 entry["article_previews"] = rec["article_previews"]
+            if rec.get("latest_revision"):
+                entry["latest_revision"] = rec["latest_revision"]
         else:
             merged.append({
                 "name": rec["name"],
@@ -807,6 +858,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "deleted_articles": rec.get("deleted_articles", []),
                 "chapters": rec.get("chapters", []),
                 "article_previews": rec.get("article_previews", {}),
+                "latest_revision": rec.get("latest_revision", {}),
                 "has_table": rec.get("has_table", False),
                 "authority": rec.get("authority", ""),
                 "status": rec.get("status", "現行"),
@@ -982,6 +1034,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   details.deleted-arts-section[open] .deleted-arts-toggle::before{{ content:"▼ "; }}
   .art-chip-penalty{{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
   a.art-chip-penalty:hover{{ background:#b91c1c; color:#fff; border-color:#b91c1c; }}
+  .art-chip-added{{ background:#dcfce7; color:#166534; border-color:#86efac; font-weight:600; }}
+  a.art-chip-added:hover{{ background:#16a34a; color:#fff; border-color:#16a34a; }}
+  .chg-summary{{ font-size:11px; color:var(--ink-soft); margin-top:2px; line-height:1.5; }}
+  .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
+  .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:10px 12px; margin-bottom:8px; font-size:12.5px; }}
+  .latest-rev-block h4{{ font-size:12px; font-weight:700; color:var(--ink-soft); margin:0 0 6px; }}
+  .latest-rev-row{{ display:flex; gap:8px; align-items:baseline; margin:3px 0; font-size:12px; }}
+  .rev-label{{ min-width:3em; font-weight:600; }}
+  .rev-arts{{ color:var(--ink-soft); word-break:break-all; }}
   .art-chip.art-selected{{ background:var(--blue); color:#fff; border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,130,246,.3); }}
   .art-index-toolbar{{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }}
   .art-search{{ flex:1; min-width:80px; font-size:12px; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); outline:none; }}
@@ -1269,7 +1330,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-lawfilter="all" class="active">全部</button>
       <button data-lawfilter="starred">已收藏</button>
       <button data-lawfilter="subscribed">🔔 已訂閱</button>
-      <button data-lawfilter="recent">近期修正</button>
+      <button data-lawfilter="recent3m">近3月修正</button>
+      <button data-lawfilter="recent">近1年修正</button>
       <div class="sep"></div>
       <span class="label">排序：</span>
       <button data-sort="cat" class="active">依分類</button>
@@ -1546,8 +1608,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const GENERATED = new Date("{generated_date}");
   const cutoff12m = new Date(GENERATED);
   cutoff12m.setMonth(cutoff12m.getMonth() - 12);
+  const cutoff3m = new Date(GENERATED);
+  cutoff3m.setMonth(cutoff3m.getMonth() - 3);
   function isRecent(d) {{ return !!d && new Date(d) >= cutoff12m; }}
+  function isRecent3m(d) {{ return !!d && new Date(d) >= cutoff3m; }}
   function isNewLaw(r) {{ return !!(r.note && r.note.includes("新訂定")); }}
+  function _chgSummary(r) {{
+    var lr = r.latest_revision;
+    if (!lr) return '';
+    if (lr.is_full) return '<span class="chg-modified">全文修正</span>';
+    var parts = [];
+    if (lr.modified && lr.modified.length) parts.push('<span class="chg-modified">✏修正' + lr.modified.length + '條</span>');
+    if (lr.added   && lr.added.length)    parts.push('<span class="chg-added">➕增訂' + lr.added.length + '條</span>');
+    if (lr.deleted && lr.deleted.length)  parts.push('<span class="chg-deleted">✖刪除' + lr.deleted.length + '條</span>');
+    return parts.join('・');
+  }}
 
   function renderNews() {{
     try {{ _renderNews(); }} catch(e) {{
@@ -2159,7 +2234,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (catFilter !== "all") rows = rows.filter(r => r.cat === catFilter);
     if (lawFilter === "starred") rows = rows.filter(r => state.starredLaws[r.name]);
     if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
-    if (lawFilter === "recent") rows = rows.filter(r => isRecent(r.date));
+    if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
+    if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     const q = document.getElementById("lawSearch").value.trim();
     if (q) rows = rows.filter(r => r.name.includes(q) || (r.scope && r.scope.includes(q)) || (r.note && r.note.includes(q)) || (r.authority && r.authority.includes(q)));
 
@@ -2194,10 +2270,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     document.getElementById("registryBody").innerHTML = pageRows.map(function(r, i) {{
       var idx = pageStart + i;
-      const recent = isRecent(r.date) && !isNewLaw(r);
+      const recent3m = isRecent3m(r.date) && !isNewLaw(r);
+      const recent = isRecent(r.date) && !isNewLaw(r) && !recent3m;
       const isnew = isNewLaw(r);
       const badge = isnew ? '<span class="badge new-law">新訂</span>'
-                  : recent ? '<span class="badge recent">近期修正</span>' : "";
+                  : recent3m ? '<span class="badge recent" style="background:#dc2626">近3月修正</span>'
+                  : recent   ? '<span class="badge recent">近期修正</span>' : "";
+      const chgSum = (recent || recent3m) ? _chgSummary(r) : '';
       const dateText = r.date || "待確認";
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
       const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
@@ -2209,7 +2288,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') + '</td>' +
+        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+          (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
         '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
@@ -2302,6 +2382,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '</div>';
     }}
 
+    // 最新修正詳情
+    var lr = r.latest_revision;
+    if (lr && (lr.is_full || (lr.modified && lr.modified.length) || (lr.added && lr.added.length) || (lr.deleted && lr.deleted.length))) {{
+      var lrDate = r.date || '';
+      html += '<div class="drawer-section"><div class="latest-rev-block">';
+      html += '<h4>最新修正' + (lrDate ? '　' + lrDate : '') + '</h4>';
+      if (lr.is_full) {{
+        html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 全文</span><span class="rev-arts">全文修正</span></div>';
+      }} else {{
+        if (lr.modified && lr.modified.length) {{
+          html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 修正</span><span class="rev-arts">第' + lr.modified.join('、') + '條（共' + lr.modified.length + '條）</span></div>';
+        }}
+        if (lr.added && lr.added.length) {{
+          html += '<div class="latest-rev-row"><span class="rev-label chg-added">➕ 增訂</span><span class="rev-arts">第' + lr.added.join('、') + '條（共' + lr.added.length + '條）</span></div>';
+        }}
+        if (lr.deleted && lr.deleted.length) {{
+          html += '<div class="latest-rev-row"><span class="rev-label chg-deleted">✖ 刪除</span><span class="rev-arts">第' + lr.deleted.join('、') + '條（共' + lr.deleted.length + '條）</span></div>';
+        }}
+      }}
+      html += '</div></div>';
+    }}
+
     // 沿革摘要
     if (r.summary) {{
       html += '<div class="drawer-section"><h3>沿革摘要</h3>' +
@@ -2325,6 +2427,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (r.articles && r.articles.length > 0) {{
       var delArts = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
       var penaltySet = new Set((r.penalty_articles || []).map(function(pa) {{ return pa.no; }}));
+      var addedSet  = new Set((r.latest_revision && r.latest_revision.added) ? r.latest_revision.added : []);
       var previews = r.article_previews || {{}};
       var cntLabel = r.articles.length + ' 條有效' + (delArts.length ? '（' + delArts.length + ' 條已刪除）' : '');
       html += '<div class="drawer-section">';
@@ -2337,7 +2440,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '</div>';
       // ②③ chip 產生函式
       function _mkChip(no) {{
-        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : '');
+        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '');
         var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
         var ta = prev ? ' title="' + prev + '"' : '';
         return artBase
