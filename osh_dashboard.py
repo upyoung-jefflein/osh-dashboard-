@@ -951,7 +951,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     --paper:#F4EFE2; --card:#FBF8EF; --ink:#1E2B3A; --ink-soft:#4C5A6B;
     --stamp:#9C2B22; --brass:#A8842E; --border:rgba(30,43,58,0.14);
     --green:#1a7340; --amber:#8c5e00; --hover:rgba(30,43,58,0.06);
-    --blue:#2563eb; --font-sz:13px;
+    --blue:#2563eb; --font-sz:12.5px;
     --radius:4px; --shadow:0 1px 3px rgba(30,43,58,.08),0 1px 2px rgba(30,43,58,.04);
     --sidebar-bg:#EDE8D6;
   }}
@@ -972,33 +972,35 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
   }}
   *{{ box-sizing:border-box; margin:0; padding:0; }}
-  body{{ font-family:"Inter","Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; font-size:var(--font-sz); transition:background .25s,color .25s; }}
+  body{{ font-family:"Inter","Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.55; font-size:var(--font-sz); transition:background .25s,color .25s;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility; font-feature-settings:"kern" 1,"liga" 1; }}
   /* ── 頂部固定列 ── */
   .topbar{{ position:fixed; top:0; left:0; right:0; height:52px; background:var(--card);
     border-bottom:1px solid var(--border); border-top:3px solid var(--stamp);
     display:flex; align-items:center; padding:0 20px; gap:14px;
     z-index:300; box-shadow:0 2px 8px rgba(30,43,58,.08); }}
   .topbar-brand{{ display:flex; align-items:center; gap:12px; flex-shrink:0; }}
-  .topbar-brand h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:17px;
+  .topbar-brand h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:15.5px;
     letter-spacing:-.01em; margin:0; color:var(--ink); }}
-  .topbar-divider{{ width:1px; height:18px; background:var(--border); flex-shrink:0; }}
-  .topbar-subtitle{{ font-size:11px; color:var(--ink-soft); letter-spacing:.01em; }}
+  .topbar-divider{{ width:1px; height:16px; background:var(--border); flex-shrink:0; }}
+  .topbar-subtitle{{ font-size:10.5px; color:var(--ink-soft); letter-spacing:.02em; }}
   .topbar-right{{ margin-left:auto; display:flex; align-items:center; gap:10px; flex-shrink:0; }}
-  .topbar-meta{{ font-size:11px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; letter-spacing:.01em; }}
+  .topbar-meta{{ font-size:10.5px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; letter-spacing:.01em; font-variant-numeric:tabular-nums; }}
   /* ── 左側選單 ── */
   .sidebar{{ position:fixed; top:52px; left:0; bottom:0; width:210px; background:var(--sidebar-bg);
     border-right:1px solid var(--border); z-index:200; display:flex; flex-direction:column;
     padding:8px 0; overflow-y:auto; }}
-  .sidebar-section-label{{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-soft); padding:12px 16px 4px; opacity:.7; }}
-  .sidebar-btn{{ display:flex; align-items:center; gap:10px; width:100%; padding:9px 16px;
+  .sidebar-section-label{{ font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-soft); padding:12px 16px 3px; opacity:.6; }}
+  .sidebar-btn{{ display:flex; align-items:center; gap:9px; width:100%; padding:8px 16px;
     border:none; background:transparent; cursor:pointer; text-align:left;
     font-family:inherit; color:var(--ink-soft); transition:all .15s;
     border-left:3px solid transparent; border-radius:0 4px 4px 0; margin-right:8px; }}
   .sidebar-btn:hover{{ background:rgba(30,43,58,.06); color:var(--ink); }}
   .sidebar-btn.active{{ color:var(--stamp); font-weight:600; background:rgba(156,43,34,.08); border-left-color:var(--stamp); }}
-  .snav-icon{{ font-size:15px; flex-shrink:0; opacity:.85; }}
-  .snav-label{{ font-size:13px; }}
+  .snav-icon{{ font-size:14px; flex-shrink:0; opacity:.8; }}
+  .snav-label{{ font-size:12.5px; }}
   .sidebar-footer{{ margin-top:auto; padding:12px 16px; font-size:10.5px; color:var(--ink-soft);
     border-top:1px solid var(--border); line-height:1.8; opacity:.8; }}
   /* ── 主內容區 ── */
@@ -1006,10 +1008,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   nav.tabs{{ display:none; }}
   .tabpanel{{ display:none; }}
   .tabpanel.active{{ display:block; }}
-  h2{{ font-family:"Noto Serif TC",serif; font-size:18px; margin-bottom:5px; }}
-  h3{{ font-family:"Noto Serif TC",serif; font-size:15px; font-weight:700; margin:22px 0 9px; }}
-  .section-note{{ color:var(--ink-soft); font-size:12.5px; line-height:1.75; margin-bottom:16px; }}
-  .search{{ width:100%; padding:9px 12px; border:1px solid var(--border); font-size:14px;
+  h2{{ font-family:"Noto Serif TC",serif; font-size:16px; margin-bottom:4px; }}
+  h3{{ font-family:"Noto Serif TC",serif; font-size:14px; font-weight:700; margin:20px 0 8px; }}
+  .section-note{{ color:var(--ink-soft); font-size:12px; line-height:1.75; margin-bottom:14px; }}
+  .search{{ width:100%; padding:8px 12px; border:1px solid var(--border); font-size:13px;
     background:var(--card); color:var(--ink); margin-bottom:10px;
     border-radius:var(--radius); transition:border-color .15s; outline:none; }}
   .search:focus{{ border-color:var(--stamp); }}
@@ -1032,19 +1034,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .swipe-save-hint{{position:absolute;left:0;top:0;bottom:0;width:64px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;pointer-events:none;transform:translateX(-64px);transition:transform .15s;}}
   .item.will-save .swipe-save-hint{{transform:translateX(0);}}
   .item{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--brass);
-    padding:14px 16px; margin-bottom:10px; position:relative; overflow:hidden;
+    padding:11px 14px; margin-bottom:8px; position:relative; overflow:hidden;
     animation:item-in .22s ease; border-radius:0 4px 4px 0;
     box-shadow:var(--shadow); transition:box-shadow .15s; }}
   .item:hover{{ box-shadow:0 4px 12px rgba(30,43,58,.1); }}
   .item.read{{ opacity:.55; }}
   .item .row{{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }}
-  .item .date{{ font-size:12px; color:var(--ink-soft); white-space:nowrap; }}
-  .item h3{{ margin:4px 0 6px; font-size:15px; font-family:"Noto Sans TC",sans-serif; font-weight:600; }}
+  .item .date{{ font-size:11px; color:var(--ink-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }}
+  .item h3{{ margin:3px 0 5px; font-size:13.5px; font-family:"Noto Sans TC",sans-serif; font-weight:600; }}
   .item h3 a{{ color:var(--ink); text-decoration:none; }}
   .item h3 a:hover{{ color:var(--stamp); text-decoration:underline; }}
-  .item .src{{ font-size:12px; color:var(--ink-soft); }}
-  .item .actions{{ display:flex; gap:8px; margin-top:8px; }}
-  .item .actions button{{ font-size:12px; padding:3px 9px; border:1px solid var(--border);
+  .item .src{{ font-size:11px; color:var(--ink-soft); }}
+  .item .actions{{ display:flex; gap:6px; margin-top:7px; }}
+  .item .actions button{{ font-size:11px; padding:3px 8px; border:1px solid var(--border);
     background:transparent; cursor:pointer; border-radius:var(--radius); transition:all .15s; }}
   .item .actions button.on{{ border-color:var(--stamp); color:var(--stamp); }}
   .also{{ font-size:11px; color:var(--ink-soft); margin-top:4px; }}
@@ -1061,28 +1063,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #newsList.list-view .item .actions{{margin-top:0;}}
   .reg-toolbar{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }}
   .reg-toolbar input{{ flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border);
-    font-size:14px; background:var(--card); color:var(--ink);
+    font-size:13px; background:var(--card); color:var(--ink);
     border-radius:var(--radius); transition:border-color .15s; outline:none; }}
   .reg-toolbar input:focus{{ border-color:var(--stamp); }}
   .cat-filters{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }}
-  .cat-btn{{ font-size:12px; padding:4px 12px; border:1px solid var(--border); background:var(--card);
+  .cat-btn{{ font-size:11px; padding:3px 11px; border:1px solid var(--border); background:var(--card);
     cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
   .cat-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
   .reg-controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }}
   .reg-controls .label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
-  .reg-controls button{{ font-size:12.5px; padding:4px 11px; border:1px solid var(--border);
+  .reg-controls button{{ font-size:12px; padding:3px 10px; border:1px solid var(--border);
     background:transparent; cursor:pointer; color:var(--ink);
     border-radius:var(--radius); transition:all .15s; }}
   .reg-controls button:hover:not(.active){{ border-color:var(--ink-soft); }}
   .reg-controls button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
   .reg-controls .sep{{ width:1px; height:20px; background:var(--border); margin:0 4px; align-self:center; }}
-  .registry-meta{{ font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }}
+  .registry-meta{{ font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }}
   .table-scroll{{ overflow-x:auto; border:1px solid var(--border); margin-bottom:8px; border-radius:6px; box-shadow:var(--shadow); }}
-  table.registry-table{{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:560px; }}
-  .registry-table th{{ text-align:left; font-weight:700; font-size:11px; color:var(--ink-soft);
-    padding:9px 12px; background:var(--card); border-bottom:2px solid var(--border);
-    white-space:nowrap; text-transform:uppercase; letter-spacing:.06em; }}
-  .registry-table td{{ padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:middle; transition:background .12s; }}
+  table.registry-table{{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:560px; }}
+  .registry-table th{{ text-align:left; font-weight:700; font-size:10px; color:var(--ink-soft);
+    padding:8px 12px; background:var(--card); border-bottom:2px solid var(--border);
+    white-space:nowrap; text-transform:uppercase; letter-spacing:.07em; }}
+  .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle; transition:background .12s; font-variant-numeric:tabular-nums; }}
   .registry-table tr:last-child td{{ border-bottom:none; }}
   .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
   .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
