@@ -62,9 +62,9 @@ DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
     # type="rss"：解析 RSS feed（結構穩定，不需要 BeautifulSoup）
-    # type="html"：HTML 爬蟲（備用，需確認 robots.txt 允許）
     {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/1607/1632/1633/RssList", "type": "rss"},
-    # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/...", "type": "rss"},
+    # 職安署 RSS 暫無公開 well-formed feed，待確認後啟用
+    # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/1106/1109/1124/RssList", "type": "rss"},
 ]
 
 LAW_XML_URLS = [
@@ -86,36 +86,36 @@ STATIC_REGISTRY = [
     {"name": "勞工健康保護規則", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None, "authority": _MOL},
     {"name": "女性勞工母性健康保護實施辦法", "tier": "reg", "cat": "職業衛生", "date": None, "source": REG_SOURCE, "note": None, "authority": _MOL},
     {"name": "勞工作業環境監測實施辦法", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
-    {"name": "職業安全衛生標示設置準則", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準", "tier": "reg", "cat": "職業衛生", "date": "2025-11-20", "source": REG_SOURCE, "note": None},
-    {"name": "異常氣壓危害預防標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "高架作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "高溫作業勞工作息時間標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "精密作業勞工視機能保護設施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "重體力勞動作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "高壓氣體勞工安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "缺氧症預防規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "營造安全衛生設施標準", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": REG_SOURCE, "note": None},
-    {"name": "工程安全設計及整體工程統合管理辦法", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": REG_SOURCE, "note": "新訂定"},
-    {"name": "林場安全衛生設施規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "船舶清艙解體勞工安全規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "碼頭裝卸安全衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": "2025-09-10", "source": REG_SOURCE, "note": None},
-    {"name": "礦場職業衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "鍋爐及壓力容器安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "起重升降機具安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "危險性機械及設備安全檢查規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "危害性化學品標示及通識規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "危害性化學品評估及分級管理辦法", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "特定化學物質危害預防標準", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "有機溶劑中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "鉛中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "粉塵危害預防標準", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None},
-    {"name": "勞工作業場所容許暴露標準", "tier": "reg", "cat": "化學品安全", "date": "2025-04-11", "source": REG_SOURCE_EN, "note": None},
-    {"name": "新化學物質登記管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2025-08-08", "source": REG_SOURCE_EN, "note": "新訂定"},
-    {"name": "優先管理化學品之指定及運作管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2024-06-06", "source": REG_SOURCE_EN, "note": None},
-    {"name": "職業災害預防及職業災害勞工重建補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-12-12", "source": REG_SOURCE_EN, "note": None},
-    {"name": "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法", "tier": "reg", "cat": "職業災害", "date": "2024-11-18", "source": REG_SOURCE_EN, "note": None},
-    {"name": "職業災害勞工職能復健專業機構認可管理及補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-01-30", "source": REG_SOURCE_EN, "note": None},
+    {"name": "職業安全衛生標示設置準則", "tier": "reg", "cat": "作業環境", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準", "tier": "reg", "cat": "職業衛生", "date": "2025-11-20", "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "異常氣壓危害預防標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "高架作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "高溫作業勞工作息時間標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "精密作業勞工視機能保護設施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "重體力勞動作業勞工保護措施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "高壓氣體勞工安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "缺氧症預防規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "營造安全衛生設施標準", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "工程安全設計及整體工程統合管理辦法", "tier": "reg", "cat": "營造工程", "date": "2026-06-30", "source": REG_SOURCE, "note": "新訂定", "authority": _OSHA},
+    {"name": "林場安全衛生設施規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "船舶清艙解體勞工安全規則", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "碼頭裝卸安全衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": "2025-09-10", "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "礦場職業衛生設施標準", "tier": "reg", "cat": "特殊作業", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "鍋爐及壓力容器安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "起重升降機具安全規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "危險性機械及設備安全檢查規則", "tier": "reg", "cat": "機械設備", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "危害性化學品標示及通識規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "危害性化學品評估及分級管理辦法", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "特定化學物質危害預防標準", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "有機溶劑中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "鉛中毒預防規則", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "粉塵危害預防標準", "tier": "reg", "cat": "化學品安全", "date": None, "source": REG_SOURCE, "note": None, "authority": _OSHA},
+    {"name": "勞工作業場所容許暴露標準", "tier": "reg", "cat": "化學品安全", "date": "2025-04-11", "source": REG_SOURCE_EN, "note": None, "authority": _OSHA},
+    {"name": "新化學物質登記管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2025-08-08", "source": REG_SOURCE_EN, "note": "新訂定", "authority": _OSHA},
+    {"name": "優先管理化學品之指定及運作管理辦法", "tier": "reg", "cat": "化學品安全", "date": "2024-06-06", "source": REG_SOURCE_EN, "note": None, "authority": _OSHA},
+    {"name": "職業災害預防及職業災害勞工重建補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-12-12", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
+    {"name": "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法", "tier": "reg", "cat": "職業災害", "date": "2024-11-18", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
+    {"name": "職業災害勞工職能復健專業機構認可管理及補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-01-30", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
 ]
 
 STATIC_DIRECTIVES = [
@@ -667,17 +667,11 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         status = "現行"
         if abolish_note:
             status = "廢止"
-        elif eff_date_roc and len(eff_date_roc) >= 7:
-            # ROC date YYYMMDD → compare with today
-            try:
-                roc_y = int(eff_date_roc[:3])
-                roc_m = int(eff_date_roc[3:5])
-                roc_d = int(eff_date_roc[5:7])
-                eff_iso = f"{roc_y + 1911:04d}{roc_m:02d}{roc_d:02d}"
-                if eff_iso > today_str:
-                    status = "未生效"
-            except (ValueError, IndexError):
-                pass
+        elif eff_date_roc:
+            # 使用 roc_to_iso() 統一處理 7 碼 ROC 與 8 碼西元格式
+            eff_iso = roc_to_iso(eff_date_roc)
+            if eff_iso and eff_iso > date.today().isoformat():
+                status = "未生效"
 
         # 條文全部（分析用）
         all_arts = list(law.iter("條文"))
@@ -1101,6 +1095,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .compare-header button{{ background:none; border:none; cursor:pointer; font-size:20px; color:var(--ink-soft); }}
   .compare-selects{{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }}
   .compare-selects select{{ flex:1; min-width:220px; padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; }}
+  .compare-filter-wrap{{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:4px; }}
+  .compare-filter-input{{ padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; width:100%; }}
+  .compare-filter-input::placeholder{{ color:var(--ink-soft); }}
+  /* ── 分頁控制 ── */
+  .reg-pager{{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; margin:8px 0; font-size:13px; }}
+  .reg-pager button{{ padding:4px 10px; border:1px solid var(--border); background:transparent; cursor:pointer; border-radius:3px; color:var(--ink); font-size:12px; }}
+  .reg-pager button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
+  .reg-pager button:disabled{{ opacity:.35; cursor:default; }}
+  .reg-pager .pager-info{{ font-size:12px; color:var(--ink-soft); margin:0 4px; }}
   .compare-cols{{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }}
   @media(max-width:640px){{ .compare-cols{{ grid-template-columns:1fr; }} }}
   .compare-col{{ border:1px solid var(--border); border-radius:6px; padding:14px; max-height:60vh; overflow-y:auto; }}
@@ -1211,6 +1214,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <tbody id="registryBody"></tbody>
       </table>
     </div>
+    <div class="reg-pager" id="registryPager"></div>
     <h3>近期行政規則與公告</h3>
     <p class="section-note" style="margin-top:-6px">非法規命令，但對職安執行實務有重要影響。</p>
     <div class="table-scroll">
@@ -1273,8 +1277,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button onclick="closeCompare()">✕</button>
     </div>
     <div class="compare-selects">
-      <select id="compare-sel-a" onchange="renderCompare()"><option value="">— 選擇法規 A —</option></select>
-      <select id="compare-sel-b" onchange="renderCompare()"><option value="">— 選擇法規 B —</option></select>
+      <div class="compare-filter-wrap">
+        <input class="compare-filter-input" id="compare-filter-a" placeholder="搜尋法規 A…" autocomplete="off">
+        <select id="compare-sel-a" onchange="renderCompare()"><option value="">— 選擇法規 A —</option></select>
+      </div>
+      <div class="compare-filter-wrap">
+        <input class="compare-filter-input" id="compare-filter-b" placeholder="搜尋法規 B…" autocomplete="off">
+        <select id="compare-sel-b" onchange="renderCompare()"><option value="">— 選擇法規 B —</option></select>
+      </div>
     </div>
     <div class="compare-cols" id="compare-cols"></div>
   </div>
@@ -1389,6 +1399,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
   var currentBoard = null;
+  var registryPage = 1;
+  var REGISTRY_PAGE_SIZE = 30;
+  var _regRows = [];
 
   function save() {{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); updateBadges(); }}
   function idOf(item) {{ return item.date + "|" + item.title; }}
@@ -1489,7 +1502,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (state.mutedKeywords && state.mutedKeywords.length) {{
         if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
-      if (q && !item.title.includes(q)) return false;
+      if (q && !item.title.includes(q) && !(item.summary && item.summary.includes(q))) return false;
       return true;
     }});
     const list = document.getElementById("newsList");
@@ -1921,23 +1934,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   // ─── 法規並排對比 ─────────────────────────────────────────────
+  function _fillCompareSelect(sel, filterQ) {{
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">— 選擇法規 —</option>';
+    REGISTRY.forEach(function(r, i) {{
+      if (r.articles && r.articles.length > 0) {{
+        if (filterQ && !r.name.includes(filterQ)) return;
+        var opt = document.createElement('option');
+        opt.value = i; opt.textContent = r.name;
+        if (String(i) === cur) opt.selected = true;
+        sel.appendChild(opt);
+      }}
+    }});
+  }}
   function openCompare() {{
     var modal = document.getElementById('compare-modal');
-    // 填入下拉選單
     var selA = document.getElementById('compare-sel-a');
     var selB = document.getElementById('compare-sel-b');
-    [selA, selB].forEach(function(sel) {{
-      var cur = sel.value;
-      sel.innerHTML = '<option value="">— 選擇法規 —</option>';
-      REGISTRY.forEach(function(r, i) {{
-        if (r.articles && r.articles.length > 0) {{
-          var opt = document.createElement('option');
-          opt.value = i; opt.textContent = r.name;
-          if (String(i) === cur) opt.selected = true;
-          sel.appendChild(opt);
-        }}
-      }});
-    }});
+    var fA = document.getElementById('compare-filter-a');
+    var fB = document.getElementById('compare-filter-b');
+    _fillCompareSelect(selA, fA ? fA.value : '');
+    _fillCompareSelect(selB, fB ? fB.value : '');
+    if (fA) {{
+      fA.oninput = function() {{ _fillCompareSelect(selA, fA.value); renderCompare(); }};
+    }}
+    if (fB) {{
+      fB.oninput = function() {{ _fillCompareSelect(selB, fB.value); renderCompare(); }};
+    }}
     modal.classList.add('open');
     renderCompare();
   }}
@@ -2025,7 +2048,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         catFilter = value;
         document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-        renderRegistry();
+        registryPage = 1; renderRegistry();
       }};
       cf.appendChild(btn);
     }}
@@ -2040,7 +2063,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
     if (lawFilter === "recent") rows = rows.filter(r => isRecent(r.date));
     const q = document.getElementById("lawSearch").value.trim();
-    if (q) rows = rows.filter(r => r.name.includes(q));
+    if (q) rows = rows.filter(r => r.name.includes(q) || (r.scope && r.scope.includes(q)) || (r.note && r.note.includes(q)) || (r.authority && r.authority.includes(q)));
 
     if (sortMode === "date") {{
       rows.sort((a, b) => {{
@@ -2061,10 +2084,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     const confirmed = rows.filter(r => r.date).length;
-    document.getElementById("registryMeta").textContent =
-      "顯示 " + rows.length + " 筆（共 " + REGISTRY.length + " 筆），已確認修正日期 " + confirmed + " 筆";
+    const totalPages = Math.max(1, Math.ceil(rows.length / REGISTRY_PAGE_SIZE));
+    if (registryPage > totalPages) registryPage = totalPages;
+    const pageStart = (registryPage - 1) * REGISTRY_PAGE_SIZE;
+    const pageRows = rows.slice(pageStart, pageStart + REGISTRY_PAGE_SIZE);
+    _regRows = rows;
 
-    document.getElementById("registryBody").innerHTML = rows.map((r, idx) => {{
+    document.getElementById("registryMeta").textContent =
+      "顯示 " + rows.length + " 筆（共 " + REGISTRY.length + " 筆），已確認修正日期 " + confirmed + " 筆" +
+      (totalPages > 1 ? "，第 " + registryPage + " / " + totalPages + " 頁" : "");
+
+    document.getElementById("registryBody").innerHTML = pageRows.map(function(r, i) {{
+      var idx = pageStart + i;
       const recent = isRecent(r.date) && !isNewLaw(r);
       const isnew = isNewLaw(r);
       const badge = isnew ? '<span class="badge new-law">新訂</span>'
@@ -2088,6 +2119,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '</tr>';
     }}).join("");
 
+    // 分頁控制
+    var pager = document.getElementById("registryPager");
+    if (totalPages <= 1) {{
+      pager.innerHTML = "";
+    }} else {{
+      var pbtns = '<button data-pgact="prev"' + (registryPage === 1 ? ' disabled' : '') + '>‹ 上頁</button>';
+      for (var p = 1; p <= totalPages; p++) {{
+        pbtns += '<button data-pgact="goto" data-pgno="' + p + '" class="' + (p === registryPage ? 'active' : '') + '">' + p + '</button>';
+      }}
+      pbtns += '<button data-pgact="next"' + (registryPage === totalPages ? ' disabled' : '') + '>下頁 ›</button>';
+      pager.innerHTML = pbtns;
+      pager.querySelectorAll('[data-pgact="prev"]').forEach(function(b) {{
+        b.onclick = function() {{ registryPage--; renderRegistry(); }};
+      }});
+      pager.querySelectorAll('[data-pgact="goto"]').forEach(function(b) {{
+        b.onclick = function() {{ registryPage = +b.dataset.pgno; renderRegistry(); }};
+      }});
+      pager.querySelectorAll('[data-pgact="next"]').forEach(function(b) {{
+        b.onclick = function() {{ registryPage++; renderRegistry(); }};
+      }});
+    }}
+
     document.querySelectorAll(".star-btn").forEach(btn => {{
       btn.onclick = () => {{
         const name = btn.dataset.law;
@@ -2100,7 +2153,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       btn.onclick = () => toggleSubscribeLaw(btn.dataset.sublaw);
     }});
     document.querySelectorAll(".rname-btn").forEach(btn => {{
-      btn.onclick = () => openDrawer(rows[+btn.dataset.idx]);
+      btn.onclick = () => openDrawer(_regRows[+btn.dataset.idx]);
     }});
   }}
 
@@ -2320,18 +2373,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   document.querySelectorAll("[data-lawfilter]").forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll("[data-lawfilter]").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active"); lawFilter = btn.dataset.lawfilter; renderRegistry();
+      btn.classList.add("active"); lawFilter = btn.dataset.lawfilter; registryPage = 1; renderRegistry();
     }};
   }});
   document.querySelectorAll("[data-sort]").forEach(btn => {{
     btn.onclick = () => {{
       sortMode = btn.dataset.sort;
       document.querySelectorAll("[data-sort]").forEach(b => b.classList.toggle("active", b.dataset.sort === sortMode));
-      renderRegistry();
+      registryPage = 1; renderRegistry();
     }};
   }});
-  document.getElementById("newsSearch").addEventListener("input", renderNews);
-  document.getElementById("lawSearch").addEventListener("input", renderRegistry);
+  var _newsDebounce, _lawDebounce;
+  document.getElementById("newsSearch").addEventListener("input", function() {{
+    clearTimeout(_newsDebounce);
+    _newsDebounce = setTimeout(renderNews, 200);
+  }});
+  document.getElementById("lawSearch").addEventListener("input", function() {{
+    clearTimeout(_lawDebounce);
+    registryPage = 1;
+    _lawDebounce = setTimeout(renderRegistry, 200);
+  }});
   document.querySelectorAll("nav.tabs button").forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
