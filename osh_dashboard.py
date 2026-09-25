@@ -3340,6 +3340,16 @@ def enrich_news_summaries(news: list[dict], api_key: str) -> None:
 
 
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path):
+    from urllib.parse import quote as _urlq
+    _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
+
+    def _fix_source(item: dict) -> dict:
+        """將通用首頁 URL 轉成以法規名稱為關鍵字的搜尋連結。"""
+        if item.get("source") in _base_urls:
+            q = _urlq(item["name"], safe="")
+            return {**item, "source": f"https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?ty=keyword&p=&q={q}"}
+        return item
+
     now = datetime.now()
     html = HTML_TEMPLATE.format(
         generated_at=now.strftime("%Y-%m-%d %H:%M"),
@@ -3348,8 +3358,8 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         registry_count=len(registry),
         practitioner_html=PRACTITIONER_HTML,
         news_json=json.dumps(news, ensure_ascii=False),
-        registry_json=json.dumps(registry, ensure_ascii=False),
-        directives_json=json.dumps(directives, ensure_ascii=False),
+        registry_json=json.dumps([_fix_source(r) for r in registry], ensure_ascii=False),
+        directives_json=json.dumps([_fix_source(d) for d in directives], ensure_ascii=False),
         scenarios_json=json.dumps(QUICK_SCENARIOS, ensure_ascii=False),
         categories_json=json.dumps(CATEGORIES, ensure_ascii=False),
         checklists_json=json.dumps(CHECKLISTS, ensure_ascii=False),
