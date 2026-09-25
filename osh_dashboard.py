@@ -55,6 +55,9 @@ OSH_KEYWORDS = [
     "重體力勞動", "精密作業", "高壓氣體勞工", "異常氣壓", "碼頭裝卸",
     "礦場安全", "礦場職業衛生", "船舶清艙", "鍋爐及壓力容器", "起重升降機具",
     "作業環境監測", "容許暴露標準", "局限空間", "熱危害", "工程安全",
+    # 職安署新聞常見詞
+    "作業安全", "工安", "職場健康", "安全衛生管理", "職災", "風險評估",
+    "排氣裝置", "防護具", "安全訓練", "勞動檢查機構", "職場心理健康",
 ]
 EXCLUDE_STATUS_KEYWORDS = ["廢止", "停止適用"]
 USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
@@ -63,8 +66,9 @@ DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 SOURCES = [
     # type="rss"：解析 RSS feed（結構穩定，不需要 BeautifulSoup）
     {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/1607/1632/1633/RssList", "type": "rss"},
-    # 職安署 RSS 暫無公開 well-formed feed，待確認後啟用
-    # {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/1106/1109/1124/RssList", "type": "rss"},
+    {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList", "type": "rss"},
+    {"name": "職安署公布欄", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList", "type": "rss"},
+    {"name": "職安署活動訊息", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList", "type": "rss"},
 ]
 
 LAW_XML_URLS = [
@@ -1161,7 +1165,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <section class="tabpanel active" id="tab-news">
     <h2>最新動態</h2>
-    <p class="section-note">從勞動部官方新聞稿擷取職安相關公告，自動去重後依日期排序。</p>
+    <p class="section-note">從勞動部及職業安全衛生署官方新聞稿擷取職安相關公告，自動去重後依日期排序。</p>
     <input class="search" id="newsSearch" placeholder="搜尋標題關鍵字…">
     <div class="controls">
       <button data-filter="all" class="active">全部<span class="filter-badge" id="badge-all"></span></button>
