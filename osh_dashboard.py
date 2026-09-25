@@ -680,6 +680,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         # 條文全部（分析用）
         all_arts = list(law.iter("條文"))
         articles = []
+        deleted_arts = []
         scope_parts = []
         penalty_articles = []
 
@@ -688,8 +689,14 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             art_no = raw_no.replace("第", "").replace("條", "").strip()
             if not art_no:
                 continue
-            articles.append(art_no)
             content = _text(art.find("條文內容"))
+
+            # 已刪除條文單獨記錄，不加入有效條文清單
+            if content and content.strip() in ("（刪除）", "(刪除)"):
+                deleted_arts.append(art_no)
+                continue
+
+            articles.append(art_no)
 
             # 適用範圍：前 3 條
             try:
@@ -725,6 +732,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "scope": "\n".join(scope_parts),
             "penalty_articles": penalty_articles,
             "articles": articles,
+            "deleted_articles": deleted_arts,
             "has_table": has_table,
             "資料擷取日期": fetched_at,
         })
@@ -760,6 +768,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["scope"] = rec["scope"]
             if rec.get("penalty_articles"):
                 entry["penalty_articles"] = rec["penalty_articles"]
+            if rec.get("deleted_articles") is not None:
+                entry["deleted_articles"] = rec["deleted_articles"]
         else:
             merged.append({
                 "name": rec["name"],
@@ -770,6 +780,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "note": "XML 新增，未在原始清單中",
                 "pcode": rec.get("pcode", ""),
                 "articles": rec.get("articles", []),
+                "deleted_articles": rec.get("deleted_articles", []),
                 "has_table": rec.get("has_table", False),
                 "authority": rec.get("authority", ""),
                 "status": rec.get("status", "現行"),
@@ -938,6 +949,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     background:var(--hover); font-size:12px; color:var(--ink); text-decoration:none;
     border:1px solid var(--border); white-space:nowrap; }}
   a.art-chip:hover{{ background:var(--blue); color:#fff; border-color:var(--blue); }}
+  .art-chip-deleted{{ text-decoration:line-through; color:var(--ink-soft); opacity:.6; }}
+  .deleted-arts-toggle{{ cursor:pointer; font-size:12px; color:var(--ink-soft); user-select:none; list-style:none; }}
+  .deleted-arts-toggle::-webkit-details-marker{{ display:none; }}
+  .deleted-arts-toggle::before{{ content:"▶ "; font-size:9px; }}
+  details.deleted-arts-section[open] .deleted-arts-toggle::before{{ content:"▼ "; }}
   .drawer-fulllink{{ display:inline-block; margin-top:10px; padding:7px 16px;
     background:var(--blue); color:#fff; border-radius:5px; text-decoration:none;
     font-size:13px; font-weight:600; }}
@@ -2006,11 +2022,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var h = '<div class="compare-col"><h4>' + r.name + ' <span class="' + statusCls + '">' + (r.status||'現行') + '</span></h4>';
       if (r.scope) h += '<div class="scope-text" style="font-size:11.5px;margin-bottom:8px">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
       if (r.articles && r.articles.length) {{
+        var delA = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
+        h += '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px">' +
+          r.articles.length + ' 條有效' + (delA.length ? '・' + delA.length + ' 條已刪除' : '') + '</div>';
         r.articles.forEach(function(no) {{
           h += artBase
             ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no" style="color:var(--stamp)">第' + no + '條</a></div>'
             : '<div class="compare-art"><span class="art-no">第' + no + '條</span></div>';
         }});
+        if (delA.length > 0) {{
+          h += '<details class="deleted-arts-section" style="margin-top:6px">' +
+            '<summary class="deleted-arts-toggle">已刪除條文（' + delA.length + ' 條）</summary>';
+          delA.forEach(function(no) {{
+            h += artBase
+              ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no art-chip-deleted" style="color:var(--ink-soft)">第' + no + '條</a></div>'
+              : '<div class="compare-art"><span class="art-no art-chip-deleted" style="color:var(--ink-soft)">第' + no + '條</span></div>';
+          }});
+          h += '</details>';
+        }}
       }}
       return h + '</div>';
     }}
@@ -2249,7 +2278,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     // 條文索引
     if (r.articles && r.articles.length > 0) {{
-      html += '<div class="drawer-section"><h3>條文索引（共 ' + r.articles.length + ' 條）</h3>' +
+      var delArts = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
+      var cntLabel = r.articles.length + ' 條有效' + (delArts.length ? '（' + delArts.length + ' 條已刪除）' : '');
+      html += '<div class="drawer-section"><h3>條文索引（共 ' + cntLabel + '）</h3>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:2px 0">';
       r.articles.forEach(function(no) {{
         var chip = artBase
@@ -2257,7 +2288,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           : '<span class="art-chip">第' + no + '條</span>';
         html += chip;
       }});
-      html += '</div></div>';
+      html += '</div>';
+      if (delArts.length > 0) {{
+        html += '<details class="deleted-arts-section" style="margin-top:6px">' +
+          '<summary class="deleted-arts-toggle">已刪除條文（' + delArts.length + ' 條）</summary>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding:2px 0">';
+        delArts.forEach(function(no) {{
+          var chip = artBase
+            ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="art-chip art-chip-deleted">第' + no + '條</a>'
+            : '<span class="art-chip art-chip-deleted">第' + no + '條</span>';
+          html += chip;
+        }});
+        html += '</div></details>';
+      }}
+      html += '</div>';
     }}
 
     // 全文按鈕
@@ -2684,6 +2728,11 @@ def main():
                 registry = merge_registry(STATIC_REGISTRY, xml_records)
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
+                XML_CACHE.write_text(
+                    json.dumps(xml_records, ensure_ascii=False, separators=(",", ":")),
+                    encoding="utf-8",
+                )
+                print(f"已更新法規快取 {XML_CACHE}（{len(xml_records)} 筆）。")
             else:
                 print(f"找不到 {args.law_xml}，法規區塊維持靜態清單。", file=sys.stderr)
         elif XML_CACHE.exists():
