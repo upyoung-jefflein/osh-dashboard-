@@ -1084,7 +1084,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .registry-table th{{ text-align:left; font-weight:700; font-size:10px; color:var(--ink-soft);
     padding:8px 12px; background:var(--card); border-bottom:2px solid var(--border);
     white-space:nowrap; text-transform:uppercase; letter-spacing:.07em; }}
-  .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle; transition:background .12s; font-variant-numeric:tabular-nums; }}
+  .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; transition:background .12s; font-variant-numeric:tabular-nums; }}
+  .registry-table td:first-child,.registry-table td:nth-child(2){{ vertical-align:middle; }}
   .registry-table tr:last-child td{{ border-bottom:none; }}
   .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
   .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
@@ -1158,7 +1159,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   a.art-chip-penalty:hover{{ background:#b91c1c; color:#fff; border-color:#b91c1c; }}
   .art-chip-added{{ background:#dcfce7; color:#166534; border-color:#86efac; font-weight:600; }}
   a.art-chip-added:hover{{ background:#16a34a; color:#fff; border-color:#16a34a; }}
-  .chg-summary{{ font-size:11px; color:var(--ink-soft); margin-top:2px; line-height:1.5; }}
+  .chg-summary{{ margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; }}
+  .chg-chip{{ display:inline-flex; align-items:center; font-size:10.5px; padding:1px 7px;
+    border-radius:99px; font-weight:600; white-space:nowrap; border:1px solid currentColor; line-height:1.6; }}
+  .chg-chip.chg-modified{{ background:rgba(180,83,9,.07); color:#b45309; }}
+  .chg-chip.chg-added{{ background:rgba(22,101,52,.07); color:#15803d; }}
+  .chg-chip.chg-deleted{{ background:rgba(185,28,28,.07); color:#b91c1c; }}
+  [data-theme="dark"] .chg-chip.chg-modified{{ background:rgba(251,191,36,.08); color:#fbbf24; }}
+  [data-theme="dark"] .chg-chip.chg-added{{ background:rgba(52,211,153,.08); color:#34d399; }}
+  [data-theme="dark"] .chg-chip.chg-deleted{{ background:rgba(252,165,165,.08); color:#fca5a5; }}
   .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
   .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:12px 14px;
     margin-bottom:8px; font-size:12.5px; border:1px solid var(--border); }}
@@ -1263,7 +1272,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .art-chip{{ padding:6px 12px; font-size:13px; }}
     .art-search{{ padding:7px 10px; font-size:13px; }}
     .art-copy-btn{{ padding:7px 14px; font-size:12px; }}
-    .chg-summary{{ font-size:12px; line-height:1.7; }}
+    .chg-chip{{ font-size:10px; padding:1px 5px; }}
     .latest-rev-block .art-chip{{ padding:5px 11px; font-size:12px; }}
     #law-drawer{{ width:100vw; }}
   }}
@@ -1843,20 +1852,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function _chgSummary(r) {{
     var lr = r.latest_revision;
     if (!lr) return '';
-    if (lr.is_full) return '<span class="chg-modified">全文修正</span>';
-    function _artList(nos, max) {{
-      var shown = nos.slice(0, max).map(function(n) {{ return '第'+n+'條'; }}).join('、');
-      var rest = nos.length - max;
-      return shown + (rest > 0 ? '…(+'+rest+')' : '');
-    }}
-    var parts = [];
+    if (lr.is_full) return '<span class="chg-chip chg-modified">全文修正</span>';
+    var chips = [];
     if (lr.modified && lr.modified.length)
-      parts.push('<span class="chg-modified">✏修正：' + _artList(lr.modified, 3) + '</span>');
+      chips.push('<span class="chg-chip chg-modified">✏ 修正 ' + lr.modified.length + ' 條</span>');
     if (lr.added && lr.added.length)
-      parts.push('<span class="chg-added">➕增訂：' + _artList(lr.added, 5) + '</span>');
+      chips.push('<span class="chg-chip chg-added">＋增 ' + lr.added.length + ' 條</span>');
     if (lr.deleted && lr.deleted.length)
-      parts.push('<span class="chg-deleted">✖刪除：' + _artList(lr.deleted, 3) + '</span>');
-    return parts.join(' ');
+      chips.push('<span class="chg-chip chg-deleted">✕刪 ' + lr.deleted.length + ' 條</span>');
+    return chips.join('');
   }}
 
   function renderNews() {{
