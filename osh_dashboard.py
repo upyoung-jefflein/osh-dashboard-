@@ -64,11 +64,11 @@ USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
-    # type="rss"：解析 RSS feed（結構穩定，不需要 BeautifulSoup）
-    {"name": "勞動部新聞稿", "org": "勞動部", "url": "https://www.mol.gov.tw/1607/1632/1633/RssList", "type": "rss"},
-    {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList", "type": "rss"},
-    {"name": "職安署公布欄", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList", "type": "rss"},
-    {"name": "職安署活動訊息", "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList", "type": "rss"},
+    # type="rss"：解析 RSS feed；source_type：news/notice/event 決定前端預設顯示
+    {"name": "勞動部新聞稿",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/RssList",        "type": "rss", "source_type": "news"},
+    {"name": "職安署新聞稿",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",   "type": "rss", "source_type": "news"},
+    {"name": "職安署公布欄",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",   "type": "rss", "source_type": "notice"},
+    {"name": "職安署活動訊息","org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",   "type": "rss", "source_type": "event"},
 ]
 
 LAW_XML_URLS = [
@@ -501,7 +501,7 @@ def fetch_rss_source(source: dict, debug: bool = False) -> list[dict]:
         if debug:
             print(f"    RSS item: {date_str}  {title[:50]}")
 
-        items.append({"title": title.strip(), "link": link.strip(), "date": date_str, "source": name, "org": org})
+        items.append({"title": title.strip(), "link": link.strip(), "date": date_str, "source": name, "org": org, "source_type": source.get("source_type", "news")})
 
     print(f"  RSS 解析出 {len(items)} 筆項目。")
     return items
@@ -1030,6 +1030,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .ctx-menu .ctx-sep{{ height:1px; background:var(--border); margin:3px 0; }}
   /* ── 稍後閱讀 ── */
   .rl-badge{{ display:inline-block;background:#2563eb;color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle; }}
+  /* ── 新聞來源分類過濾 ── */
+  .src-filters{{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }}
+  .src-filter-label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
+  .src-filter-btn{{ font-size:12px; padding:3px 10px; border:1px solid var(--border); background:var(--card); cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
+  .src-filter-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
+  .src-type-badge{{ display:inline-block; font-size:10px; padding:1px 5px; border-radius:2px; margin-left:4px; vertical-align:middle; }}
+  .src-type-news{{ background:#dbeafe; color:#1e40af; }}
+  .src-type-notice{{ background:#fef9c3; color:#713f12; }}
+  .src-type-event{{ background:#f0fdf4; color:#166534; }}
   /* ── 搜尋高亮 ── */
   mark{{ background:rgba(168,132,46,.25); color:var(--ink); padding:0 1px; border-radius:2px; }}
   /* ── 設定與主題按鈕區 ── */
@@ -1172,6 +1181,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-filter="unread">未讀<span class="filter-badge" id="badge-unread"></span></button>
       <button data-filter="starred">已收藏<span class="filter-badge" id="badge-starred"></span></button>
       <button data-filter="readlater">稍後閱讀<span class="rl-badge" id="badge-rl"></span></button>
+    </div>
+    <div class="src-filters">
+      <span class="src-filter-label">來源類型：</span>
+      <button class="src-filter-btn active" data-srctype="news">📰 新聞稿</button>
+      <button class="src-filter-btn active" data-srctype="notice">📋 公告</button>
+      <button class="src-filter-btn" data-srctype="event">📅 活動訊息</button>
     </div>
     <div class="board-area" id="board-area" style="display:none">
       <span style="font-size:11.5px;color:var(--ink-soft)">版板：</span>
@@ -1403,6 +1418,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
   var currentBoard = null;
+  var srcTypeFilter = new Set(["news", "notice"]); // 預設隱藏活動訊息
   var registryPage = 1;
   var REGISTRY_PAGE_SIZE = 30;
   var _regRows = [];
@@ -1506,6 +1522,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (state.mutedKeywords && state.mutedKeywords.length) {{
         if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
+      if (srcTypeFilter.size > 0 && !srcTypeFilter.has(item.source_type || "news")) return false;
       if (q && !item.title.includes(q) && !(item.summary && item.summary.includes(q))) return false;
       return true;
     }});
@@ -1530,9 +1547,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         : '';
       const rlLabel = state.readLater[id] ? "📌 已加入" : "📌 稍後閱讀";
       const rlCls = state.readLater[id] ? " on" : "";
+      const srcTypeLabelMap = {{news:"新聞稿", notice:"公告", event:"活動"}};
+      const srcTypeCls = "src-type-" + (item.source_type || "news");
+      const srcTypeBadge = '<span class="src-type-badge ' + srcTypeCls + '">' + (srcTypeLabelMap[item.source_type] || "新聞稿") + '</span>';
       el.innerHTML =
         '<div class="swipe-save-hint">★</div>' +
-        '<div class="row"><span class="src">' + item.org + ' · ' + item.source + '</span><span class="date">' + item.date + '</span></div>' +
+        '<div class="row"><span class="src">' + item.org + ' · ' + item.source + srcTypeBadge + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3 data-date="' + item.date + '"><a href="' + item.link + '" target="_blank" rel="noopener">' + hl(item.title) + '</a></h3>' +
         aiSummary +
         also +
@@ -2371,6 +2391,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       btn.classList.add("active"); newsFilter = btn.dataset.filter;
       currentBoard = null;
       renderBoardArea();
+      renderNews();
+    }};
+  }});
+  document.querySelectorAll("[data-srctype]").forEach(btn => {{
+    btn.onclick = () => {{
+      const t = btn.dataset.srctype;
+      if (srcTypeFilter.has(t)) {{
+        srcTypeFilter.delete(t);
+        btn.classList.remove("active");
+      }} else {{
+        srcTypeFilter.add(t);
+        btn.classList.add("active");
+      }}
       renderNews();
     }};
   }});
