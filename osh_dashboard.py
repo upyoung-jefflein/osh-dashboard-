@@ -945,20 +945,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>職安法規觀測站</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {{
     --paper:#F4EFE2; --card:#FBF8EF; --ink:#1E2B3A; --ink-soft:#4C5A6B;
     --stamp:#9C2B22; --brass:#A8842E; --border:rgba(30,43,58,0.14);
     --green:#1a7340; --amber:#8c5e00; --hover:rgba(30,43,58,0.06);
-    --blue:#2563eb; --font-sz:14px;
+    --blue:#2563eb; --font-sz:13px;
     --radius:4px; --shadow:0 1px 3px rgba(30,43,58,.08),0 1px 2px rgba(30,43,58,.04);
+    --sidebar-bg:#EDE8D6;
   }}
   [data-theme="dark"] {{
     --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
     --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
     --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
     --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
+    --sidebar-bg:#1a1a1a;
   }}
   @media(prefers-color-scheme:dark){{
     :root:not([data-theme="light"]){{
@@ -966,42 +968,47 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
       --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
       --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
+      --sidebar-bg:#1a1a1a;
     }}
   }}
   *{{ box-sizing:border-box; margin:0; padding:0; }}
-  body{{ font-family:"Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; font-size:var(--font-sz); transition:background .25s,color .25s; }}
+  body{{ font-family:"Inter","Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.6; font-size:var(--font-sz); transition:background .25s,color .25s; }}
   /* ── 頂部固定列 ── */
-  .topbar{{ position:fixed; top:0; left:0; right:0; height:56px; background:var(--card);
-    border-bottom:1px solid var(--border); display:flex; align-items:center;
-    padding:0 20px; gap:14px; z-index:300; box-shadow:0 1px 4px rgba(30,43,58,.06); }}
-  .topbar-brand{{ display:flex; align-items:baseline; gap:10px; flex-shrink:0; }}
-  .topbar-brand h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:19px;
+  .topbar{{ position:fixed; top:0; left:0; right:0; height:52px; background:var(--card);
+    border-bottom:1px solid var(--border); border-top:3px solid var(--stamp);
+    display:flex; align-items:center; padding:0 20px; gap:14px;
+    z-index:300; box-shadow:0 2px 8px rgba(30,43,58,.08); }}
+  .topbar-brand{{ display:flex; align-items:center; gap:12px; flex-shrink:0; }}
+  .topbar-brand h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:17px;
     letter-spacing:-.01em; margin:0; color:var(--ink); }}
-  .topbar-subtitle{{ font-size:11.5px; color:var(--ink-soft); }}
+  .topbar-divider{{ width:1px; height:18px; background:var(--border); flex-shrink:0; }}
+  .topbar-subtitle{{ font-size:11px; color:var(--ink-soft); letter-spacing:.01em; }}
   .topbar-right{{ margin-left:auto; display:flex; align-items:center; gap:10px; flex-shrink:0; }}
-  .topbar-meta{{ font-size:11.5px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; }}
+  .topbar-meta{{ font-size:11px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; letter-spacing:.01em; }}
   /* ── 左側選單 ── */
-  .sidebar{{ position:fixed; top:56px; left:0; bottom:0; width:220px; background:var(--card);
+  .sidebar{{ position:fixed; top:52px; left:0; bottom:0; width:210px; background:var(--sidebar-bg);
     border-right:1px solid var(--border); z-index:200; display:flex; flex-direction:column;
-    padding:10px 0; overflow-y:auto; }}
-  .sidebar-btn{{ display:flex; align-items:center; gap:11px; width:100%; padding:13px 20px;
+    padding:8px 0; overflow-y:auto; }}
+  .sidebar-section-label{{ font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-soft); padding:12px 16px 4px; opacity:.7; }}
+  .sidebar-btn{{ display:flex; align-items:center; gap:10px; width:100%; padding:9px 16px;
     border:none; background:transparent; cursor:pointer; text-align:left;
     font-family:inherit; color:var(--ink-soft); transition:all .15s;
-    border-left:3px solid transparent; }}
-  .sidebar-btn:hover{{ background:var(--hover); color:var(--ink); }}
-  .sidebar-btn.active{{ color:var(--stamp); font-weight:700; background:rgba(156,43,34,.07); border-left-color:var(--stamp); }}
-  .snav-icon{{ font-size:18px; flex-shrink:0; }}
-  .snav-label{{ font-size:13.5px; }}
-  .sidebar-footer{{ margin-top:auto; padding:14px 20px; font-size:11px; color:var(--ink-soft);
-    border-top:1px solid var(--border); line-height:1.9; }}
+    border-left:3px solid transparent; border-radius:0 4px 4px 0; margin-right:8px; }}
+  .sidebar-btn:hover{{ background:rgba(30,43,58,.06); color:var(--ink); }}
+  .sidebar-btn.active{{ color:var(--stamp); font-weight:600; background:rgba(156,43,34,.08); border-left-color:var(--stamp); }}
+  .snav-icon{{ font-size:15px; flex-shrink:0; opacity:.85; }}
+  .snav-label{{ font-size:13px; }}
+  .sidebar-footer{{ margin-top:auto; padding:12px 16px; font-size:10.5px; color:var(--ink-soft);
+    border-top:1px solid var(--border); line-height:1.8; opacity:.8; }}
   /* ── 主內容區 ── */
-  .main-area{{ margin-left:220px; margin-top:56px; padding:28px 32px 80px; }}
+  .main-area{{ margin-left:210px; margin-top:52px; padding:24px 28px 80px; }}
   nav.tabs{{ display:none; }}
   .tabpanel{{ display:none; }}
   .tabpanel.active{{ display:block; }}
-  h2{{ font-family:"Noto Serif TC",serif; font-size:20px; margin-bottom:6px; }}
-  h3{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
-  .section-note{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:18px; }}
+  h2{{ font-family:"Noto Serif TC",serif; font-size:18px; margin-bottom:5px; }}
+  h3{{ font-family:"Noto Serif TC",serif; font-size:15px; font-weight:700; margin:22px 0 9px; }}
+  .section-note{{ color:var(--ink-soft); font-size:12.5px; line-height:1.75; margin-bottom:16px; }}
   .search{{ width:100%; padding:9px 12px; border:1px solid var(--border); font-size:14px;
     background:var(--card); color:var(--ink); margin-bottom:10px;
     border-radius:var(--radius); transition:border-color .15s; outline:none; }}
@@ -1241,7 +1248,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     font-size:12px; color:var(--ink-soft); line-height:1.8; }}
   @media(max-width:768px){{
     .sidebar{{ display:none; }}
-    .main-area{{ margin-left:0; padding:20px 18px 80px; }}
+    .main-area{{ margin-left:0; margin-top:52px; padding:20px 18px 80px; }}
     .bottom-nav{{ display:flex; }}
     .topbar-meta{{ display:none; }}
   }}
@@ -1438,6 +1445,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <header class="topbar">
   <div class="topbar-brand">
     <h1>職安法規觀測站</h1>
+    <div class="topbar-divider"></div>
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
@@ -1446,9 +1454,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
 </header>
 <nav class="sidebar" id="sidebar">
+  <div class="sidebar-section-label">資訊</div>
   <button class="sidebar-btn active" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
+  <div class="sidebar-section-label">法規</div>
   <button class="sidebar-btn" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
+  <div class="sidebar-section-label">工具</div>
   <button class="sidebar-btn" data-tab="practitioner"><span class="snav-icon">👷</span><span class="snav-label">職安人員實用區</span></button>
   <div class="sidebar-footer">收藏與讀取狀態<br>僅存於本機瀏覽器</div>
 </nav>
