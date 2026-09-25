@@ -3560,66 +3560,179 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       el.innerHTML = '<div style="padding:60px 40px;text-align:center;color:var(--ink-soft);line-height:2">'
         + '<div style="font-size:36px;margin-bottom:12px">🕸</div>'
         + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">D3.js 圖形庫尚未載入</div>'
-        + '<div style="font-size:12px">瀏覽器可能封鎖了外部 CDN 腳本。<br>'
-        + '請嘗試：關閉 Tracking Prevention、或改用 Chrome / Firefox。</div>'
+        + '<div style="font-size:12px">瀏覽器可能封鎖外部 CDN。<br>請嘗試關閉 Tracking Prevention 或改用 Chrome / Firefox。</div>'
         + '</div>';
       return;
     }}
-    var W = el.offsetWidth || el.parentElement.offsetWidth || 760, H = 580;
     if (_graphSim) {{ _graphSim.stop(); _graphSim = null; }}
+    d3.select(el).selectAll("*").remove();
+    el.style.position = "relative";
+
+    var W = el.offsetWidth || 760, H = 580;
+
+    // 分類色盤（對應 CATEGORIES）
+    var catPal = {{
+      '管理制度':'#dc4b4b', '作業環境':'#e8813a', '職業衛生':'#c99a1a',
+      '化學品安全':'#28a050', '機械設備':'#2a72e0', '特殊作業':'#7952c0',
+      '營造工程':'#b040a0', '職業災害':'#3aa0d0'
+    }};
+
+    // 建立資料
     var allLaws = REGISTRY.filter(function(r) {{ return r.articles && r.articles.length > 0; }});
-    var nodes = allLaws.map(function(r) {{
-      return {{ id: r.name, arts: r.articles.length, cat: r.cat || '', tier: r.tier || 'dir',
-               cross: r.cross_refs ? Object.keys(r.cross_refs).length : 0, _r: r }};
-    }});
-    var nodeMap = {{}};
-    nodes.forEach(function(n) {{ nodeMap[n.id] = n; }});
-    var links = [];
+    var lawMap = {{}};
+    allLaws.forEach(function(r) {{ lawMap[r.name] = r; }});
+
+    var seenLink = new Set();
+    var linkData = [];
     allLaws.forEach(function(r) {{
       if (!r.cross_refs) return;
-      Object.keys(r.cross_refs).forEach(function(target) {{
-        if (nodeMap[target] && target !== r.name) {{
-          links.push({{ source: r.name, target: target, val: r.cross_refs[target].length }});
+      Object.keys(r.cross_refs).forEach(function(tgt) {{
+        if (!lawMap[tgt] || tgt === r.name) return;
+        var key = [r.name, tgt].sort().join('||');
+        if (!seenLink.has(key)) {{
+          seenLink.add(key);
+          linkData.push({{ source: r.name, target: tgt, val: r.cross_refs[tgt].length }});
         }}
       }});
     }});
-    var catPal = {{'職安衛主要法規':'#dc4b4b','化學品管理':'#e07a2a','營造業':'#c99a1a','機械設備':'#4aaa52','電氣安全':'#2a72e0','防護具':'#6a52c0','職業衛生':'#b052c0','勞工行政':'#52a8b0','職業傷病':'#3aa0d0'}};
-    d3.select(el).selectAll("*").remove();
-    var svg = d3.select(el).append("svg").attr("width", W).attr("height", H);
+
+    var connSet = new Set();
+    linkData.forEach(function(l) {{ connSet.add(l.source); connSet.add(l.target); }});
+
+    function nodeR(d) {{ return Math.sqrt(d.arts) * 1.8 + 6; }}
+
+    function mkNodes(incIso) {{
+      return allLaws
+        .filter(function(r) {{ return incIso || connSet.has(r.name); }})
+        .map(function(r) {{
+          return {{ id: r.name, arts: r.articles.length, cat: r.cat || '',
+                   tier: r.tier || 'dir', iso: !connSet.has(r.name),
+                   inspect: INSPECTION_FOCUS.hasOwnProperty(r.name), _r: r }};
+        }});
+    }}
+
+    // SVG
+    var svg = d3.select(el).append("svg")
+      .attr("width", "100%").attr("height", H).style("display","block");
+    var zoom = d3.zoom().scaleExtent([0.05, 8]).on("zoom", function(e) {{ g.attr("transform", e.transform); }});
+    svg.call(zoom);
     var g = svg.append("g");
-    svg.call(d3.zoom().scaleExtent([0.1, 6]).on("zoom", function(e) {{ g.attr("transform", e.transform); }}));
-    var sim = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(function(d) {{ return d.id; }}).distance(85).strength(0.35))
-      .force("charge", d3.forceManyBody().strength(-200))
-      .force("center", d3.forceCenter(W / 2, H / 2))
-      .force("collide", d3.forceCollide(function(d) {{ return Math.sqrt(d.arts) * 2.2 + 9; }}));
-    _graphSim = sim;
-    var link = g.append("g").attr("stroke-opacity", 0.55).selectAll("line").data(links).join("line")
-      .attr("stroke", "var(--border)").attr("stroke-width", function(d) {{ return Math.min(3, Math.sqrt(d.val) + 0.4); }});
-    var node = g.append("g").selectAll("g").data(nodes).join("g").attr("cursor", "pointer");
-    node.call(d3.drag()
-      .on("start", function(e, d) {{ if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }})
-      .on("drag",  function(e, d) {{ d.fx = e.x; d.fy = e.y; }})
-      .on("end",   function(e, d) {{ if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }})
-    );
-    node.on("click", function(e, d) {{ openDrawer(d._r); }});
-    node.append("circle")
-      .attr("r", function(d) {{ return Math.sqrt(d.arts) * 2 + 7; }})
-      .attr("fill", function(d) {{ return catPal[d.cat] || '#888'; }})
-      .attr("opacity", 0.8).attr("stroke", "var(--card)").attr("stroke-width", 2);
-    node.append("text")
-      .text(function(d) {{ return d.id.length > 9 ? d.id.slice(0, 9) + '…' : d.id; }})
-      .attr("dy", function(d) {{ return Math.sqrt(d.arts) * 2 + 18; }})
-      .attr("text-anchor", "middle").attr("font-size", 9.5).attr("font-family", "inherit")
-      .attr("fill", "var(--ink)").attr("pointer-events", "none");
-    node.append("title").text(function(d) {{
-      return d.id + ' ｜ 條文數：' + d.arts + ' ｜ 交叉引用：' + d.cross + ' 部（點擊節點開啟抽屜）';
+    var gLinks = g.append("g");
+    var gNodes = g.append("g");
+
+    // 控制列
+    var ctrlDiv = d3.select(el).append("div")
+      .style("position","absolute").style("top","8px").style("right","8px")
+      .style("display","flex").style("gap","5px").style("z-index","10");
+    function mkBtn(txt, tip) {{
+      return ctrlDiv.append("button").text(txt).attr("title", tip)
+        .style("padding","3px 9px").style("font-size","11px").style("border","1px solid var(--border)")
+        .style("border-radius","3px").style("background","var(--card)").style("cursor","pointer")
+        .style("font-family","inherit").style("color","var(--ink-soft)");
+    }}
+    var showIso = false;
+    var isoBtn = mkBtn("+ 孤立節點", "顯示無交叉引用的法規節點");
+    var fitBtn = mkBtn("⊡ 全覽", "縮放至全部節點");
+
+    // 圖例
+    var legG = svg.append("g").attr("transform","translate(10,10)");
+    CATEGORIES.forEach(function(cat, i) {{
+      var row = legG.append("g").attr("transform","translate(0," + (i*16) + ")");
+      row.append("circle").attr("r",5).attr("cx",5).attr("cy",0)
+        .attr("fill", catPal[cat]||'#888').attr("opacity",0.85);
+      row.append("text").text(cat).attr("x",13).attr("dy","0.35em")
+        .attr("font-size",10).attr("fill","var(--ink-soft)").attr("font-family","inherit");
     }});
-    sim.on("tick", function() {{
-      link.attr("x1", function(d) {{ return d.source.x; }}).attr("y1", function(d) {{ return d.source.y; }})
-          .attr("x2", function(d) {{ return d.target.x; }}).attr("y2", function(d) {{ return d.target.y; }});
-      node.attr("transform", function(d) {{ return "translate(" + d.x + "," + d.y + ")"; }});
+    // 圖例 - 稽查重點
+    var legBot = svg.append("g").attr("transform","translate(10," + (CATEGORIES.length*16+18) + ")");
+    legBot.append("circle").attr("r",6).attr("cx",5).attr("cy",0)
+      .attr("fill","none").attr("stroke","#b91c1c").attr("stroke-width",2).attr("stroke-dasharray","4,2");
+    legBot.append("text").text("稽查重點法規").attr("x",14).attr("dy","0.35em")
+      .attr("font-size",10).attr("fill","#b91c1c").attr("font-family","inherit");
+
+    function fitView() {{
+      var b = gNodes.node().getBBox();
+      if (!b || b.width < 1) return;
+      var pad = 50;
+      var sc = Math.min((W-pad*2)/(b.width||1), (H-pad*2)/(b.height||1), 2.5);
+      var tx = W/2 - sc*(b.x + b.width/2);
+      var ty = H/2 - sc*(b.y + b.height/2);
+      svg.transition().duration(450).call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(sc));
+    }}
+
+    function redraw(incIso) {{
+      if (_graphSim) {{ _graphSim.stop(); _graphSim = null; }}
+      gLinks.selectAll("*").remove();
+      gNodes.selectAll("*").remove();
+      var nodes = mkNodes(incIso);
+      var nmap = {{}};
+      nodes.forEach(function(n) {{ nmap[n.id] = true; }});
+      var links = linkData.filter(function(l) {{ return nmap[typeof l.source==='object'?l.source.id:l.source] && nmap[typeof l.target==='object'?l.target.id:l.target]; }});
+
+      var sim = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(function(d) {{ return d.id; }}).distance(110).strength(0.45))
+        .force("charge", d3.forceManyBody().strength(function(d) {{ return d.iso ? -40 : -300; }}))
+        .force("center", d3.forceCenter(W/2, H/2))
+        .force("collide", d3.forceCollide(function(d) {{ return nodeR(d) + 14; }}))
+        .force("x", d3.forceX(W/2).strength(0.03))
+        .force("y", d3.forceY(H/2).strength(0.03))
+        .alphaDecay(0.022);
+      _graphSim = sim;
+
+      var link = gLinks.selectAll("line").data(links).join("line")
+        .attr("stroke","var(--border)").attr("stroke-opacity",0.55)
+        .attr("stroke-width", function(d) {{ return Math.min(4, Math.sqrt(d.val||1)+0.5); }});
+
+      var node = gNodes.selectAll("g").data(nodes).join("g").attr("cursor","pointer");
+      node.call(d3.drag()
+        .on("start", function(e,d) {{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; }})
+        .on("drag",  function(e,d) {{ d.fx=e.x; d.fy=e.y; }})
+        .on("end",   function(e,d) {{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }})
+      );
+      node.on("click", function(e,d) {{ openDrawer(d._r); }});
+
+      // 稽查重點外圈
+      node.filter(function(d) {{ return d.inspect; }})
+        .append("circle")
+        .attr("r", function(d) {{ return nodeR(d)+5; }})
+        .attr("fill","none").attr("stroke","#b91c1c").attr("stroke-width",2)
+        .attr("stroke-dasharray","4,2").attr("opacity",0.85);
+
+      node.append("circle")
+        .attr("r", nodeR)
+        .attr("fill", function(d) {{ return d.iso ? '#bbb' : (catPal[d.cat]||'#888'); }})
+        .attr("opacity", function(d) {{ return d.iso ? 0.35 : 0.88; }})
+        .attr("stroke","var(--card)").attr("stroke-width",1.5);
+
+      // 標籤（只顯示有連線的節點，最多12字）
+      node.filter(function(d) {{ return !d.iso; }})
+        .append("text")
+        .text(function(d) {{ return d.id.length > 12 ? d.id.slice(0,12)+'…' : d.id; }})
+        .attr("dy", function(d) {{ return nodeR(d)+13; }})
+        .attr("text-anchor","middle").attr("font-size",10).attr("font-family","inherit")
+        .attr("fill","var(--ink)").attr("pointer-events","none")
+        .attr("text-shadow","0 0 3px var(--card)");
+
+      node.append("title").text(function(d) {{
+        return d.id + ' | 條文：' + d.arts + ' | 引用：' + (d._r.cross_refs ? Object.keys(d._r.cross_refs).length : 0) + ' 部法規 | 點擊開啟詳情';
+      }});
+
+      sim.on("tick", function() {{
+        link.attr("x1",function(d) {{ return d.source.x; }}).attr("y1",function(d) {{ return d.source.y; }})
+            .attr("x2",function(d) {{ return d.target.x; }}).attr("y2",function(d) {{ return d.target.y; }});
+        node.attr("transform",function(d) {{ return "translate("+d.x+","+d.y+")"; }});
+      }});
+      sim.on("end", function() {{ fitView(); }});
+    }}
+
+    isoBtn.on("click", function() {{
+      showIso = !showIso;
+      isoBtn.text(showIso ? "- 孤立節點" : "+ 孤立節點");
+      redraw(showIso);
     }});
+    fitBtn.on("click", fitView);
+
+    redraw(false);
   }}
 
   // ② 修訂時間軸
