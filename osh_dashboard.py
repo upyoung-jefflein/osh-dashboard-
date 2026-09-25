@@ -1617,11 +1617,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var lr = r.latest_revision;
     if (!lr) return '';
     if (lr.is_full) return '<span class="chg-modified">全文修正</span>';
+    function _artList(nos, max) {{
+      var shown = nos.slice(0, max).map(function(n) {{ return '第'+n+'條'; }}).join('、');
+      var rest = nos.length - max;
+      return shown + (rest > 0 ? '…(+'+rest+')' : '');
+    }}
+    function _tip(nos) {{ return nos.map(function(n) {{ return '第'+n+'條'; }}).join('、'); }}
     var parts = [];
-    if (lr.modified && lr.modified.length) parts.push('<span class="chg-modified">✏修正' + lr.modified.length + '條</span>');
-    if (lr.added   && lr.added.length)    parts.push('<span class="chg-added">➕增訂' + lr.added.length + '條</span>');
-    if (lr.deleted && lr.deleted.length)  parts.push('<span class="chg-deleted">✖刪除' + lr.deleted.length + '條</span>');
-    return parts.join('・');
+    if (lr.modified && lr.modified.length)
+      parts.push('<span class="chg-modified" title="'+_tip(lr.modified)+'">✏修正：' + _artList(lr.modified, 3) + '</span>');
+    if (lr.added && lr.added.length)
+      parts.push('<span class="chg-added" title="'+_tip(lr.added)+'">➕增訂：' + _artList(lr.added, 5) + '</span>');
+    if (lr.deleted && lr.deleted.length)
+      parts.push('<span class="chg-deleted" title="'+_tip(lr.deleted)+'">✖刪除：' + _artList(lr.deleted, 3) + '</span>');
+    return parts.join('<br>');
   }}
 
   function renderNews() {{
@@ -2392,13 +2401,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 全文</span><span class="rev-arts">全文修正</span></div>';
       }} else {{
         if (lr.modified && lr.modified.length) {{
-          html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 修正</span><span class="rev-arts">第' + lr.modified.join('、') + '條（共' + lr.modified.length + '條）</span></div>';
+          html += '<div class="latest-rev-row"><span class="rev-label chg-modified">✏ 修正（' + lr.modified.length + '條）</span></div>';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          lr.modified.forEach(function(no) {{
+            html += artBase
+              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip" style="font-size:11px">第'+no+'條</a>'
+              : '<span class="art-chip" style="font-size:11px">第'+no+'條</span>';
+          }});
+          html += '</div>';
         }}
         if (lr.added && lr.added.length) {{
-          html += '<div class="latest-rev-row"><span class="rev-label chg-added">➕ 增訂</span><span class="rev-arts">第' + lr.added.join('、') + '條（共' + lr.added.length + '條）</span></div>';
+          html += '<div class="latest-rev-row"><span class="rev-label chg-added">➕ 增訂（' + lr.added.length + '條）</span></div>';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          lr.added.forEach(function(no) {{
+            html += artBase
+              ? '<a href="'+artBase+encodeURIComponent(no)+'" target="_blank" class="art-chip art-chip-added" style="font-size:11px">第'+no+'條</a>'
+              : '<span class="art-chip art-chip-added" style="font-size:11px">第'+no+'條</span>';
+          }});
+          html += '</div>';
         }}
         if (lr.deleted && lr.deleted.length) {{
-          html += '<div class="latest-rev-row"><span class="rev-label chg-deleted">✖ 刪除</span><span class="rev-arts">第' + lr.deleted.join('、') + '條（共' + lr.deleted.length + '條）</span></div>';
+          html += '<div class="latest-rev-row"><span class="rev-label chg-deleted">✖ 刪除（' + lr.deleted.length + '條）</span></div>';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px">';
+          lr.deleted.forEach(function(no) {{
+            html += '<span class="art-chip art-chip-deleted" style="font-size:11px">第'+no+'條</span>';
+          }});
+          html += '</div>';
         }}
       }}
       html += '</div></div>';
