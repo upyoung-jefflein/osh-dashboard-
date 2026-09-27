@@ -557,6 +557,18 @@
   .reg-view-toggle { display:flex; gap:6px; margin:10px 0 8px; flex-wrap:wrap; }
   .reg-view-toggle button { background:transparent; border:1px solid var(--border); border-radius:4px; padding:4px 12px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }
   .reg-view-toggle button.active { background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }
+  /* 合規風險評分 */
+  .risk-dots { display:inline-flex; gap:2px; align-items:center; vertical-align:middle; }
+  .risk-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .risk-lvl-5 .risk-dot.on { background:#b91c1c; }
+  .risk-lvl-4 .risk-dot.on { background:#ea580c; }
+  .risk-lvl-3 .risk-dot.on { background:#ca8a04; }
+  .risk-lvl-2 .risk-dot.on { background:#16a34a; }
+  .risk-lvl-1 .risk-dot.on { background:#6d28d9; }
+  .risk-dot.off { background:var(--border); }
+  /* 風險矩陣 */
+  #riskMatrix { display:none; width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }
+  .risk-matrix-tooltip { position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:4px; font-size:11.5px; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }
   @media(max-width:640px) {
     .tl-item { min-width:130px; max-width:calc(50% - 4px); }
     #lawGraph { height:420px; }
@@ -572,7 +584,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-26 01:52 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-27 10:16 ｜ 149 則動態 ｜ 113 筆法規</div>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -656,10 +668,13 @@
       <button class="active" data-regview="table">📋 表格</button>
       <button data-regview="timeline">📅 時間軸</button>
       <button data-regview="graph">🕸 關係圖譜</button>
+      <button data-regview="matrix">📊 風險矩陣</button>
     </div>
     <div class="registry-meta" id="registryMeta"></div>
     <div id="lawTimeline"></div>
     <div id="lawGraph"></div>
+    <div id="riskMatrix"></div>
+    <div class="risk-matrix-tooltip" id="rmTooltip"></div>
     <div class="table-scroll" id="mainTableScroll">
       <table class="registry-table">
         <thead><tr><th></th><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
@@ -1020,7 +1035,7 @@
     }, {passive: true});
   }
 
-  const GENERATED = new Date("2026-09-26");
+  const GENERATED = new Date("2026-09-27");
   const cutoff12m = new Date(GENERATED);
   cutoff12m.setMonth(cutoff12m.getMonth() - 12);
   const cutoff3m = new Date(GENERATED);
@@ -1710,6 +1725,7 @@
     document.getElementById("registryPager").style.display = regViewMode === "table" ? "" : "none";
     document.getElementById("lawTimeline").style.display = regViewMode === "timeline" ? "block" : "none";
     document.getElementById("lawGraph").style.display = regViewMode === "graph" ? "block" : "none";
+    document.getElementById("riskMatrix").style.display = regViewMode === "matrix" ? "block" : "none";
 
     if (regViewMode === "timeline") {
       document.getElementById("registryMeta").textContent = "時間軸：顯示 " + rows.length + " 筆，依最新修正日期排列";
@@ -1719,6 +1735,10 @@
       var crossCount = REGISTRY.filter(r => r.cross_refs && Object.keys(r.cross_refs).length > 0).length;
       document.getElementById("registryMeta").textContent = "關係圖譜：" + REGISTRY.filter(r => r.articles && r.articles.length).length + " 部法規，" + crossCount + " 部含交叉引用（拖曳移動節點，滾輪縮放）";
       renderGraph(); return;
+    }
+    if (regViewMode === "matrix") {
+      document.getElementById("registryMeta").textContent = "風險矩陣：依稽查頻率（X軸）× 最高罰鍰（Y軸）定位各法規合規優先順序，泡泡大小＝條文數";
+      renderRiskMatrix(); return;
     }
 
     const totalPages = Math.max(1, Math.ceil(rows.length / REGISTRY_PAGE_SIZE));
@@ -1762,6 +1782,27 @@
         ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
       var inspBadge = INSPECTION_FOCUS.hasOwnProperty(r.name)
         ? '<span class="inspect-badge">🔍 稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
+      // 風險評分點點（1~5 顆）
+      (function() {
+        var rs = 0;
+        var fi = INSPECTION_FOCUS[r.name];
+        if (fi) rs += Math.max(0, 11 - fi.rank) * 8;
+        if (r.penalty_articles && r.penalty_articles.length) {
+          var mf = 0;
+          r.penalty_articles.forEach(function(pa){ if ((pa.fine_max||0)>mf) mf=pa.fine_max||0; });
+          rs += Math.min(50, mf * 2);
+          if (r.penalty_articles.some(function(pa){ return pa.criminal; })) rs += 20;
+        }
+        if (isRecent3m(r.date)) rs += 15;
+        else if (isRecent(r.date)) rs += 8;
+        rs = Math.min(100, Math.round(rs));
+        var lvl = rs >= 80 ? 5 : rs >= 60 ? 4 : rs >= 40 ? 3 : rs >= 20 ? 2 : rs > 0 ? 1 : 0;
+        if (lvl > 0) {
+          var dots = '';
+          for (var di=1; di<=5; di++) dots += '<span class="risk-dot ' + (di<=lvl ? 'on' : 'off') + '"></span>';
+          inspBadge += '<span class="risk-dots risk-lvl-' + lvl + '" title="合規風險評分 ' + rs + '/100（點擊風險矩陣查看）" style="margin-left:4px">' + dots + '</span>';
+        }
+      })();
       return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
@@ -2515,6 +2556,196 @@
     fitBtn.on("click", fitView);
 
     redraw(false);
+  }
+
+  // ③ 合規風險矩陣（D3 泡泡圖）
+  var _rmRendered = false;
+  function renderRiskMatrix() {
+    var el = document.getElementById("riskMatrix");
+    // 計算每部法規風險評分
+    function riskScore(r) {
+      var s = 0;
+      var fi = INSPECTION_FOCUS[r.name];
+      if (fi) s += Math.max(0, 11 - fi.rank) * 8;  // 稽查排名 1→80, 10→8
+      if (r.penalty_articles && r.penalty_articles.length) {
+        var maxFine = 0;
+        r.penalty_articles.forEach(function(pa) { if ((pa.fine_max||0) > maxFine) maxFine = pa.fine_max||0; });
+        s += Math.min(50, maxFine * 2);
+        var hasCriminal = r.penalty_articles.some(function(pa) { return pa.criminal; });
+        if (hasCriminal) s += 20;
+      }
+      if (isRecent3m(r.date)) s += 15;
+      else if (isRecent(r.date)) s += 8;
+      return Math.min(100, Math.round(s));
+    }
+    // 準備資料點：只取有罰則或稽查重點的法規
+    var pts = REGISTRY.filter(function(r) {
+      return r.status !== '廢止' && (INSPECTION_FOCUS[r.name] || (r.penalty_articles && r.penalty_articles.length));
+    }).map(function(r) {
+      var fi = INSPECTION_FOCUS[r.name];
+      var maxFine = 0;
+      if (r.penalty_articles) r.penalty_articles.forEach(function(pa) { if ((pa.fine_max||0) > maxFine) maxFine = pa.fine_max||0; });
+      var hasCriminal = r.penalty_articles && r.penalty_articles.some(function(pa) { return pa.criminal; });
+      return {
+        name: r.name, cat: r.cat || '其他',
+        rank: fi ? fi.rank : 11,       // 11 = 非稽查重點
+        fine: maxFine,
+        artCount: r.articles ? r.articles.length : 0,
+        criminal: hasCriminal,
+        score: riskScore(r),
+        recent: isRecent3m(r.date) ? 'recent3m' : isRecent(r.date) ? 'recent' : '',
+        fi: fi
+      };
+    });
+
+    if (!pts.length) { el.innerHTML = '<p style="padding:20px;color:var(--ink-soft)">無足夠資料建立風險矩陣</p>'; return; }
+
+    var catPal = {'管理制度':'#dc4b4b','作業環境':'#e8813a','職業衛生':'#c99a1a','化學品安全':'#28a050','機械設備':'#2a72e0','特殊作業':'#7952c0','營造工程':'#b040a0','職業災害':'#3aa0d0','其他':'#888'};
+    var W = el.clientWidth || 800, H = 520;
+    var mg = {t:30, r:20, b:60, l:70};
+    var iW = W - mg.l - mg.r, iH = H - mg.t - mg.b;
+
+    el.innerHTML = '';
+    var svg = d3.select(el).append("svg").attr("width", W).attr("height", H);
+    var g = svg.append("g").attr("transform","translate(" + mg.l + "," + mg.t + ")");
+
+    // 軸：X = 稽查排名（1最高→11非重點），Y = 最高罰鍰萬元
+    var maxFineAll = d3.max(pts, function(d){ return d.fine; }) || 300;
+    var xScale = d3.scaleLinear().domain([1, 12]).range([0, iW]);
+    var yScale = d3.scaleLinear().domain([0, maxFineAll * 1.1]).range([iH, 0]);
+    var rScale = d3.scaleSqrt().domain([0, d3.max(pts, function(d){ return d.artCount; }) || 1]).range([6, 28]);
+
+    // 網格
+    g.append("g").attr("class","rm-grid").call(
+      d3.axisLeft(yScale).tickSize(-iW).ticks(6)
+        .tickFormat(function(d){ return d ? d + '萬' : '0'; })
+    ).select(".domain").remove();
+    g.selectAll(".rm-grid line").style("stroke","var(--border)").style("stroke-dasharray","3,3").style("opacity",.6);
+
+    // X 軸
+    var xTicks = d3.range(1,12);
+    var xAxis = d3.axisBottom(xScale).tickValues(xTicks).tickFormat(function(d){ return d <= 10 ? '#' + d : '非重點'; });
+    g.append("g").attr("transform","translate(0," + iH + ")").call(xAxis)
+      .selectAll("text").style("font-size","10px").attr("dy","1.2em");
+    g.selectAll(".domain").style("stroke","var(--border)");
+    g.selectAll(".tick line").style("stroke","var(--border)");
+
+    // 軸標籤
+    g.append("text").attr("x", iW/2).attr("y", iH + 48).attr("text-anchor","middle")
+      .style("font-size","11px").style("fill","var(--ink-soft)").text("← 稽查排名（1＝最高頻率）　　　非稽查重點 →");
+    g.append("text").attr("transform","rotate(-90)").attr("x",-iH/2).attr("y",-52)
+      .attr("text-anchor","middle").style("font-size","11px").style("fill","var(--ink-soft)").text("最高罰鍰（萬元）");
+
+    // 刑事責任橫帶（視覺分區）
+    var crimPts = pts.filter(function(d){ return d.criminal; });
+    if (crimPts.length) {
+      g.append("rect").attr("x",0).attr("y",0).attr("width",iW).attr("height",4)
+        .style("fill","rgba(185,28,28,.08)");
+      g.append("text").attr("x",iW-4).attr("y",14).attr("text-anchor","end")
+        .style("font-size","9.5px").style("fill","rgba(185,28,28,.5)").text("含刑事責任");
+    }
+
+    // Jitter 避免重疊（同分類同位置）
+    var jitterMap = {};
+    pts.forEach(function(d) {
+      var key = d.rank + '_' + d.fine;
+      jitterMap[key] = (jitterMap[key] || 0) + 1;
+      d._jitterIdx = jitterMap[key];
+    });
+    pts.forEach(function(d) {
+      var key = d.rank + '_' + d.fine;
+      var total = jitterMap[key];
+      d._jx = (d._jitterIdx - (total + 1) / 2) * 18;
+      d._jy = total > 1 ? (d._jitterIdx % 2 === 0 ? -12 : 12) : 0;
+    });
+
+    // 泡泡
+    var tip = document.getElementById("rmTooltip");
+    var circles = g.selectAll(".rm-bubble").data(pts).enter().append("circle")
+      .attr("class","rm-bubble")
+      .attr("cx", function(d){ return xScale(d.rank + .5) + d._jx; })
+      .attr("cy", function(d){ return yScale(d.fine) + d._jy; })
+      .attr("r", function(d){ return rScale(d.artCount || 1); })
+      .style("fill", function(d){ return catPal[d.cat] || catPal['其他']; })
+      .style("fill-opacity", function(d){ return d.rank <= 10 ? .82 : .45; })
+      .style("stroke", function(d){ return d.criminal ? "#b91c1c" : catPal[d.cat] || catPal['其他']; })
+      .style("stroke-width", function(d){ return d.criminal ? 2.5 : 1; })
+      .style("stroke-dasharray", function(d){ return d.criminal ? "4,2" : "none"; })
+      .style("cursor","pointer")
+      .on("mousemove", function(event, d) {
+        var lines = ['<strong>' + d.name + '</strong>',
+          '分類：' + d.cat,
+          d.rank <= 10 ? '稽查排名：第 ' + d.rank + ' 名' : '（非稽查重點）',
+          d.fine ? '最高罰鍰：' + d.fine + ' 萬元' : '罰鍰：未列明',
+          d.criminal ? '⚠️ 含刑事責任' : '',
+          '條文數：' + d.artCount,
+          '合規風險分數：' + d.score + ' / 100',
+          d.recent === 'recent3m' ? '🔴 近3月修正' : d.recent === 'recent' ? '🟡 近期修正' : ''
+        ].filter(Boolean).join('<br>');
+        tip.innerHTML = lines;
+        tip.style.display = 'block';
+        tip.style.left = (event.clientX + 14) + 'px';
+        tip.style.top = (event.clientY - 10) + 'px';
+      })
+      .on("mouseleave", function() { tip.style.display = 'none'; })
+      .on("click", function(event, d) {
+        tip.style.display = 'none';
+        var idx = REGISTRY.findIndex(function(r){ return r.name === d.name; });
+        if (idx >= 0) openDrawer(idx);
+      });
+
+    // 標籤（只顯示稽查重點 top 5 + 高罰鍰）
+    g.selectAll(".rm-label").data(pts.filter(function(d){ return d.rank <= 5 || d.fine >= 100; }))
+      .enter().append("text").attr("class","rm-label")
+      .attr("x", function(d){ return xScale(d.rank + .5) + d._jx; })
+      .attr("y", function(d){ return yScale(d.fine) + d._jy - rScale(d.artCount || 1) - 3; })
+      .attr("text-anchor","middle")
+      .style("font-size","9px").style("fill","var(--ink)").style("pointer-events","none")
+      .text(function(d) {
+        var n = d.name.replace(/法|辦法|規則|標準|規定/g,'').replace(/（.+?）/g,'');
+        return n.length > 8 ? n.slice(0,8)+'…' : n;
+      });
+
+    // 圖例
+    var legCats = [...new Set(pts.map(function(d){ return d.cat; }))];
+    var legG = svg.append("g").attr("transform","translate(" + (mg.l + 8) + ",10)");
+    legCats.forEach(function(cat, i) {
+      legG.append("circle").attr("cx", i * 90).attr("cy",8).attr("r",5)
+        .style("fill", catPal[cat] || catPal['其他']).style("fill-opacity",.8);
+      legG.append("text").attr("x", i * 90 + 9).attr("y",12)
+        .style("font-size","9.5px").style("fill","var(--ink-soft)").text(cat);
+    });
+
+    // 右上角泡泡大小說明
+    var szG = svg.append("g").attr("transform","translate(" + (W - mg.r - 60) + ",10)");
+    szG.append("text").attr("x",0).attr("y",9).style("font-size","9px").style("fill","var(--ink-soft)").text("○ 大小＝條文數");
+
+    // 分隔線：稽查重點 vs 非重點
+    g.append("line").attr("x1", xScale(11)).attr("x2", xScale(11)).attr("y1",0).attr("y2",iH)
+      .style("stroke","var(--border)").style("stroke-dasharray","6,3");
+    g.append("text").attr("x", xScale(11) - 6).attr("y",10).attr("text-anchor","end")
+      .style("font-size","9px").style("fill","var(--ink-soft)").text("稽查重點");
+    g.append("text").attr("x", xScale(11) + 6).attr("y",10)
+      .style("font-size","9px").style("fill","var(--ink-soft)").text("其他法規");
+
+    // 手機：tap tooltip（觸控設備）
+    circles.on("touchstart", function(event, d) {
+      event.preventDefault();
+      var touch = event.touches[0];
+      var lines = ['<strong>' + d.name + '</strong>',
+        '分類：' + d.cat,
+        d.rank <= 10 ? '稽查排名：第 ' + d.rank + ' 名' : '（非稽查重點）',
+        d.fine ? '最高罰鍰：' + d.fine + ' 萬元' : '罰鍰：未列明',
+        d.criminal ? '⚠️ 含刑事責任' : '',
+        '條文數：' + d.artCount,
+        '合規風險分數：' + d.score + ' / 100'
+      ].filter(Boolean).join('<br>');
+      tip.innerHTML = lines + '<br><small style="color:#aaa">點擊查看詳情</small>';
+      tip.style.display = 'block';
+      tip.style.left = Math.min(touch.clientX + 10, window.innerWidth - 230) + 'px';
+      tip.style.top = Math.max(10, touch.clientY - 80) + 'px';
+      setTimeout(function(){ tip.style.display='none'; }, 3500);
+    }, {passive:false});
   }
 
   // ② 修訂時間軸
