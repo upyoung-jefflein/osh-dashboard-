@@ -4089,7 +4089,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       .on("click", function(event, d) {{
         tip.style.display = 'none';
         var idx = REGISTRY.findIndex(function(r){{ return r.name === d.name; }});
-        if (idx >= 0) openDrawer(idx);
+        if (idx >= 0) openDrawer(REGISTRY[idx]);
       }});
 
     // 標籤（只顯示稽查重點 top 5 + 高罰鍰；手機只顯示 top 3）
