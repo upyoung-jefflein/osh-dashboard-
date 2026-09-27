@@ -3269,7 +3269,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var maxFine = Math.max.apply(null, r.penalty_articles.map(function(pa) {{ return pa.fine_max || 0; }}));
       html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
       r.penalty_articles.forEach(function(pa) {{
-        var t = pa.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var t = (pa.text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>';
         // 結構化資訊列
