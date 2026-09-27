@@ -569,6 +569,36 @@
   /* 風險矩陣 */
   #riskMatrix { display:none; width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }
   .risk-matrix-tooltip { position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:4px; font-size:11.5px; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }
+  /* 資料狀態指示 */
+  .data-status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .ds-ok { background:#16a34a; }
+  .ds-warn { background:#ca8a04; }
+  .ds-fail { background:#b91c1c; }
+  .ds-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }
+  .ds-modal.open { display:flex; }
+  .ds-box { background:var(--card); border-radius:8px; padding:20px 22px; width:min(480px,94vw); max-height:88vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+  .ds-box h3 { font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; justify-content:space-between; }
+  .ds-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .ds-row:last-child { border:none; }
+  .ds-name { flex:1; font-weight:500; }
+  .ds-count { font-size:11px; color:var(--ink-soft); margin-left:auto; }
+  .ds-ts { font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }
+  .ds-section-hd { font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; padding:10px 0 4px; }
+  .ds-xml-row { display:flex; gap:8px; align-items:center; font-size:12.5px; padding:6px 0; }
+  .ds-xml-age { font-size:11px; padding:2px 7px; border-radius:99px; font-weight:600; }
+  .ds-xml-fresh { background:#dcfce7; color:#166534; }
+  .ds-xml-old { background:#fef9c3; color:#713f12; }
+  .ds-xml-stale { background:#fee2e2; color:#991b1b; }
+  /* 條文內嵌預覽卡 */
+  .art-preview-card { background:rgba(168,132,46,.06); border:1px solid var(--brass); border-radius:5px; padding:10px 13px; margin:8px 0; font-size:12.5px; line-height:1.75; color:var(--ink); position:relative; }
+  .art-preview-card .apv-no { font-weight:700; color:var(--stamp); margin-bottom:4px; font-size:13px; display:block; }
+  .art-preview-card .apv-text { white-space:pre-line; word-break:break-all; }
+  .art-preview-card .apv-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--blue); text-decoration:none; }
+  .art-preview-card .apv-link:hover { text-decoration:underline; }
+  .art-preview-card .apv-close { position:absolute; top:6px; right:8px; background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:16px; line-height:1; padding:2px 4px; }
+  /* 函釋查詢連結 */
+  .interp-link { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--blue); background:rgba(37,99,235,.06); border:1px solid rgba(37,99,235,.2); border-radius:4px; padding:4px 10px; text-decoration:none; margin-top:6px; }
+  .interp-link:hover { background:rgba(37,99,235,.12); }
   @media(max-width:640px) {
     .tl-item { min-width:130px; max-width:calc(50% - 4px); }
     #lawGraph { height:380px; }
@@ -624,7 +654,10 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-27 10:26 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-27 10:37 ｜ 149 則動態 ｜ 113 筆法規</div>
+    <button class="tool-btn" id="ds-btn" onclick="openDataStatus()" title="資料來源狀態" style="display:flex;align-items:center;gap:4px;font-size:12px">
+      <span class="data-status-dot ds-ok" id="ds-indicator"></span><span class="topbar-subtitle" style="display:inline">狀態</span>
+    </button>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -867,6 +900,12 @@
 </div>
 <div id="clip-toast" class="toast-clip"></div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
+<div id="ds-modal" class="ds-modal" onclick="if(event.target===this)closeDataStatus()">
+  <div class="ds-box">
+    <h3>資料來源狀態 <button onclick="closeDataStatus()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft);padding:0 4px">✕</button></h3>
+    <div id="ds-content"></div>
+  </div>
+</div>
 
 <div id="compare-modal" class="compare-modal" onclick="if(event.target===this)closeCompare()">
   <div class="compare-box">
@@ -980,6 +1019,8 @@
   const APPLICABILITY = {"職業安全衛生法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "適用所有事業單位（含承攬、派遣）；自營作業者另有規定"}, "職業安全衛生法施行細則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "隨母法（職安法）一併適用"}, "職業安全衛生設施規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "一般作業場所安全設施通用標準"}, "職業安全衛生管理辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": ["第一類事業", "第二類事業", "第三類事業"], "notes": "人員配置依附表一、二分類；第一類（製造/營造）門檻最嚴"}, "職業安全衛生教育訓練規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "特殊作業、管理人員時數依附表；115年6月25日新增丁種主管"}, "勞工健康保護規則": {"industries": ["全行業"], "min_workers": 50, "risk_class": [], "notes": "50人以上設健康服務人員或委託；特殊作業不受人數限制"}, "女性勞工母性健康保護實施辦法": {"industries": ["全行業"], "min_workers": 100, "risk_class": [], "notes": "100人以上強制；其他得自願辦理"}, "勞工作業環境監測實施辦法": {"industries": ["製造業", "化學工業", "礦業", "營造業", "電子業"], "min_workers": null, "risk_class": ["甲種作業", "乙種作業"], "notes": "有害物質暴露場所均適用，不設人數下限"}, "職業安全衛生標示設置準則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "危害場所皆須設置；配合危害通識規則使用"}, "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "孕婦、產後一年、未滿18歲勞工，應進行工作適性評估"}, "異常氣壓危害預防標準": {"industries": ["營造業", "潛水業", "隧道工程"], "min_workers": null, "risk_class": [], "notes": "壓縮空氣作業（沉箱、潛水）或低壓環境"}, "高架作業勞工保護措施標準": {"industries": ["營造業", "電信業", "維修業", "製造業"], "min_workers": null, "risk_class": [], "notes": "離地面或樓板2公尺以上作業即適用"}, "高溫作業勞工作息時間標準": {"industries": ["製造業", "營造業", "餐飲業", "農業"], "min_workers": null, "risk_class": [], "notes": "WBGT≧25℃之作業環境；附表規定各溫度帶作息比例"}, "精密作業勞工視機能保護設施標準": {"industries": ["電子業", "製造業", "印刷業"], "min_workers": null, "risk_class": [], "notes": "精密儀器操作、VDT作業超過一定時數"}, "重體力勞動作業勞工保護措施標準": {"industries": ["製造業", "倉儲業", "營造業"], "min_workers": null, "risk_class": [], "notes": "搬運物重超過規定標準之作業"}, "高壓氣體勞工安全規則": {"industries": ["化學工業", "食品加工", "鋼鐵業", "醫療業"], "min_workers": null, "risk_class": [], "notes": "製造、儲存、使用高壓氣體（依容量計）"}, "缺氧症預防規則": {"industries": ["營造業", "製造業", "污水處理", "食品業"], "min_workers": null, "risk_class": [], "notes": "局限空間作業；密閉隧道、坑道、桶槽等"}, "營造安全衛生設施標準": {"industries": ["營造業"], "min_workers": 1, "risk_class": ["甲種危險工作場所", "丙種危險工作場所"], "notes": "所有建築/土木/設備工程適用"}, "工程安全設計及整體工程統合管理辦法": {"industries": ["營造業"], "min_workers": null, "risk_class": ["甲種危險工作場所"], "notes": "115年新訂；適用一定規模以上工程專案"}, "林場安全衛生設施規則": {"industries": ["林業"], "min_workers": null, "risk_class": [], "notes": "林業作業專用"}, "船舶清艙解體勞工安全規則": {"industries": ["航運業", "拆船業"], "min_workers": null, "risk_class": [], "notes": "船舶清艙、解體作業"}, "碼頭裝卸安全衛生設施標準": {"industries": ["倉儲業", "運輸業"], "min_workers": null, "risk_class": [], "notes": "港口碼頭裝卸作業"}, "礦場職業衛生設施標準": {"industries": ["礦業"], "min_workers": null, "risk_class": [], "notes": "礦場採掘作業專用"}, "鍋爐及壓力容器安全規則": {"industries": ["製造業", "能源業", "化學工業", "食品業"], "min_workers": null, "risk_class": [], "notes": "設置鍋爐（第一種/第二種）或壓力容器即適用"}, "起重升降機具安全規則": {"industries": ["製造業", "營造業", "倉儲業", "港口業"], "min_workers": null, "risk_class": [], "notes": "起重機、升降機、人字臂起重桿等"}, "危險性機械及設備安全檢查規則": {"industries": ["製造業", "營造業", "能源業"], "min_workers": null, "risk_class": [], "notes": "鍋爐、壓力容器、起重機等危險性機械設備定期檢查"}, "危害性化學品標示及通識規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "使用危害性化學品即適用（GHS標示+SDS）"}, "危害性化學品評估及分級管理辦法": {"industries": ["全行業"], "min_workers": 5, "risk_class": [], "notes": "5人以上且使用危害化學品；依暴露及危害分級管理"}, "特定化學物質危害預防標準": {"industries": ["化學工業", "製造業", "電子業", "皮革業"], "min_workers": null, "risk_class": [], "notes": "甲類（致癌）/乙類/丙類/丁類特定化學物質"}, "有機溶劑中毒預防規則": {"industries": ["製造業", "印刷業", "乾洗業", "電子業", "皮革業"], "min_workers": null, "risk_class": [], "notes": "第一種/第二種/第三種有機溶劑作業"}, "鉛中毒預防規則": {"industries": ["電池製造", "印刷業", "金屬冶煉", "電子業"], "min_workers": null, "risk_class": [], "notes": "鉛或其化合物之製造/處置/使用/廢棄作業"}, "粉塵危害預防標準": {"industries": ["礦業", "營造業", "石材加工", "陶瓷業", "製藥業"], "min_workers": null, "risk_class": [], "notes": "產生粉塵之特定作業，含矽肺病預防"}, "勞工作業場所容許暴露標準": {"industries": ["全行業"], "min_workers": null, "risk_class": [], "notes": "配合作業環境監測使用；規定各化學物質PEL/STEL"}, "新化學物質登記管理辦法": {"industries": ["化學工業", "製造業"], "min_workers": null, "risk_class": [], "notes": "製造/輸入量≧100kg之新化學物質須登記"}, "優先管理化學品之指定及運作管理辦法": {"industries": ["化學工業", "製造業", "電子業"], "min_workers": null, "risk_class": [], "notes": "指定之優先管理化學品須申報運作情形"}, "職業災害預防及職業災害勞工重建補助辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職災勞工補助申請；含預防補助、職能復健"}, "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職業傷病認定、醫療機構認可、職災通報義務"}, "職業災害勞工職能復健專業機構認可管理及補助辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職能復健機構認可標準與補助申請"}};
   const INSPECTION_FOCUS = {"職業安全衛生法": {"rank": 1, "focus_articles": ["6", "21", "23", "32", "37"], "common_violations": ["一般安全衛生教育訓練未落實", "未訂定安全衛生工作守則", "特殊作業未辦健康檢查", "重大職災未24小時通報"], "note": "歷年勞動檢查違規件數最高，適用所有事業單位"}, "職業安全衛生設施規則": {"rank": 2, "focus_articles": ["19之1", "224", "228", "248", "277", "309"], "common_violations": ["局限空間進入前未辦許可及氣體測定", "高架作業護欄不符規定", "電氣設備未接地或漏電斷路器", "個人防護具未提供或未確認使用"], "note": "條文最多（超過300條），各類設施均有詳細規範"}, "職業安全衛生管理辦法": {"rank": 3, "focus_articles": ["11", "12之1", "14", "23", "27"], "common_violations": ["職業安全衛生委員會未每季召開", "安全衛生管理計畫流於形式", "自動檢查記錄不完整", "承攬管理計畫未訂定"], "note": "管理制度面違規，常與設施規則同時被裁罰"}, "危害性化學品標示及通識規則": {"rank": 4, "focus_articles": ["7", "10", "13", "16", "17"], "common_violations": ["容器GHS標示不完整或未更新", "SDS未放置於作業現場", "危害性化學品清單未建立或未更新", "勞工未接受SDS教育訓練"], "note": "製造業/化工業高頻違規，GHS標示常見格式錯誤"}, "缺氧症預防規則": {"rank": 5, "focus_articles": ["4", "5", "14", "22", "26之1"], "common_violations": ["進入局限空間前未測定氧氣及有害氣體", "未選任缺氧作業主管", "未訂定緊急避難及搶救方法", "勞工未受缺氧症預防教育訓練"], "note": "致死率高，稽查人員重點查核項目之一"}, "勞工作業環境監測實施辦法": {"rank": 6, "focus_articles": ["7", "12", "13", "14"], "common_violations": ["定期監測未辦理或逾期", "監測結果未告知勞工", "超過容許暴露標準未採取改善措施", "監測紀錄未保存3年"], "note": "化學品作業場所必查項目"}, "營造安全衛生設施標準": {"rank": 7, "focus_articles": ["5之1", "17之1", "19", "62", "155"], "common_violations": ["未訂定施工安全計畫", "墜落防護設施不足（護欄/安全網）", "開挖作業無擋土支撐", "起重機械無合格證書"], "note": "營造業職災比例最高，稽查頻率最高行業"}, "高架作業勞工保護措施標準": {"rank": 8, "focus_articles": ["3", "5", "6", "8"], "common_violations": ["未提供安全帶及安全母索", "作業前未評估環境風險", "安全設施設置不符標準"], "note": "墜落是營造業最主要死亡原因"}, "特定化學物質危害預防標準": {"rank": 9, "focus_articles": ["6", "7", "20", "38"], "common_violations": ["密閉設備未達規定", "局部排氣裝置風速不足", "作業主管未選任", "定期實施自動檢查"], "note": "致癌物（甲類）違規有最嚴裁罰"}, "高溫作業勞工作息時間標準": {"rank": 10, "focus_articles": ["3", "4", "7", "8"], "common_violations": ["未量測WBGT值", "未依WBGT調整作息比例", "未提供防暑飲水", "勞工未接受熱危害預防訓練"], "note": "夏季重點查核，職業性熱中暑為職業病"}};
   const CNS_ISO = {"職業安全衛生法": [{"code": "ILO-OSH 2001", "title": "職業安全衛生管理系統指引"}], "職業安全衛生管理辦法": [{"code": "ISO 45001:2018", "title": "職業安全衛生管理系統"}, {"code": "CNS 45001:2019", "title": "職業安全衛生管理系統（臺灣國家標準）"}], "危害性化學品標示及通識規則": [{"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"}, {"code": "CNS 15030", "title": "化學品分類及標示"}], "危害性化學品評估及分級管理辦法": [{"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"}, {"code": "ISO 31000:2018", "title": "風險管理指引"}], "勞工作業場所容許暴露標準": [{"code": "ACGIH TLV-TWA/STEL", "title": "美國工業衛生師協會容許暴露值"}, {"code": "NIOSH REL", "title": "美國職業安全衛生研究所建議暴露值"}], "勞工作業環境監測實施辦法": [{"code": "ISO 11171", "title": "顆粒污染量測方法"}, {"code": "NIOSH Method Manual", "title": "美國NIOSH採樣分析方法手冊"}], "鍋爐及壓力容器安全規則": [{"code": "ASME BPVC", "title": "美國機械工程師學會鍋爐及壓力容器規範"}, {"code": "CNS 2160 系列", "title": "鍋爐及壓力容器相關國家標準"}], "起重升降機具安全規則": [{"code": "ISO 4301 系列", "title": "起重機分類與設計規範"}, {"code": "CNS 14253", "title": "吊掛用鋼索安全規範"}], "缺氧症預防規則": [{"code": "ANSI/ASSP Z117.1", "title": "局限空間安全要求"}], "異常氣壓危害預防標準": [{"code": "EN 14153 系列", "title": "潛水作業安全歐洲標準"}, {"code": "ISO 11107", "title": "潛水呼吸氣體標準"}], "高壓氣體勞工安全規則": [{"code": "ISO 11114 系列", "title": "氣瓶閥門相容性標準"}, {"code": "CNS 4620", "title": "高壓氣體安全規則（臺灣）"}], "特定化學物質危害預防標準": [{"code": "IARC 致癌物分類", "title": "國際癌症研究機構致癌物分級"}, {"code": "ACGIH A1/A2", "title": "確定/疑似人類致癌物分類"}], "有機溶劑中毒預防規則": [{"code": "ACGIH TLV-TWA", "title": "各有機溶劑容許暴露值"}, {"code": "GHS Skin/Resp. Sensitizer", "title": "皮膚/呼吸道致敏標示"}], "粉塵危害預防標準": [{"code": "ISO 7708", "title": "空氣品質—粒徑分組採樣定義"}, {"code": "ACGIH TLV-TWA（可呼吸性粉塵）", "title": "可呼吸性粉塵濃度限值"}], "職業安全衛生設施規則": [{"code": "ISO 45001:2018 §8.1", "title": "作業規劃與控制"}, {"code": "IEC 60364", "title": "建築物電氣裝置安全標準"}], "高溫作業勞工作息時間標準": [{"code": "ISO 7933:2004", "title": "熱環境—預測熱緊迫分析（PHS模型）"}, {"code": "ACGIH WBGT TLV", "title": "濕球黑球溫度容許暴露值"}], "新化學物質登記管理辦法": [{"code": "REACH (EU)", "title": "歐盟化學品登記、評估、授權及限制"}, {"code": "K-REACH (KR)", "title": "韓國化學物質登記及評估法"}]};
+  const SOURCE_STATUS = [{"name": "勞動部新聞稿", "org": "勞動部", "type": "news", "ok": true, "count": 60, "ts": "2026-09-27 10:36"}, {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "type": "news", "ok": true, "count": 60, "ts": "2026-09-27 10:36"}, {"name": "職安署公布欄", "org": "勞動部職業安全衛生署", "type": "notice", "ok": true, "count": 60, "ts": "2026-09-27 10:36"}, {"name": "職安署活動訊息", "org": "勞動部職業安全衛生署", "type": "event", "ok": true, "count": 60, "ts": "2026-09-27 10:36"}, {"name": "勞動部法規公告", "org": "勞動部", "type": "notice", "ok": false, "count": 0, "ts": "2026-09-27 10:36"}, {"name": "行政院電子公報", "org": "行政院", "type": "notice", "ok": false, "count": 0, "ts": "2026-09-27 10:36"}, {"name": "職安署教育訓練", "org": "勞動部職業安全衛生署", "type": "event", "ok": false, "count": 0, "ts": "2026-09-27 10:36"}, {"name": "勞動部勞動統計", "org": "勞動部", "type": "notice", "ok": false, "count": 0, "ts": "2026-09-27 10:36"}];
+  const XML_CACHE_INFO = {"exists": true, "age_days": 1.8, "count": 106, "ts": "2026-09-25 15:34"};
   const TIER_LABEL = {act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -2094,18 +2135,19 @@
       html += '<h3>條文索引（共 ' + cntLabel + '）</h3>';
       // ④ 搜尋工具列
       html += '<div class="art-index-toolbar">';
-      html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號…" autocomplete="off">';
+      html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號或條文內容…" autocomplete="off">';
       html += '<button class="art-copy-btn" id="art-ms-btn" title="切換多選模式後點擊條文可批次複製引用">☑ 多選</button>';
       html += '<button class="art-copy-btn" id="art-cp-btn" style="display:none">複製引用（<span id="art-sel-cnt">0</span>）</button>';
       html += '</div>';
-      // ②③ chip 產生函式
+      // ②③ chip 產生函式（用 data-prev 取代 title，手機也能展開預覽）
       function _mkChip(no) {
         var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '');
         var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
-        var ta = prev ? ' title="' + prev + '"' : '';
-        return artBase
-          ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</a>'
-          : '<span class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</span>';
+        var dprev = prev ? ' data-prev="' + prev + '"' : '';
+        var href = artBase ? artBase + encodeURIComponent(no) : '';
+        return href
+          ? '<a href="' + href + '" target="_blank" rel="noopener" class="' + cls + '" data-artno="' + no + '"' + dprev + '>第' + no + '條</a>'
+          : '<span class="' + cls + '" data-artno="' + no + '"' + dprev + '>第' + no + '條</span>';
       }
       html += '<div id="art-chips-wrap">';
       // ① 章節分組 or 平鋪
@@ -2134,8 +2176,21 @@
         });
         html += '</div></details>';
       }
+      // 條文預覽卡（點擊 chip 後顯示內容；手機友善）
+      html += '<div class="art-preview-card" id="art-prev-card" style="display:none">' +
+        '<button class="apv-close" id="apv-close-btn">✕</button>' +
+        '<span class="apv-no" id="apv-no"></span>' +
+        '<div class="apv-text" id="apv-text"></div>' +
+        (artBase ? '<a class="apv-link" id="apv-link" href="#" target="_blank" rel="noopener">開啟全文頁面 ↗</a>' : '') +
+        '</div>';
       html += '</div>';
     }
+
+    // 函釋查詢連結（連至勞動法令查詢系統）
+    var interpUrl = 'https://laws.mol.gov.tw/FLAW/FLAWQRY01-1.aspx?kw=' + encodeURIComponent(r.name);
+    html += '<div style="margin:6px 0 12px">' +
+      '<a href="' + interpUrl + '" target="_blank" rel="noopener" class="interp-link">📖 查詢函釋解釋令</a>' +
+      '</div>';
 
     // 全文按鈕
     html += '<a href="' + r.source + '" target="_blank" rel="noopener" class="drawer-fulllink">開啟全文頁面 ↗</a>';
@@ -2206,22 +2261,53 @@
           .then(function() { showToast('已複製 ' + sel.size + ' 條引用'); })
           .catch(function() { showToast('複製失敗，請手動選取'); });
       };
-      // ⑤ 委派點擊（多選模式攔截，普通模式放行）
+      // ⑤ 委派點擊（多選模式攔截；普通模式顯示預覽卡）
+      var prevCard = document.getElementById('art-prev-card');
+      var apvNo = document.getElementById('apv-no');
+      var apvText = document.getElementById('apv-text');
+      var apvLink = document.getElementById('apv-link');
+      var apvClose = document.getElementById('apv-close-btn');
+      if (apvClose && prevCard) apvClose.onclick = function() { prevCard.style.display = 'none'; prevCard.dataset.artno = ''; };
+
       if (wrap) wrap.addEventListener('click', function(e) {
-        if (!multiMode) return;
         var chip = e.target.closest('.art-chip');
         if (!chip || !chip.dataset.artno) return;
-        e.preventDefault();
-        var no = chip.dataset.artno;
-        if (sel.has(no)) { sel.delete(no); chip.classList.remove('art-selected'); }
-        else { sel.add(no); chip.classList.add('art-selected'); }
-        if (cntEl) cntEl.textContent = sel.size;
+        if (multiMode) {
+          e.preventDefault();
+          var no = chip.dataset.artno;
+          if (sel.has(no)) { sel.delete(no); chip.classList.remove('art-selected'); }
+          else { sel.add(no); chip.classList.add('art-selected'); }
+          if (cntEl) cntEl.textContent = sel.size;
+          return;
+        }
+        // 普通模式：有預覽文字 → 顯示預覽卡（攔截導航）
+        var prev = chip.dataset.prev || '';
+        if (prev && prevCard) {
+          var no = chip.dataset.artno;
+          if (prevCard.dataset.artno === no && prevCard.style.display !== 'none') {
+            // 二次點擊同一條 → 開啟全文
+            if (chip.href) window.open(chip.href, '_blank');
+            prevCard.style.display = 'none'; prevCard.dataset.artno = '';
+            return;
+          }
+          e.preventDefault();
+          if (apvNo) apvNo.textContent = '第' + no + '條';
+          if (apvText) apvText.textContent = prev;
+          if (apvLink && chip.href) { apvLink.href = chip.href; apvLink.style.display = ''; }
+          else if (apvLink) apvLink.style.display = 'none';
+          prevCard.style.display = 'block';
+          prevCard.dataset.artno = no;
+          prevCard.scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
+        // 無預覽 → 正常導航（連結繼續運作）
       });
-      // ④ 條號搜尋
+      // ④ 條號/內容搜尋
       if (srch) srch.addEventListener('input', function() {
-        var q = srch.value.trim();
+        var q = srch.value.trim().toLowerCase();
         wrap && wrap.querySelectorAll('.art-chip').forEach(function(c) {
-          c.style.display = (!q || (c.dataset.artno || '').includes(q)) ? '' : 'none';
+          var noMatch = !q || (c.dataset.artno || '').includes(q);
+          var prevMatch = q && (c.dataset.prev || '').toLowerCase().includes(q);
+          c.style.display = (noMatch || prevMatch) ? '' : 'none';
         });
         wrap && wrap.querySelectorAll('.art-chapter-group').forEach(function(g) {
           var vis = [...g.querySelectorAll('.art-chip')].filter(function(c) { return c.style.display !== 'none'; }).length;
@@ -2597,6 +2683,48 @@
 
     redraw(false);
   }
+
+  // ─── 資料來源狀態面板 ──────────────────────────────────────────
+  (function initDataStatus() {
+    var failCount = SOURCE_STATUS.filter(function(s) { return !s.ok; }).length;
+    var dot = document.getElementById('ds-indicator');
+    if (dot) {
+      dot.className = 'data-status-dot ' + (failCount === 0 ? 'ds-ok' : failCount < SOURCE_STATUS.length / 2 ? 'ds-warn' : 'ds-fail');
+    }
+  })();
+
+  function openDataStatus() {
+    var el = document.getElementById('ds-content');
+    if (!el) return;
+    var html = '<div class="ds-section-hd">新聞 RSS 來源</div>';
+    SOURCE_STATUS.forEach(function(s) {
+      var dotCls = s.ok ? 'ds-ok' : 'ds-fail';
+      var label = s.ok ? '正常' : '失敗';
+      html += '<div class="ds-row">' +
+        '<span class="data-status-dot ' + dotCls + '"></span>' +
+        '<span class="ds-name">' + s.name + '<span style="font-size:10.5px;color:var(--ink-soft);margin-left:4px">(' + s.org + ')</span></span>' +
+        '<span class="ds-count">' + (s.ok ? s.count + ' 筆' : '取得失敗') + '</span>' +
+        '</div>';
+    });
+    html += '<div class="ds-section-hd">法規資料庫</div>';
+    if (XML_CACHE_INFO && XML_CACHE_INFO.exists) {
+      var ageDays = XML_CACHE_INFO.age_days || 0;
+      var ageCls = ageDays <= 1 ? 'ds-xml-fresh' : ageDays <= 7 ? 'ds-xml-old' : 'ds-xml-stale';
+      var ageLabel = ageDays <= 1 ? '最新' : ageDays + ' 天前';
+      html += '<div class="ds-xml-row">' +
+        '<span class="data-status-dot ds-ok"></span>' +
+        '<span style="flex:1">法規 XML 快取（' + (XML_CACHE_INFO.count || 0) + ' 筆）</span>' +
+        '<span class="ds-xml-age ' + ageCls + '">' + ageLabel + '</span>' +
+        '<span class="ds-ts" style="margin-left:6px">' + (XML_CACHE_INFO.ts || '') + '</span>' +
+        '</div>';
+    } else {
+      html += '<div class="ds-xml-row"><span class="data-status-dot ds-warn"></span><span>尚無法規快取，請執行 --fetch-xml</span></div>';
+    }
+    html += '<div style="margin-top:14px;font-size:11.5px;color:var(--ink-soft)">資料於每次重新生成時更新。可於 GitHub Actions 手動觸發以取得最新資料。</div>';
+    el.innerHTML = html;
+    document.getElementById('ds-modal').classList.add('open');
+  }
+  function closeDataStatus() { document.getElementById('ds-modal').classList.remove('open'); }
 
   // ③ 合規風險矩陣（D3 泡泡圖）
   var _rmRendered = false;

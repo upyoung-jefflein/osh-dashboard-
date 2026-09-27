@@ -71,6 +71,8 @@ SOURCES = [
     {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",                     "type": "rss", "source_type": "event"},
     {"name": "勞動部法規公告",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1634/RssList",                          "type": "rss", "source_type": "notice"},
     {"name": "行政院電子公報",  "org": "行政院",              "url": "https://gazette.nat.gov.tw/rss?agencyId=A22000000E",                     "type": "rss", "source_type": "notice"},
+    {"name": "職安署教育訓練",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48427/RssList",                     "type": "rss", "source_type": "event"},
+    {"name": "勞動部勞動統計",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1635/RssList",                          "type": "rss", "source_type": "notice"},
 ]
 
 LAW_XML_URLS = [
@@ -1876,6 +1878,36 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   /* 風險矩陣 */
   #riskMatrix {{ display:none; width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }}
   .risk-matrix-tooltip {{ position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:4px; font-size:11.5px; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }}
+  /* 資料狀態指示 */
+  .data-status-dot {{ width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }}
+  .ds-ok {{ background:#16a34a; }}
+  .ds-warn {{ background:#ca8a04; }}
+  .ds-fail {{ background:#b91c1c; }}
+  .ds-modal {{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
+  .ds-modal.open {{ display:flex; }}
+  .ds-box {{ background:var(--card); border-radius:8px; padding:20px 22px; width:min(480px,94vw); max-height:88vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,.18); }}
+  .ds-box h3 {{ font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; justify-content:space-between; }}
+  .ds-row {{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; }}
+  .ds-row:last-child {{ border:none; }}
+  .ds-name {{ flex:1; font-weight:500; }}
+  .ds-count {{ font-size:11px; color:var(--ink-soft); margin-left:auto; }}
+  .ds-ts {{ font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }}
+  .ds-section-hd {{ font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; padding:10px 0 4px; }}
+  .ds-xml-row {{ display:flex; gap:8px; align-items:center; font-size:12.5px; padding:6px 0; }}
+  .ds-xml-age {{ font-size:11px; padding:2px 7px; border-radius:99px; font-weight:600; }}
+  .ds-xml-fresh {{ background:#dcfce7; color:#166534; }}
+  .ds-xml-old {{ background:#fef9c3; color:#713f12; }}
+  .ds-xml-stale {{ background:#fee2e2; color:#991b1b; }}
+  /* 條文內嵌預覽卡 */
+  .art-preview-card {{ background:rgba(168,132,46,.06); border:1px solid var(--brass); border-radius:5px; padding:10px 13px; margin:8px 0; font-size:12.5px; line-height:1.75; color:var(--ink); position:relative; }}
+  .art-preview-card .apv-no {{ font-weight:700; color:var(--stamp); margin-bottom:4px; font-size:13px; display:block; }}
+  .art-preview-card .apv-text {{ white-space:pre-line; word-break:break-all; }}
+  .art-preview-card .apv-link {{ display:inline-block; margin-top:8px; font-size:11.5px; color:var(--blue); text-decoration:none; }}
+  .art-preview-card .apv-link:hover {{ text-decoration:underline; }}
+  .art-preview-card .apv-close {{ position:absolute; top:6px; right:8px; background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:16px; line-height:1; padding:2px 4px; }}
+  /* 函釋查詢連結 */
+  .interp-link {{ display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--blue); background:rgba(37,99,235,.06); border:1px solid rgba(37,99,235,.2); border-radius:4px; padding:4px 10px; text-decoration:none; margin-top:6px; }}
+  .interp-link:hover {{ background:rgba(37,99,235,.12); }}
   @media(max-width:640px) {{
     .tl-item {{ min-width:130px; max-width:calc(50% - 4px); }}
     #lawGraph {{ height:380px; }}
@@ -1932,6 +1964,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
   <div class="topbar-right">
     <div class="topbar-meta">📅 {generated_at} ｜ {news_count} 則動態 ｜ {registry_count} 筆法規</div>
+    <button class="tool-btn" id="ds-btn" onclick="openDataStatus()" title="資料來源狀態" style="display:flex;align-items:center;gap:4px;font-size:12px">
+      <span class="data-status-dot ds-ok" id="ds-indicator"></span><span class="topbar-subtitle" style="display:inline">狀態</span>
+    </button>
     <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
@@ -2085,6 +2120,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </div>
 <div id="clip-toast" class="toast-clip"></div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
+<div id="ds-modal" class="ds-modal" onclick="if(event.target===this)closeDataStatus()">
+  <div class="ds-box">
+    <h3>資料來源狀態 <button onclick="closeDataStatus()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft);padding:0 4px">✕</button></h3>
+    <div id="ds-content"></div>
+  </div>
+</div>
 
 <div id="compare-modal" class="compare-modal" onclick="if(event.target===this)closeCompare()">
   <div class="compare-box">
@@ -2198,6 +2239,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const APPLICABILITY = {applicability_json};
   const INSPECTION_FOCUS = {inspection_focus_json};
   const CNS_ISO = {cns_iso_json};
+  const SOURCE_STATUS = {source_status_json};
+  const XML_CACHE_INFO = {xml_cache_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"}};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -3312,18 +3355,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '<h3>條文索引（共 ' + cntLabel + '）</h3>';
       // ④ 搜尋工具列
       html += '<div class="art-index-toolbar">';
-      html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號…" autocomplete="off">';
+      html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號或條文內容…" autocomplete="off">';
       html += '<button class="art-copy-btn" id="art-ms-btn" title="切換多選模式後點擊條文可批次複製引用">☑ 多選</button>';
       html += '<button class="art-copy-btn" id="art-cp-btn" style="display:none">複製引用（<span id="art-sel-cnt">0</span>）</button>';
       html += '</div>';
-      // ②③ chip 產生函式
+      // ②③ chip 產生函式（用 data-prev 取代 title，手機也能展開預覽）
       function _mkChip(no) {{
         var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '');
         var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
-        var ta = prev ? ' title="' + prev + '"' : '';
-        return artBase
-          ? '<a href="' + artBase + encodeURIComponent(no) + '" target="_blank" rel="noopener" class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</a>'
-          : '<span class="' + cls + '" data-artno="' + no + '"' + ta + '>第' + no + '條</span>';
+        var dprev = prev ? ' data-prev="' + prev + '"' : '';
+        var href = artBase ? artBase + encodeURIComponent(no) : '';
+        return href
+          ? '<a href="' + href + '" target="_blank" rel="noopener" class="' + cls + '" data-artno="' + no + '"' + dprev + '>第' + no + '條</a>'
+          : '<span class="' + cls + '" data-artno="' + no + '"' + dprev + '>第' + no + '條</span>';
       }}
       html += '<div id="art-chips-wrap">';
       // ① 章節分組 or 平鋪
@@ -3352,8 +3396,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }});
         html += '</div></details>';
       }}
+      // 條文預覽卡（點擊 chip 後顯示內容；手機友善）
+      html += '<div class="art-preview-card" id="art-prev-card" style="display:none">' +
+        '<button class="apv-close" id="apv-close-btn">✕</button>' +
+        '<span class="apv-no" id="apv-no"></span>' +
+        '<div class="apv-text" id="apv-text"></div>' +
+        (artBase ? '<a class="apv-link" id="apv-link" href="#" target="_blank" rel="noopener">開啟全文頁面 ↗</a>' : '') +
+        '</div>';
       html += '</div>';
     }}
+
+    // 函釋查詢連結（連至勞動法令查詢系統）
+    var interpUrl = 'https://laws.mol.gov.tw/FLAW/FLAWQRY01-1.aspx?kw=' + encodeURIComponent(r.name);
+    html += '<div style="margin:6px 0 12px">' +
+      '<a href="' + interpUrl + '" target="_blank" rel="noopener" class="interp-link">📖 查詢函釋解釋令</a>' +
+      '</div>';
 
     // 全文按鈕
     html += '<a href="' + r.source + '" target="_blank" rel="noopener" class="drawer-fulllink">開啟全文頁面 ↗</a>';
@@ -3424,22 +3481,53 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           .then(function() {{ showToast('已複製 ' + sel.size + ' 條引用'); }})
           .catch(function() {{ showToast('複製失敗，請手動選取'); }});
       }};
-      // ⑤ 委派點擊（多選模式攔截，普通模式放行）
+      // ⑤ 委派點擊（多選模式攔截；普通模式顯示預覽卡）
+      var prevCard = document.getElementById('art-prev-card');
+      var apvNo = document.getElementById('apv-no');
+      var apvText = document.getElementById('apv-text');
+      var apvLink = document.getElementById('apv-link');
+      var apvClose = document.getElementById('apv-close-btn');
+      if (apvClose && prevCard) apvClose.onclick = function() {{ prevCard.style.display = 'none'; prevCard.dataset.artno = ''; }};
+
       if (wrap) wrap.addEventListener('click', function(e) {{
-        if (!multiMode) return;
         var chip = e.target.closest('.art-chip');
         if (!chip || !chip.dataset.artno) return;
-        e.preventDefault();
-        var no = chip.dataset.artno;
-        if (sel.has(no)) {{ sel.delete(no); chip.classList.remove('art-selected'); }}
-        else {{ sel.add(no); chip.classList.add('art-selected'); }}
-        if (cntEl) cntEl.textContent = sel.size;
+        if (multiMode) {{
+          e.preventDefault();
+          var no = chip.dataset.artno;
+          if (sel.has(no)) {{ sel.delete(no); chip.classList.remove('art-selected'); }}
+          else {{ sel.add(no); chip.classList.add('art-selected'); }}
+          if (cntEl) cntEl.textContent = sel.size;
+          return;
+        }}
+        // 普通模式：有預覽文字 → 顯示預覽卡（攔截導航）
+        var prev = chip.dataset.prev || '';
+        if (prev && prevCard) {{
+          var no = chip.dataset.artno;
+          if (prevCard.dataset.artno === no && prevCard.style.display !== 'none') {{
+            // 二次點擊同一條 → 開啟全文
+            if (chip.href) window.open(chip.href, '_blank');
+            prevCard.style.display = 'none'; prevCard.dataset.artno = '';
+            return;
+          }}
+          e.preventDefault();
+          if (apvNo) apvNo.textContent = '第' + no + '條';
+          if (apvText) apvText.textContent = prev;
+          if (apvLink && chip.href) {{ apvLink.href = chip.href; apvLink.style.display = ''; }}
+          else if (apvLink) apvLink.style.display = 'none';
+          prevCard.style.display = 'block';
+          prevCard.dataset.artno = no;
+          prevCard.scrollIntoView({{behavior:'smooth', block:'nearest'}});
+        }}
+        // 無預覽 → 正常導航（連結繼續運作）
       }});
-      // ④ 條號搜尋
+      // ④ 條號/內容搜尋
       if (srch) srch.addEventListener('input', function() {{
-        var q = srch.value.trim();
+        var q = srch.value.trim().toLowerCase();
         wrap && wrap.querySelectorAll('.art-chip').forEach(function(c) {{
-          c.style.display = (!q || (c.dataset.artno || '').includes(q)) ? '' : 'none';
+          var noMatch = !q || (c.dataset.artno || '').includes(q);
+          var prevMatch = q && (c.dataset.prev || '').toLowerCase().includes(q);
+          c.style.display = (noMatch || prevMatch) ? '' : 'none';
         }});
         wrap && wrap.querySelectorAll('.art-chapter-group').forEach(function(g) {{
           var vis = [...g.querySelectorAll('.art-chip')].filter(function(c) {{ return c.style.display !== 'none'; }}).length;
@@ -3815,6 +3903,48 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     redraw(false);
   }}
+
+  // ─── 資料來源狀態面板 ──────────────────────────────────────────
+  (function initDataStatus() {{
+    var failCount = SOURCE_STATUS.filter(function(s) {{ return !s.ok; }}).length;
+    var dot = document.getElementById('ds-indicator');
+    if (dot) {{
+      dot.className = 'data-status-dot ' + (failCount === 0 ? 'ds-ok' : failCount < SOURCE_STATUS.length / 2 ? 'ds-warn' : 'ds-fail');
+    }}
+  }})();
+
+  function openDataStatus() {{
+    var el = document.getElementById('ds-content');
+    if (!el) return;
+    var html = '<div class="ds-section-hd">新聞 RSS 來源</div>';
+    SOURCE_STATUS.forEach(function(s) {{
+      var dotCls = s.ok ? 'ds-ok' : 'ds-fail';
+      var label = s.ok ? '正常' : '失敗';
+      html += '<div class="ds-row">' +
+        '<span class="data-status-dot ' + dotCls + '"></span>' +
+        '<span class="ds-name">' + s.name + '<span style="font-size:10.5px;color:var(--ink-soft);margin-left:4px">(' + s.org + ')</span></span>' +
+        '<span class="ds-count">' + (s.ok ? s.count + ' 筆' : '取得失敗') + '</span>' +
+        '</div>';
+    }});
+    html += '<div class="ds-section-hd">法規資料庫</div>';
+    if (XML_CACHE_INFO && XML_CACHE_INFO.exists) {{
+      var ageDays = XML_CACHE_INFO.age_days || 0;
+      var ageCls = ageDays <= 1 ? 'ds-xml-fresh' : ageDays <= 7 ? 'ds-xml-old' : 'ds-xml-stale';
+      var ageLabel = ageDays <= 1 ? '最新' : ageDays + ' 天前';
+      html += '<div class="ds-xml-row">' +
+        '<span class="data-status-dot ds-ok"></span>' +
+        '<span style="flex:1">法規 XML 快取（' + (XML_CACHE_INFO.count || 0) + ' 筆）</span>' +
+        '<span class="ds-xml-age ' + ageCls + '">' + ageLabel + '</span>' +
+        '<span class="ds-ts" style="margin-left:6px">' + (XML_CACHE_INFO.ts || '') + '</span>' +
+        '</div>';
+    }} else {{
+      html += '<div class="ds-xml-row"><span class="data-status-dot ds-warn"></span><span>尚無法規快取，請執行 --fetch-xml</span></div>';
+    }}
+    html += '<div style="margin-top:14px;font-size:11.5px;color:var(--ink-soft)">資料於每次重新生成時更新。可於 GitHub Actions 手動觸發以取得最新資料。</div>';
+    el.innerHTML = html;
+    document.getElementById('ds-modal').classList.add('open');
+  }}
+  function closeDataStatus() {{ document.getElementById('ds-modal').classList.remove('open'); }}
 
   // ③ 合規風險矩陣（D3 泡泡圖）
   var _rmRendered = false;
@@ -4238,7 +4368,8 @@ def enrich_news_summaries(news: list[dict], api_key: str) -> None:
         print("  所有新聞均有快取，未呼叫 Gemini API。")
 
 
-def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path):
+def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
+               source_status: list[dict] | None = None, xml_cache_info: dict | None = None):
     from urllib.parse import quote as _urlq
     _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
 
@@ -4265,6 +4396,8 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         applicability_json=json.dumps(APPLICABILITY_DATA, ensure_ascii=False),
         inspection_focus_json=json.dumps(INSPECTION_FOCUS_LAWS, ensure_ascii=False),
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
+        source_status_json=json.dumps(source_status or [], ensure_ascii=False),
+        xml_cache_json=json.dumps(xml_cache_info or {{}}, ensure_ascii=False),
     )
     output_path.write_text(html, encoding="utf-8")
 
@@ -4284,8 +4417,18 @@ def main():
     args = parser.parse_args()
 
     all_news = []
+    source_status: list[dict] = []
+    _fetch_ts = datetime.now().strftime("%Y-%m-%d %H:%M")
     for source in SOURCES:
-        all_news.extend(fetch_source(source, debug=args.debug))
+        items = fetch_source(source, debug=args.debug)
+        all_news.extend(items)
+        source_status.append({
+            "name": source["name"], "org": source["org"],
+            "type": source.get("source_type", "news"),
+            "ok": len(items) > 0,
+            "count": len(items),
+            "ts": _fetch_ts,
+        })
     news = dedupe_and_filter_news(all_news)
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
 
@@ -4366,7 +4509,20 @@ def main():
             confirmed = sum(1 for r in registry if r["date"])
             print(f"法規：自動使用快取 {XML_CACHE}（{len(all_xml_records)} 筆），合併後共 {len(registry)} 筆。")
 
-    build_html(news, registry, STATIC_DIRECTIVES, args.output)
+    # 計算法規快取新鮮度
+    xml_cache_info: dict = {"exists": False, "age_days": None, "count": 0}
+    if XML_CACHE.exists():
+        import time as _time
+        age_sec = _time.time() - XML_CACHE.stat().st_mtime
+        xml_cache_info = {
+            "exists": True,
+            "age_days": round(age_sec / 86400, 1),
+            "count": len(all_xml_records) if 'all_xml_records' in dir() else 0,
+            "ts": datetime.fromtimestamp(XML_CACHE.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+        }
+
+    build_html(news, registry, STATIC_DIRECTIVES, args.output,
+               source_status=source_status, xml_cache_info=xml_cache_info)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
 
