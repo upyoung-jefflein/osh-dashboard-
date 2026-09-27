@@ -1483,7 +1483,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .src-link:hover{{ color:var(--stamp); }}
   /* ── Side Drawer ── */
   #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
-    opacity:0; pointer-events:none; transition:opacity .25s; }}
+    opacity:0; pointer-events:none; transition:opacity .25s; cursor:pointer; }}
   #drawer-overlay.open{{ opacity:1; pointer-events:auto; }}
   #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh;
     background:var(--card); z-index:201; box-shadow:-6px 0 32px rgba(0,0,0,.18);
@@ -1501,6 +1501,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border-radius:var(--radius); transition:color .15s, background .15s; }}
   #drawer-close:hover{{ color:var(--ink); background:var(--hover); }}
   #drawer-body{{ flex:1; overflow-y:auto; padding:16px 18px 24px; }}
+  .drawer-footer-bar{{ display:none; }}
   .drawer-meta{{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; font-size:12.5px; }}
   .drawer-meta span{{ background:var(--hover); border-radius:99px; padding:3px 9px;
     border:1px solid var(--border); }}
@@ -1946,6 +1947,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     /* 抽屜 meta pill 換行 */
     .drawer-meta {{ gap:4px; }}
     .drawer-meta span {{ font-size:11.5px; padding:3px 7px; }}
+    /* 抽屜：手機全寬 + 自適應字體 + 底部關閉列 */
+    #law-drawer {{ width:100vw; font-size:13.5px; }}
+    #drawer-header {{ padding:12px 14px 10px; }}
+    #drawer-header h2 {{ font-size:14px; }}
+    #drawer-body {{ padding:12px 14px 16px; }}
+    .drawer-footer-bar {{ display:flex; padding:10px 16px; padding-bottom:max(10px,env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--border); flex-shrink:0; }}
+    .drawer-footer-bar button {{ flex:1; padding:14px; background:var(--stamp); color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; font-weight:600; letter-spacing:.04em; }}
     /* 底部安全區域 */
     .notif-toast {{ padding-bottom:max(10px, env(safe-area-inset-bottom,0px)); }}
   }}
@@ -2218,6 +2226,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button id="drawer-close" onclick="closeDrawer()" title="關閉">✕</button>
   </div>
   <div id="drawer-body"></div>
+  <div class="drawer-footer-bar"><button onclick="closeDrawer()">✕ 關閉</button></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -3550,6 +3559,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById("drawer-overlay").classList.remove("open");
     document.body.style.overflow = "";
   }}
+
+  // 手機 drawer：overlay touchstart + 右滑手勢關閉
+  (function() {{
+    var ov = document.getElementById('drawer-overlay');
+    ov.addEventListener('touchstart', function() {{ closeDrawer(); }}, {{passive:true}});
+    var drw = document.getElementById('law-drawer');
+    var _tsX = 0;
+    drw.addEventListener('touchstart', function(e) {{ _tsX = e.touches[0].clientX; }}, {{passive:true}});
+    drw.addEventListener('touchend', function(e) {{
+      if (e.changedTouches[0].clientX - _tsX > 80) closeDrawer();
+    }}, {{passive:true}});
+  }})();
 
   // ⑥ 鍵盤快捷鍵（j/k 上下、s 收藏、o 開啟、m 已讀、? 說明、Esc 關閉）
   var focusedItemIdx = -1;
