@@ -1479,7 +1479,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .tier-tag.reg{{ color:var(--brass); }}
   .tier-tag.dir,.tier-tag.notice{{ color:var(--ink-soft); }}
   .cat-tag{{ display:inline-block; font-size:10.5px; padding:2px 8px; border:1px solid var(--border);
-    color:var(--ink-soft); background:rgba(0,0,0,.03); border-radius:99px; }}
+    color:var(--ink-soft); background:rgba(0,0,0,.03); border-radius:99px; white-space:nowrap; }}
   .badge{{ display:inline-block; font-size:10px; padding:2px 6px; border-radius:99px; margin-left:5px;
     vertical-align:middle; white-space:nowrap; line-height:1.4; font-weight:600; }}
   .badge.recent{{ background:#fff3cd; color:var(--amber); border:1px solid #ffc107; }}
