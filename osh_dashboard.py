@@ -1491,6 +1491,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .badge{{ display:inline-block; font-size:10px; padding:2px 6px; border-radius:99px; margin-left:5px;
     vertical-align:middle; white-space:nowrap; line-height:1.4; font-weight:600; }}
   .badge.recent{{ background:#fff3cd; color:var(--amber); border:1px solid #ffc107; }}
+  .unread-dot{{ display:inline-block; width:7px; height:7px; background:#3b82f6; border-radius:50%;
+    margin-right:5px; vertical-align:middle; flex-shrink:0; }}
+  .unread-law-count{{ font-size:11px; color:#3b82f6; font-weight:700; white-space:nowrap; padding:0 2px; }}
   .badge.new-law{{ background:#d1fae5; color:var(--green); border:1px solid #6ee7b7; }}
   .star-btn{{ background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px;
     color:#ccc; line-height:1; vertical-align:middle; transition:color .15s, transform .12s; }}
@@ -2086,6 +2089,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-lawfilter="subscribed">🔔 已訂閱</button>
       <button data-lawfilter="recent3m">近3月修正</button>
       <button data-lawfilter="recent">近1年修正</button>
+      <button data-lawfilter="unread">● 未讀</button>
       <div class="sep"></div>
       <span class="label">排序：</span>
       <button data-sort="cat" class="active">依分類</button>
@@ -2099,6 +2103,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查重點</button>
       <div class="sep"></div>
       <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
+      <div class="sep"></div>
+      <span id="unread-law-count" class="unread-law-count"></span>
+      <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
     </div>
     <div id="legend-panel">
       <div class="legend-row">
@@ -2386,6 +2393,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.subscribedLaws || typeof state.subscribedLaws !== "object") state.subscribedLaws = {{}};
   if (!state.lawLastSeen || typeof state.lawLastSeen !== "object") state.lawLastSeen = {{}};
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
+  if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
 
   let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
@@ -3107,6 +3115,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
+    if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
     const q = document.getElementById("lawSearch").value.trim();
@@ -3193,6 +3202,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const starred = state.starredLaws[r.name];
       const isSub = !!(state.subscribedLaws && state.subscribedLaws[r.name]);
       const hasUpdate = isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
+      const isUnread = (isnew || recent || recent3m) && !state.readLaws[r.name];
       const statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : '';
       const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
       // ③ 全文搜尋：標示透過條文內容命中的法規
@@ -3230,10 +3240,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           inspBadge += '<span class="risk-dots risk-lvl-' + lvl + '" title="合規風險評分 ' + rs + '/100（點擊風險矩陣查看）" style="margin-left:4px">' + dots + '</span>';
         }}
       }})();
-      return '<tr' + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
+      return '<tr' + (isUnread ? ' class="law-unread"' : '') + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname"><button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -3283,6 +3293,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.querySelectorAll(".rname-btn").forEach(btn => {{
       btn.onclick = () => openDrawer(_regRows[+btn.dataset.idx]);
     }});
+    updateUnreadLawCount();
   }}
 
   function openDrawer(r) {{
@@ -3673,13 +3684,48 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     // 記錄查看時間（供訂閱通知判斷）
     if (!state.lawLastSeen) state.lawLastSeen = {{}};
-    if (r.date) {{ state.lawLastSeen[r.name] = r.date; save(); }}
+    if (r.date) {{ state.lawLastSeen[r.name] = r.date; }}
+
+    // 標記已讀
+    if (!state.readLaws) state.readLaws = {{}};
+    var wasUnread = !state.readLaws[r.name];
+    state.readLaws[r.name] = true;
+    save();
+    if (wasUnread) {{
+      document.querySelectorAll('.law-unread').forEach(function(tr) {{
+        var btn = tr.querySelector('.rname-btn');
+        if (btn && _regRows[+btn.dataset.idx] && _regRows[+btn.dataset.idx].name === r.name) {{
+          tr.classList.remove('law-unread');
+          var dot = tr.querySelector('.unread-dot');
+          if (dot) dot.remove();
+        }}
+      }});
+      updateUnreadLawCount();
+    }}
   }}
 
   function closeDrawer() {{
     document.getElementById("law-drawer").classList.remove("open");
     document.getElementById("drawer-overlay").classList.remove("open");
     document.body.style.overflow = "";
+  }}
+
+  function updateUnreadLawCount() {{
+    if (!state.readLaws) state.readLaws = {{}};
+    var count = REGISTRY.filter(function(r) {{
+      return (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name];
+    }}).length;
+    var el = document.getElementById('unread-law-count');
+    if (el) el.textContent = count > 0 ? count + ' 筆未讀' : '';
+    var btn = document.getElementById('markAllReadBtn');
+    if (btn) btn.style.display = count > 0 ? '' : 'none';
+  }}
+
+  function markAllLawsRead() {{
+    if (!state.readLaws) state.readLaws = {{}};
+    REGISTRY.forEach(function(r) {{ state.readLaws[r.name] = true; }});
+    save();
+    renderRegistry();
   }}
 
   // 手機 drawer：overlay touchstart + 右滑手勢關閉
