@@ -1500,6 +1500,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .src-static{{ background:#f3f4f6; color:#6b7280; }}
   .src-guide{{ background:#fef3c7; color:#92400e; }}
   .tier-tag.guide{{ background:rgba(217,119,6,.1); color:#92400e; border:1px solid rgba(217,119,6,.25); }}
+  /* ── 圖例面板 ── */
+  #legend-panel{{ display:none; border:1px solid var(--border); border-radius:6px;
+    background:var(--card); padding:12px 14px; margin:8px 0; font-size:11.5px;
+    color:var(--ink); box-shadow:var(--shadow); }}
+  #legend-panel.open{{ display:block; }}
+  .legend-row{{ display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center;
+    margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
+  .legend-row:last-child{{ margin-bottom:0; padding-bottom:0; border-bottom:none; }}
+  .legend-label{{ font-size:10px; font-weight:700; color:var(--ink-soft); letter-spacing:.05em;
+    text-transform:uppercase; min-width:56px; flex-shrink:0; }}
+  .legend-item{{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+    font-size:11px; color:var(--ink-soft); }}
+  .legend-dots{{ display:inline-flex; gap:2px; }}
+  .legend-dot{{ width:8px; height:8px; border-radius:50%; }}
   /* ── Side Drawer ── */
   #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
     opacity:0; pointer-events:none; transition:opacity .25s; cursor:pointer; }}
@@ -1966,6 +1980,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     /* 抽屜 meta pill 換行 */
     .drawer-meta {{ gap:4px; }}
     .drawer-meta span {{ font-size:11.5px; padding:3px 7px; }}
+    /* 圖例面板：手機每行獨立顯示 */
+    .legend-row {{ flex-direction:column; align-items:flex-start; gap:6px; }}
+    .legend-label {{ margin-bottom:2px; }}
     /* 抽屜：手機全寬 + 自適應字體 + 底部關閉列 */
     #law-drawer {{ width:100vw; font-size:13.5px; }}
     #drawer-header {{ padding:12px 14px 10px; }}
@@ -2072,6 +2089,79 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="sep"></div>
       <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 含罰則</button>
       <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查重點</button>
+      <div class="sep"></div>
+      <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
+    </div>
+    <div id="legend-panel">
+      <div class="legend-row">
+        <span class="legend-label">位階</span>
+        <span class="legend-item"><span class="tier-tag act">法律</span>由立法院制定</span>
+        <span class="legend-item"><span class="tier-tag reg">法規命令</span>部會發布規則/辦法/標準</span>
+        <span class="legend-item"><span class="tier-tag dir">行政規則</span>內部行政指令</span>
+        <span class="legend-item"><span class="tier-tag notice">公告</span>行政公告</span>
+        <span class="legend-item"><span class="tier-tag guide">技術指引</span>OSHA技術參考文件</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">資料來源</span>
+        <span class="legend-item"><span class="src-badge src-xml">XML</span>全國法規資料庫自動更新（每日）</span>
+        <span class="legend-item"><span class="src-badge src-static">靜態</span>手動維護</span>
+        <span class="legend-item"><span class="src-badge src-guide">指引</span>OSHA技術指引（手動）</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">修正狀態</span>
+        <span class="legend-item"><span class="badge recent">近期修正</span>近3個月內有修正</span>
+        <span class="legend-item"><span class="badge" style="background:#ef4444;color:#fff;padding:1px 7px;border-radius:3px;font-size:11px">未生效</span>已修正但尚未施行</span>
+        <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>訂閱後有新修正</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">稽查</span>
+        <span class="legend-item"><span class="badge" style="background:rgba(234,88,12,.12);color:#c2410c;border:1px solid rgba(234,88,12,.3);padding:1px 7px;border-radius:3px;font-size:11px">🔍 精查重點 #1</span>勞動檢查常見缺失，數字為嚴重度排名</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">合規風險</span>
+        <span class="legend-item">
+          <span class="legend-dots">
+            <span class="legend-dot" style="background:#b91c1c"></span>
+            <span class="legend-dot" style="background:#b91c1c"></span>
+            <span class="legend-dot" style="background:#b91c1c"></span>
+            <span class="legend-dot" style="background:#b91c1c"></span>
+            <span class="legend-dot" style="background:#b91c1c"></span>
+          </span>5分：違反即可能停工/重罰
+        </span>
+        <span class="legend-item">
+          <span class="legend-dots">
+            <span class="legend-dot" style="background:#ea580c"></span>
+            <span class="legend-dot" style="background:#ea580c"></span>
+            <span class="legend-dot" style="background:#ea580c"></span>
+            <span class="legend-dot" style="background:#ea580c"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+          </span>4分：重大缺失
+        </span>
+        <span class="legend-item">
+          <span class="legend-dots">
+            <span class="legend-dot" style="background:#ca8a04"></span>
+            <span class="legend-dot" style="background:#ca8a04"></span>
+            <span class="legend-dot" style="background:#ca8a04"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+          </span>3分：一般缺失
+        </span>
+        <span class="legend-item">
+          <span class="legend-dots">
+            <span class="legend-dot" style="background:#16a34a"></span>
+            <span class="legend-dot" style="background:#16a34a"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+            <span class="legend-dot" style="background:var(--border)"></span>
+          </span>2分：輕微
+        </span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">條文標籤</span>
+        <span class="legend-item"><span class="art-chip art-chip-penalty" style="font-size:11px;padding:2px 7px">第X條</span>含罰則條文</span>
+        <span class="legend-item"><span class="art-chip art-chip-added" style="font-size:11px;padding:2px 7px">第X條</span>本次新增條文</span>
+        <span class="legend-item"><span class="art-chip" style="font-size:11px;padding:2px 7px">第X條</span>修正條文</span>
+      </div>
     </div>
     <div class="reg-view-toggle">
       <button class="active" data-regview="table">📋 表格</button>
