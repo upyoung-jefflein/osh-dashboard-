@@ -1467,6 +1467,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     white-space:nowrap; text-transform:uppercase; letter-spacing:.07em; }}
   .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; transition:background .12s; font-variant-numeric:tabular-nums; }}
   .registry-table td:first-child,.registry-table td:nth-child(2){{ vertical-align:middle; }}
+  /* 名稱欄：取得剩餘空間；其他短欄：收縮到內容寬度 */
+  .registry-table th:nth-child(3),.registry-table td:nth-child(3){{ min-width:180px; }}
+  .registry-table th:nth-child(1),.registry-table td:nth-child(1),
+  .registry-table th:nth-child(2),.registry-table td:nth-child(2),
+  .registry-table th:nth-child(4),.registry-table td:nth-child(4),
+  .registry-table th:nth-child(5),.registry-table td:nth-child(5),
+  .registry-table th:nth-child(6),.registry-table td:nth-child(6),
+  .registry-table th:nth-child(7),.registry-table td:nth-child(7){{ width:1%; white-space:nowrap; }}
   .registry-table tr:last-child td{{ border-bottom:none; }}
   .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
   .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
@@ -3229,7 +3237,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
-        '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
+        '<td class="' + dateCls + '">' + dateText + '</td>' +
         '<td>' + (function(r){{
           var lbl = r.src_type==='guide' ? '指引 ↗' : '全文 ↗';
           var ttl = r.src_type==='xml' ? '全國法規資料庫（自動更新）' : r.src_type==='guide' ? 'OSHA 技術指引（手動維護）' : '手動維護';
