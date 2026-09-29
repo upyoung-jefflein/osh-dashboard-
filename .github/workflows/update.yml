@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 完整歷史，rebase 時需要
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -24,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: 取得最新開發者改動
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+
       - name: 下載最新法規 XML 並重建 Dashboard
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -31,12 +39,11 @@ jobs:
 
       - name: 提交並推送更新
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/index.html osh_xml_records.json
           if git diff --staged --quiet; then
             echo "無法規或新聞異動，略過 commit。"
           else
             git commit -m "auto: 定期更新 $(date -u +%Y-%m-%d)"
-            git push
+            # push 失敗時（有人剛推），pull rebase 後再試一次
+            git push || (git pull --rebase -X ours origin main && git push)
           fi
