@@ -2,7 +2,7 @@ name: 定期更新職安法規觀測站
 
 "on":
   schedule:
-    - cron: '0 1 * * 1'   # 每週一 UTC 01:00 = 台灣時間 09:00
+    - cron: '0 1 * * *'   # 每日 UTC 01:00 = 台灣時間 09:00
   workflow_dispatch:        # 允許手動從 GitHub 介面觸發
 
 permissions:

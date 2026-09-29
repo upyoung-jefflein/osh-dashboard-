@@ -122,6 +122,15 @@ STATIC_REGISTRY = [
     {"name": "職業災害預防及職業災害勞工重建補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-12-12", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
     {"name": "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法", "tier": "reg", "cat": "職業災害", "date": "2024-11-18", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
     {"name": "職業災害勞工職能復健專業機構認可管理及補助辦法", "tier": "reg", "cat": "職業災害", "date": "2024-01-30", "source": REG_SOURCE_EN, "note": None, "authority": _MOL},
+    # 技術指引（OSHA 行政指引，非正式法規命令，不在全國法規資料庫 XML 中）
+    {"name": "石綿危害預防標準", "tier": "guide", "cat": "作業環境", "date": None,
+     "source": "https://laws.mol.gov.tw/FLAW/FLAWQRY01-1.aspx?kw=%E7%9F%B3%E7%B6%BF%E5%8D%B1%E5%AE%B3",
+     "note": "石綿自2005年起禁止製造及使用；危害預防規定整合至特定化學物質危害預防標準，本指引為技術參考文件",
+     "authority": _OSHA, "src_type": "guide"},
+    {"name": "噪音危害預防準則", "tier": "guide", "cat": "作業環境", "date": None,
+     "source": "https://laws.mol.gov.tw/FLAW/FLAWQRY01-1.aspx?kw=%E5%99%AA%E9%9F%B3%E5%8D%B1%E5%AE%B3",
+     "note": "職場噪音管制規定散於職業安全衛生設施規則第300-303條；OSHA另有噪音作業勞工聽力保護計畫實施技術指引",
+     "authority": _OSHA, "src_type": "guide"},
 ]
 
 STATIC_DIRECTIVES = [
@@ -133,7 +142,7 @@ STATIC_DIRECTIVES = [
     {"name": "違反職業安全衛生法及勞動檢查法案件處理要點", "tier": "dir", "date": "2026-06-30", "source": "https://law.moj.gov.tw/", "note": None},
 ]
 
-TIER_LABEL = {"act": "法律", "reg": "法規命令", "dir": "行政規則", "notice": "公告"}
+TIER_LABEL = {"act": "法律", "reg": "法規命令", "dir": "行政規則", "notice": "公告", "guide": "技術指引"}
 
 # 法規分類（決定顯示順序）
 CATEGORIES = ["管理制度", "作業環境", "職業衛生", "化學品安全", "機械設備", "特殊作業", "營造工程", "職業災害"]
@@ -1237,12 +1246,17 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
 
 def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dict]:
     merged = [dict(item) for item in static_list]
+    # 預設 src_type：guide 類保留 guide，其他靜態條目標記 static
+    for item in merged:
+        if "src_type" not in item:
+            item["src_type"] = "static"
     by_name = {item["name"]: item for item in merged}
 
     for rec in xml_records:
         iso_date = roc_to_iso(rec["最新異動日期_roc"])
         if rec["name"] in by_name:
             entry = by_name[rec["name"]]
+            entry["src_type"] = "xml"  # XML 資料庫已確認
             if iso_date:
                 entry["date"] = iso_date
             if rec["法規網址"]:
@@ -1284,6 +1298,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "date": iso_date,
                 "source": rec["法規網址"] or REG_SOURCE,
                 "note": "XML 新增，未在原始清單中",
+                "src_type": "xml",
                 "pcode": rec.get("pcode", ""),
                 "articles": rec.get("articles", []),
                 "deleted_articles": rec.get("deleted_articles", []),
@@ -1479,6 +1494,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .rname-btn:hover{{ color:var(--blue); text-decoration-style:solid; }}
   .src-link{{ font-size:12px; color:var(--ink-soft); text-decoration:none; }}
   .src-link:hover{{ color:var(--stamp); }}
+  .src-badge{{ display:inline-block; font-size:9px; font-weight:700; letter-spacing:.04em;
+    padding:1px 5px; border-radius:3px; vertical-align:middle; margin-left:4px; }}
+  .src-xml{{ background:#dbeafe; color:#1e40af; }}
+  .src-static{{ background:#f3f4f6; color:#6b7280; }}
+  .src-guide{{ background:#fef3c7; color:#92400e; }}
+  .tier-tag.guide{{ background:rgba(217,119,6,.1); color:#92400e; border:1px solid rgba(217,119,6,.25); }}
   /* ── Side Drawer ── */
   #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
     opacity:0; pointer-events:none; transition:opacity .25s; cursor:pointer; }}
@@ -2248,7 +2269,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const CNS_ISO = {cns_iso_json};
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
-  const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告"}};
+  const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告",guide:"技術指引"}};
   const STORE_KEY = "osh_state_v2";
   let state;
   try {{
@@ -3119,7 +3140,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
         '<td class="' + dateCls + '">' + dateText + noteTxt + '</td>' +
-        '<td><a href="' + r.source + '" target="_blank" rel="noopener" class="src-link">全文 ↗</a></td>' +
+        '<td>' + (function(r){{
+          var lbl = r.src_type==='guide' ? '指引 ↗' : '全文 ↗';
+          var ttl = r.src_type==='xml' ? '全國法規資料庫（自動更新）' : r.src_type==='guide' ? 'OSHA 技術指引（手動維護）' : '手動維護';
+          var bdg = r.src_type==='xml' ? '<span class="src-badge src-xml">XML</span>' : r.src_type==='guide' ? '<span class="src-badge src-guide">指引</span>' : '<span class="src-badge src-static">靜態</span>';
+          return '<a href="'+r.source+'" target="_blank" rel="noopener" class="src-link" title="'+ttl+'">'+lbl+'</a>'+bdg;
+        }})(r) + '</td>' +
         '</tr>';
     }}).join("");
 
