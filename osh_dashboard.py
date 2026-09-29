@@ -1977,24 +1977,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
 </header>
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-section-label">資訊</div>
-  <button class="sidebar-btn active" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
   <div class="sidebar-section-label">法規</div>
-  <button class="sidebar-btn" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
+  <button class="sidebar-btn active" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
+  <div class="sidebar-section-label">動態</div>
+  <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
   <div class="sidebar-section-label">工具</div>
   <button class="sidebar-btn" data-tab="practitioner"><span class="snav-icon">👷</span><span class="snav-label">職安人員實用區</span></button>
   <div class="sidebar-footer">收藏與讀取狀態<br>僅存於本機瀏覽器</div>
 </nav>
 <main class="main-area">
 <nav class="bottom-nav" id="bottomNav">
-  <button data-tab="news" class="active"><span class="bn-icon">📰</span><span>動態</span></button>
-  <button data-tab="registry"><span class="bn-icon">📋</span><span>法規</span></button>
+  <button data-tab="registry" class="active"><span class="bn-icon">📋</span><span>法規</span></button>
   <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
+  <button data-tab="news"><span class="bn-icon">📰</span><span>動態</span></button>
   <button data-tab="practitioner"><span class="bn-icon">👷</span><span>實用</span></button>
 </nav>
 
-  <section class="tabpanel active" id="tab-news">
+  <section class="tabpanel" id="tab-news">
     <h2>最新動態</h2>
     <p class="section-note">從勞動部及職業安全衛生署官方新聞稿擷取職安相關公告，自動去重後依日期排序。</p>
     <input class="search" id="newsSearch" placeholder="搜尋標題關鍵字…">
@@ -2026,7 +2026,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div id="newsList"></div>
   </section>
 
-  <section class="tabpanel" id="tab-registry">
+  <section class="tabpanel active" id="tab-registry">
     <h2>現行法規總覽</h2>
     <p class="section-note">職業安全衛生母法及附屬法規命令。<span style="color:var(--amber);font-weight:600">近期修正</span>標示為近12個月內有修正紀錄；<span style="color:var(--green);font-weight:600">新訂</span>為新制定法規；「待確認」表示尚未取得官方驗證日期。</p>
     <div class="reg-toolbar">
