@@ -69,10 +69,8 @@ SOURCES = [
     {"name": "職安署新聞稿",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",                     "type": "rss", "source_type": "news"},
     {"name": "職安署公布欄",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",                     "type": "rss", "source_type": "notice"},
     {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",                     "type": "rss", "source_type": "event"},
-    {"name": "勞動部法規公告",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1634/RssList",                          "type": "rss", "source_type": "notice"},
-    {"name": "行政院電子公報",  "org": "行政院",              "url": "https://gazette.nat.gov.tw/rss?agencyId=A22000000E",                     "type": "rss", "source_type": "notice"},
+    {"name": "勞動部公布欄",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/2665/RssList",                          "type": "rss", "source_type": "notice"},
     {"name": "職安署教育訓練",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48427/RssList",                     "type": "rss", "source_type": "event"},
-    {"name": "勞動部勞動統計",  "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1635/RssList",                          "type": "rss", "source_type": "notice"},
 ]
 
 LAW_XML_URLS = [
