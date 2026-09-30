@@ -1356,7 +1356,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .cat-btn{{ font-size:11px; padding:3px 11px; border:1px solid var(--border); background:var(--card);
     cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
   .cat-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
-  .reg-controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }}
+  .reg-controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; align-items:center; }}
   .reg-controls .label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
   .reg-controls button{{ font-size:12px; padding:3px 10px; border:1px solid var(--border);
     background:transparent; cursor:pointer; color:var(--ink);
@@ -1812,10 +1812,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .penalty-filter-btn {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:3px 9px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }}
   .penalty-filter-btn.active {{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
   [data-theme="dark"] .penalty-filter-btn.active {{ background:rgba(185,28,28,.25); color:#fca5a5; border-color:#b91c1c; }}
-  /* 視圖切換 */
-  .reg-view-toggle {{ display:flex; gap:6px; margin:10px 0 8px; flex-wrap:wrap; }}
-  .reg-view-toggle button {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:4px 12px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }}
-  .reg-view-toggle button.active {{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
+  /* 視圖切換（內嵌於第2排 reg-controls） */
+  .view-btns {{ display:inline-flex; gap:4px; margin-left:auto; flex-wrap:wrap; }}
+  .view-btns button {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:3px 10px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; white-space:nowrap; }}
+  .view-btns button.active {{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
   /* 合規風險評分 */
   .risk-dots {{ display:inline-flex; gap:2px; align-items:center; vertical-align:middle; }}
   .risk-dot {{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }}
@@ -1862,8 +1862,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .tl-item {{ min-width:130px; max-width:calc(50% - 4px); }}
     #lawGraph {{ height:380px; }}
     #riskMatrix {{ height:340px; }}
-    .reg-view-toggle {{ gap:4px; }}
-    .reg-view-toggle button {{ padding:5px 8px; font-size:10.5px; }}
+    .view-btns {{ margin-left:0; gap:4px; }}
+    .view-btns button {{ padding:4px 8px; font-size:10.5px; }}
     /* 法規表格：手機隱藏非核心欄位，只保留收藏、名稱、日期 */
     .registry-table {{ min-width:auto; }}
     .registry-table th:nth-child(4),
@@ -1992,22 +1992,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-lawfilter="recent3m">近3月修正</button>
       <button data-lawfilter="recent">近1年修正</button>
       <button data-lawfilter="unread">● 未讀</button>
-      <div class="sep"></div>
+      <span id="unread-law-count" class="unread-law-count"></span>
+      <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
+    </div>
+    <div class="reg-controls">
       <span class="label">排序：</span>
       <button data-sort="cat" class="active">依分類</button>
       <button data-sort="date">依修正日期</button>
       <button data-sort="name">依名稱</button>
       <div class="sep"></div>
-      <button onclick="openCompare()" style="font-size:12px">⚖ 並排對比</button>
-      <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 適用判斷</button>
-      <div class="sep"></div>
-      <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 含罰則</button>
-      <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查重點</button>
-      <div class="sep"></div>
+      <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
+      <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 判斷</button>
+      <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 罰則</button>
+      <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查</button>
       <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
-      <div class="sep"></div>
-      <span id="unread-law-count" class="unread-law-count"></span>
-      <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
+      <div class="view-btns">
+        <button class="active" data-regview="table">📋 表格</button>
+        <button data-regview="timeline">📅 時間軸</button>
+        <button data-regview="graph">🕸 圖譜</button>
+        <button data-regview="matrix">📊 矩陣</button>
+      </div>
     </div>
     <div id="legend-panel">
       <div class="legend-row">
@@ -2079,12 +2083,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <span class="legend-item"><span class="art-chip art-chip-added" style="font-size:11px;padding:2px 7px">第X條</span>本次新增條文</span>
         <span class="legend-item"><span class="art-chip" style="font-size:11px;padding:2px 7px">第X條</span>修正條文</span>
       </div>
-    </div>
-    <div class="reg-view-toggle">
-      <button class="active" data-regview="table">📋 表格</button>
-      <button data-regview="timeline">📅 時間軸</button>
-      <button data-regview="graph">🕸 關係圖譜</button>
-      <button data-regview="matrix">📊 風險矩陣</button>
     </div>
     <div class="registry-meta" id="registryMeta"></div>
     <div id="lawTimeline"></div>
