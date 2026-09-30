@@ -7,7 +7,6 @@
   - 最新動態：從官方新聞列表頁抓取，跨來源去重
   - 現行法規總覽：38 筆職安子法規清單，支援分類篩選、近期修正標示
   - 快速情境查詢：依作業情境索引相關法規
-  - 職安人員實用區：人員配置門檻、教育訓練時數、裁罰基準
 
 使用方式：
     python osh_dashboard.py                          # 只更新新聞
@@ -344,100 +343,6 @@ QUICK_SCENARIOS = [
 ]
 
 
-# ============================================================
-# 職安人員實用區（靜態 HTML）
-# ============================================================
-
-PRACTITIONER_HTML = """
-<section id="practitioner">
-  <h2>職安人員實用區</h2>
-  <p class="section-note">法規本文之外，職安人員日常工作更常需要的是「門檻判斷」跟「實務案例」。以下整理自職業安全衛生管理辦法附表、教育訓練規則附表，以及官方裁罰查詢系統，內容變動不頻繁，維持靜態內容。</p>
-
-  <h3 class="reg-subhead">應設置人員門檻（職業安全衛生管理辦法附表二）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>事業類別</th><th>勞工人數</th><th>應設置人員</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">第一類事業（顯著風險）</td><td>未滿30人</td><td>丙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>30人以上未滿100人</td><td>乙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>100人以上未滿300人</td><td>甲種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>300人以上未滿500人</td><td>甲種業務主管＋職業安全衛生管理員各1人</td></tr>
-        <tr><td class="rname">第一類事業</td><td>500人以上</td><td>甲種業務主管＋職業安全（衛生）管理師＋管理員各1人以上</td></tr>
-        <tr><td class="rname">第三類事業（低度風險）</td><td>未滿30人</td><td>丙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>30人以上未滿100人</td><td>乙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>100人以上未滿500人</td><td>甲種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>500人以上</td><td>甲種業務主管＋職業安全衛生管理員各1人以上</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">表列為法定最低配置，事業單位仍應依實際危害風險增置人員；第二類事業（中度風險）門檻介於第一、三類之間，未列出，請查原辦法附表二。50人以上另需依職業安全衛生法第22條置勞工健康服務人員或委託專業機構。</p>
-
-  <h3 class="reg-subhead">教育訓練時數對照（職業安全衛生教育訓練規則附表，115年6月25日修正版）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>類別</th><th>時數</th><th>適用對象／備註</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">甲種職業安全衛生業務主管</td><td>42小時</td><td>法規與通識10小時＋一般行業管理制度12小時＋管理實務20小時</td></tr>
-        <tr><td class="rname">乙種職業安全衛生業務主管</td><td>35小時</td><td>法規與通識10小時＋管理制度8小時＋管理實務17小時</td></tr>
-        <tr><td class="rname">丙種職業安全衛生業務主管</td><td>21小時</td><td>未滿30人之事業單位適用（不分第一、二、三類）</td></tr>
-        <tr><td class="rname">丁種職業安全衛生業務主管</td><td>最短時數</td><td>115年新增類別，限第二、三類事業且勞工人數5人以下之雇主本人或代理人；具體時數以官方公告為準</td></tr>
-        <tr><td class="rname">營造業甲種職業安全衛生業務主管</td><td>42小時</td><td>法規與通識14小時（含營造安全衛生設施標準4小時）＋管理制度10小時＋管理實務18小時</td></tr>
-        <tr><td class="rname">營造業丙種職業安全衛生業務主管</td><td>26小時</td><td>法規與通識4小時＋管理制度4小時＋管理實務18小時</td></tr>
-        <tr><td class="rname">職業安全管理師</td><td>130小時</td><td>內含實作6小時；職業安全衛生相關法規占58小時</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">職業衛生管理師、職業安全衛生管理員之時數未列出，請查原規則附表三。本表為課程總時數，實際排課仍須依核備之教育訓練機構課程規劃辦理。</p>
-
-  <h3 class="reg-subhead">裁罰基準參考（以臺北市政府裁罰基準為例，115年7月1日修正版）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>違反情形</th><th>法條依據</th><th>裁罰基準</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">危害性化學品洩漏或引起火災、爆炸致發生重大職業災害（甲類事業）</td><td>第42條第1項</td><td>第一次100萬元，按次累加100萬元，最高累加至300萬元</td></tr>
-        <tr><td class="rname">同上情形（乙類事業，115年7月1日後標準，較原30萬元提高）</td><td>第42條第1項</td><td>第一次50萬元，按次累加50萬元，最高累加至300萬元</td></tr>
-        <tr><td class="rname">一般違反職業安全衛生法規定（未致重大職災之常見違規）</td><td>依違反條款而定</td><td>每項最高30萬元，得按次處罰；有立即發生危險之虞者，得令停工</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">裁罰基準由各地方政府勞工主管機關個別訂定並執行，各縣市金額可能略有差異，上表以臺北市政府公告版本為例，實際處分請以受處分之縣市公告基準及個案裁量為準。</p>
-
-  <h3 class="reg-subhead">常用名詞與作業安全標準：以局限空間為例</h3>
-  <div class="law-card">
-    <dl>
-      <dt>法定定義</dt><dd>依職業安全衛生設施規則第19條之1，指非供勞工在其內部從事經常性作業，勞工進出方法受限制，且無法以自然通風來維持充分、清淨空氣之空間。</dd>
-      <dt>氣體濃度標準</dt><dd>氧氣濃度須保持在18%以上；一氧化碳濃度須藉換氣維持在35ppm以下；硫化氫濃度須藉換氣維持在10ppm以下（勞動部職業安全衛生署宣導標準）</dd>
-      <dt>主要相關法規</dt><dd>職業安全衛生設施規則、缺氧症預防規則、營造安全衛生設施標準（隧道、沉箱等作業）</dd>
-    </dl>
-    <span class="stamp-badge">來源：<a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060008" target="_blank" rel="noopener">職業安全衛生設施規則</a>、<a href="https://www.mol.gov.tw/" target="_blank" rel="noopener">勞動部職業安全衛生署宣導資料</a></span>
-  </div>
-  <p class="table-footnote">「解釋令函」為個案函釋，內容因申請情境而異，尚未整理出可穩定引用的清單，故本節先以法規明文定義與官方宣導的作業標準呈現。</p>
-
-  <h3 class="reg-subhead">實用查詢連結</h3>
-  <div class="source-grid">
-    <div class="source-card">
-      <div class="org">違反勞動法令事業單位（雇主）查詢系統</div>
-      <div class="role">勞動部　·　可查全國職安法及58項附屬法規之實際裁罰案例、違反條款、開罰金額</div>
-      <div class="link"><a href="https://www.mol.gov.tw/1607/28162/28166/28246" target="_blank" rel="noopener">https://www.mol.gov.tw/1607/28162/28166/28246</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">勞動部主管法規查詢系統－解釋令函</div>
-      <div class="role">勞動部　·　法條抽象用語的實務認定依據，例如局限空間、共同作業之界定</div>
-      <div class="link"><a href="https://law.moj.gov.tw/" target="_blank" rel="noopener">https://law.moj.gov.tw/</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">重大職業災害公開網</div>
-      <div class="role">勞動部職業安全衛生署　·　每日更新的個案層級職災揭露，適合作教育訓練案例</div>
-      <div class="link"><a href="https://pacs.osha.gov.tw/17238" target="_blank" rel="noopener">https://pacs.osha.gov.tw/17238</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">全國法規資料庫－勞動部主管法規</div>
-      <div class="role">法務部　·　職安相關法規現行條文全文，可複製引用</div>
-      <div class="link"><a href="https://law.moj.gov.tw/LawClass/LawSearchContent.aspx?pc=N" target="_blank" rel="noopener">https://law.moj.gov.tw/LawClass/LawSearchContent.aspx?pc=N</a></div>
-    </div>
-  </div>
-</section>
-"""
 
 
 # ============================================================
@@ -2031,8 +1936,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
   <div class="sidebar-section-label">動態</div>
   <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
-  <div class="sidebar-section-label">工具</div>
-  <button class="sidebar-btn" data-tab="practitioner"><span class="snav-icon">👷</span><span class="snav-label">職安人員實用區</span></button>
   <div class="sidebar-footer">收藏與讀取狀態<br>僅存於本機瀏覽器</div>
 </nav>
 <main class="main-area">
@@ -2040,7 +1943,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <button data-tab="registry" class="active"><span class="bn-icon">📋</span><span>法規</span></button>
   <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
   <button data-tab="news"><span class="bn-icon">📰</span><span>動態</span></button>
-  <button data-tab="practitioner"><span class="bn-icon">👷</span><span>實用</span></button>
 </nav>
 
   <section class="tabpanel" id="tab-news">
@@ -2213,9 +2115,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="scenario-grid" id="scenarioGrid"></div>
   </section>
 
-  <section class="tabpanel" id="tab-practitioner">
-    {practitioner_html}
-  </section>
 
   <footer>
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
@@ -4575,7 +4474,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         generated_date=now.strftime("%Y-%m-%d"),
         news_count=len(news),
         registry_count=len(registry),
-        practitioner_html=PRACTITIONER_HTML,
+
         news_json=json.dumps(news, ensure_ascii=False),
         registry_json=json.dumps([_fix_source(r) for r in registry], ensure_ascii=False),
         directives_json=json.dumps([_fix_source(d) for d in directives], ensure_ascii=False),

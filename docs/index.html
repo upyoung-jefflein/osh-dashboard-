@@ -696,7 +696,7 @@
     <div class="topbar-subtitle">職業安全衛生法規查詢</div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 2026-09-30 18:33 ｜ 150 則動態 ｜ 117 筆法規</div>
+    <div class="topbar-meta">📅 2026-09-30 23:03 ｜ 150 則動態 ｜ 117 筆法規</div>
     <button class="tool-btn" id="ds-btn" onclick="openDataStatus()" title="資料來源狀態" style="display:flex;align-items:center;gap:4px;font-size:12px">
       <span class="data-status-dot ds-ok" id="ds-indicator"></span><span class="topbar-subtitle" style="display:inline">狀態</span>
     </button>
@@ -709,8 +709,6 @@
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
   <div class="sidebar-section-label">動態</div>
   <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
-  <div class="sidebar-section-label">工具</div>
-  <button class="sidebar-btn" data-tab="practitioner"><span class="snav-icon">👷</span><span class="snav-label">職安人員實用區</span></button>
   <div class="sidebar-footer">收藏與讀取狀態<br>僅存於本機瀏覽器</div>
 </nav>
 <main class="main-area">
@@ -718,7 +716,6 @@
   <button data-tab="registry" class="active"><span class="bn-icon">📋</span><span>法規</span></button>
   <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
   <button data-tab="news"><span class="bn-icon">📰</span><span>動態</span></button>
-  <button data-tab="practitioner"><span class="bn-icon">👷</span><span>實用</span></button>
 </nav>
 
   <section class="tabpanel" id="tab-news">
@@ -891,98 +888,6 @@
     <div class="scenario-grid" id="scenarioGrid"></div>
   </section>
 
-  <section class="tabpanel" id="tab-practitioner">
-    
-<section id="practitioner">
-  <h2>職安人員實用區</h2>
-  <p class="section-note">法規本文之外，職安人員日常工作更常需要的是「門檻判斷」跟「實務案例」。以下整理自職業安全衛生管理辦法附表、教育訓練規則附表，以及官方裁罰查詢系統，內容變動不頻繁，維持靜態內容。</p>
-
-  <h3 class="reg-subhead">應設置人員門檻（職業安全衛生管理辦法附表二）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>事業類別</th><th>勞工人數</th><th>應設置人員</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">第一類事業（顯著風險）</td><td>未滿30人</td><td>丙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>30人以上未滿100人</td><td>乙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>100人以上未滿300人</td><td>甲種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第一類事業</td><td>300人以上未滿500人</td><td>甲種業務主管＋職業安全衛生管理員各1人</td></tr>
-        <tr><td class="rname">第一類事業</td><td>500人以上</td><td>甲種業務主管＋職業安全（衛生）管理師＋管理員各1人以上</td></tr>
-        <tr><td class="rname">第三類事業（低度風險）</td><td>未滿30人</td><td>丙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>30人以上未滿100人</td><td>乙種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>100人以上未滿500人</td><td>甲種職業安全衛生業務主管</td></tr>
-        <tr><td class="rname">第三類事業</td><td>500人以上</td><td>甲種業務主管＋職業安全衛生管理員各1人以上</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">表列為法定最低配置，事業單位仍應依實際危害風險增置人員；第二類事業（中度風險）門檻介於第一、三類之間，未列出，請查原辦法附表二。50人以上另需依職業安全衛生法第22條置勞工健康服務人員或委託專業機構。</p>
-
-  <h3 class="reg-subhead">教育訓練時數對照（職業安全衛生教育訓練規則附表，115年6月25日修正版）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>類別</th><th>時數</th><th>適用對象／備註</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">甲種職業安全衛生業務主管</td><td>42小時</td><td>法規與通識10小時＋一般行業管理制度12小時＋管理實務20小時</td></tr>
-        <tr><td class="rname">乙種職業安全衛生業務主管</td><td>35小時</td><td>法規與通識10小時＋管理制度8小時＋管理實務17小時</td></tr>
-        <tr><td class="rname">丙種職業安全衛生業務主管</td><td>21小時</td><td>未滿30人之事業單位適用（不分第一、二、三類）</td></tr>
-        <tr><td class="rname">丁種職業安全衛生業務主管</td><td>最短時數</td><td>115年新增類別，限第二、三類事業且勞工人數5人以下之雇主本人或代理人；具體時數以官方公告為準</td></tr>
-        <tr><td class="rname">營造業甲種職業安全衛生業務主管</td><td>42小時</td><td>法規與通識14小時（含營造安全衛生設施標準4小時）＋管理制度10小時＋管理實務18小時</td></tr>
-        <tr><td class="rname">營造業丙種職業安全衛生業務主管</td><td>26小時</td><td>法規與通識4小時＋管理制度4小時＋管理實務18小時</td></tr>
-        <tr><td class="rname">職業安全管理師</td><td>130小時</td><td>內含實作6小時；職業安全衛生相關法規占58小時</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">職業衛生管理師、職業安全衛生管理員之時數未列出，請查原規則附表三。本表為課程總時數，實際排課仍須依核備之教育訓練機構課程規劃辦理。</p>
-
-  <h3 class="reg-subhead">裁罰基準參考（以臺北市政府裁罰基準為例，115年7月1日修正版）</h3>
-  <div class="table-scroll">
-    <table class="registry-table">
-      <thead><tr><th>違反情形</th><th>法條依據</th><th>裁罰基準</th></tr></thead>
-      <tbody>
-        <tr><td class="rname">危害性化學品洩漏或引起火災、爆炸致發生重大職業災害（甲類事業）</td><td>第42條第1項</td><td>第一次100萬元，按次累加100萬元，最高累加至300萬元</td></tr>
-        <tr><td class="rname">同上情形（乙類事業，115年7月1日後標準，較原30萬元提高）</td><td>第42條第1項</td><td>第一次50萬元，按次累加50萬元，最高累加至300萬元</td></tr>
-        <tr><td class="rname">一般違反職業安全衛生法規定（未致重大職災之常見違規）</td><td>依違反條款而定</td><td>每項最高30萬元，得按次處罰；有立即發生危險之虞者，得令停工</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="table-footnote">裁罰基準由各地方政府勞工主管機關個別訂定並執行，各縣市金額可能略有差異，上表以臺北市政府公告版本為例，實際處分請以受處分之縣市公告基準及個案裁量為準。</p>
-
-  <h3 class="reg-subhead">常用名詞與作業安全標準：以局限空間為例</h3>
-  <div class="law-card">
-    <dl>
-      <dt>法定定義</dt><dd>依職業安全衛生設施規則第19條之1，指非供勞工在其內部從事經常性作業，勞工進出方法受限制，且無法以自然通風來維持充分、清淨空氣之空間。</dd>
-      <dt>氣體濃度標準</dt><dd>氧氣濃度須保持在18%以上；一氧化碳濃度須藉換氣維持在35ppm以下；硫化氫濃度須藉換氣維持在10ppm以下（勞動部職業安全衛生署宣導標準）</dd>
-      <dt>主要相關法規</dt><dd>職業安全衛生設施規則、缺氧症預防規則、營造安全衛生設施標準（隧道、沉箱等作業）</dd>
-    </dl>
-    <span class="stamp-badge">來源：<a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0060008" target="_blank" rel="noopener">職業安全衛生設施規則</a>、<a href="https://www.mol.gov.tw/" target="_blank" rel="noopener">勞動部職業安全衛生署宣導資料</a></span>
-  </div>
-  <p class="table-footnote">「解釋令函」為個案函釋，內容因申請情境而異，尚未整理出可穩定引用的清單，故本節先以法規明文定義與官方宣導的作業標準呈現。</p>
-
-  <h3 class="reg-subhead">實用查詢連結</h3>
-  <div class="source-grid">
-    <div class="source-card">
-      <div class="org">違反勞動法令事業單位（雇主）查詢系統</div>
-      <div class="role">勞動部　·　可查全國職安法及58項附屬法規之實際裁罰案例、違反條款、開罰金額</div>
-      <div class="link"><a href="https://www.mol.gov.tw/1607/28162/28166/28246" target="_blank" rel="noopener">https://www.mol.gov.tw/1607/28162/28166/28246</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">勞動部主管法規查詢系統－解釋令函</div>
-      <div class="role">勞動部　·　法條抽象用語的實務認定依據，例如局限空間、共同作業之界定</div>
-      <div class="link"><a href="https://law.moj.gov.tw/" target="_blank" rel="noopener">https://law.moj.gov.tw/</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">重大職業災害公開網</div>
-      <div class="role">勞動部職業安全衛生署　·　每日更新的個案層級職災揭露，適合作教育訓練案例</div>
-      <div class="link"><a href="https://pacs.osha.gov.tw/17238" target="_blank" rel="noopener">https://pacs.osha.gov.tw/17238</a></div>
-    </div>
-    <div class="source-card">
-      <div class="org">全國法規資料庫－勞動部主管法規</div>
-      <div class="role">法務部　·　職安相關法規現行條文全文，可複製引用</div>
-      <div class="link"><a href="https://law.moj.gov.tw/LawClass/LawSearchContent.aspx?pc=N" target="_blank" rel="noopener">https://law.moj.gov.tw/LawClass/LawSearchContent.aspx?pc=N</a></div>
-    </div>
-  </div>
-</section>
-
-  </section>
 
   <footer>
     新聞日期為官方發布日，不代表法規正式生效日，請點連結查閱官方原文核實。本頁不會自動更新，重新執行 osh_dashboard.py 可取得最新資料。
@@ -1139,8 +1044,8 @@
   const APPLICABILITY = {"職業安全衛生法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "適用所有事業單位（含承攬、派遣）；自營作業者另有規定"}, "職業安全衛生法施行細則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "隨母法（職安法）一併適用"}, "職業安全衛生設施規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "一般作業場所安全設施通用標準"}, "職業安全衛生管理辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": ["第一類事業", "第二類事業", "第三類事業"], "notes": "人員配置依附表一、二分類；第一類（製造/營造）門檻最嚴"}, "職業安全衛生教育訓練規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "特殊作業、管理人員時數依附表；115年6月25日新增丁種主管"}, "勞工健康保護規則": {"industries": ["全行業"], "min_workers": 50, "risk_class": [], "notes": "50人以上設健康服務人員或委託；特殊作業不受人數限制"}, "女性勞工母性健康保護實施辦法": {"industries": ["全行業"], "min_workers": 100, "risk_class": [], "notes": "100人以上強制；其他得自願辦理"}, "勞工作業環境監測實施辦法": {"industries": ["製造業", "化學工業", "礦業", "營造業", "電子業"], "min_workers": null, "risk_class": ["甲種作業", "乙種作業"], "notes": "有害物質暴露場所均適用，不設人數下限"}, "職業安全衛生標示設置準則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "危害場所皆須設置；配合危害通識規則使用"}, "妊娠與分娩後女性及未滿十八歲勞工禁止從事危險性或有害性工作認定標準": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "孕婦、產後一年、未滿18歲勞工，應進行工作適性評估"}, "異常氣壓危害預防標準": {"industries": ["營造業", "潛水業", "隧道工程"], "min_workers": null, "risk_class": [], "notes": "壓縮空氣作業（沉箱、潛水）或低壓環境"}, "高架作業勞工保護措施標準": {"industries": ["營造業", "電信業", "維修業", "製造業"], "min_workers": null, "risk_class": [], "notes": "離地面或樓板2公尺以上作業即適用"}, "高溫作業勞工作息時間標準": {"industries": ["製造業", "營造業", "餐飲業", "農業"], "min_workers": null, "risk_class": [], "notes": "WBGT≧25℃之作業環境；附表規定各溫度帶作息比例"}, "精密作業勞工視機能保護設施標準": {"industries": ["電子業", "製造業", "印刷業"], "min_workers": null, "risk_class": [], "notes": "精密儀器操作、VDT作業超過一定時數"}, "重體力勞動作業勞工保護措施標準": {"industries": ["製造業", "倉儲業", "營造業"], "min_workers": null, "risk_class": [], "notes": "搬運物重超過規定標準之作業"}, "高壓氣體勞工安全規則": {"industries": ["化學工業", "食品加工", "鋼鐵業", "醫療業"], "min_workers": null, "risk_class": [], "notes": "製造、儲存、使用高壓氣體（依容量計）"}, "缺氧症預防規則": {"industries": ["營造業", "製造業", "污水處理", "食品業"], "min_workers": null, "risk_class": [], "notes": "局限空間作業；密閉隧道、坑道、桶槽等"}, "營造安全衛生設施標準": {"industries": ["營造業"], "min_workers": 1, "risk_class": ["甲種危險工作場所", "丙種危險工作場所"], "notes": "所有建築/土木/設備工程適用"}, "工程安全設計及整體工程統合管理辦法": {"industries": ["營造業"], "min_workers": null, "risk_class": ["甲種危險工作場所"], "notes": "115年新訂；適用一定規模以上工程專案"}, "林場安全衛生設施規則": {"industries": ["林業"], "min_workers": null, "risk_class": [], "notes": "林業作業專用"}, "船舶清艙解體勞工安全規則": {"industries": ["航運業", "拆船業"], "min_workers": null, "risk_class": [], "notes": "船舶清艙、解體作業"}, "碼頭裝卸安全衛生設施標準": {"industries": ["倉儲業", "運輸業"], "min_workers": null, "risk_class": [], "notes": "港口碼頭裝卸作業"}, "礦場職業衛生設施標準": {"industries": ["礦業"], "min_workers": null, "risk_class": [], "notes": "礦場採掘作業專用"}, "鍋爐及壓力容器安全規則": {"industries": ["製造業", "能源業", "化學工業", "食品業"], "min_workers": null, "risk_class": [], "notes": "設置鍋爐（第一種/第二種）或壓力容器即適用"}, "起重升降機具安全規則": {"industries": ["製造業", "營造業", "倉儲業", "港口業"], "min_workers": null, "risk_class": [], "notes": "起重機、升降機、人字臂起重桿等"}, "危險性機械及設備安全檢查規則": {"industries": ["製造業", "營造業", "能源業"], "min_workers": null, "risk_class": [], "notes": "鍋爐、壓力容器、起重機等危險性機械設備定期檢查"}, "危害性化學品標示及通識規則": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "使用危害性化學品即適用（GHS標示+SDS）"}, "危害性化學品評估及分級管理辦法": {"industries": ["全行業"], "min_workers": 5, "risk_class": [], "notes": "5人以上且使用危害化學品；依暴露及危害分級管理"}, "特定化學物質危害預防標準": {"industries": ["化學工業", "製造業", "電子業", "皮革業"], "min_workers": null, "risk_class": [], "notes": "甲類（致癌）/乙類/丙類/丁類特定化學物質"}, "有機溶劑中毒預防規則": {"industries": ["製造業", "印刷業", "乾洗業", "電子業", "皮革業"], "min_workers": null, "risk_class": [], "notes": "第一種/第二種/第三種有機溶劑作業"}, "鉛中毒預防規則": {"industries": ["電池製造", "印刷業", "金屬冶煉", "電子業"], "min_workers": null, "risk_class": [], "notes": "鉛或其化合物之製造/處置/使用/廢棄作業"}, "粉塵危害預防標準": {"industries": ["礦業", "營造業", "石材加工", "陶瓷業", "製藥業"], "min_workers": null, "risk_class": [], "notes": "產生粉塵之特定作業，含矽肺病預防"}, "勞工作業場所容許暴露標準": {"industries": ["全行業"], "min_workers": null, "risk_class": [], "notes": "配合作業環境監測使用；規定各化學物質PEL/STEL"}, "新化學物質登記管理辦法": {"industries": ["化學工業", "製造業"], "min_workers": null, "risk_class": [], "notes": "製造/輸入量≧100kg之新化學物質須登記"}, "優先管理化學品之指定及運作管理辦法": {"industries": ["化學工業", "製造業", "電子業"], "min_workers": null, "risk_class": [], "notes": "指定之優先管理化學品須申報運作情形"}, "職業災害預防及職業災害勞工重建補助辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職災勞工補助申請；含預防補助、職能復健"}, "職業傷病診治醫療機構認可管理補助及職業傷病通報辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職業傷病認定、醫療機構認可、職災通報義務"}, "職業災害勞工職能復健專業機構認可管理及補助辦法": {"industries": ["全行業"], "min_workers": 1, "risk_class": [], "notes": "職能復健機構認可標準與補助申請"}};
   const INSPECTION_FOCUS = {"職業安全衛生法": {"rank": 1, "focus_articles": ["6", "21", "23", "32", "37"], "common_violations": ["一般安全衛生教育訓練未落實", "未訂定安全衛生工作守則", "特殊作業未辦健康檢查", "重大職災未24小時通報"], "note": "歷年勞動檢查違規件數最高，適用所有事業單位"}, "職業安全衛生設施規則": {"rank": 2, "focus_articles": ["19之1", "224", "228", "248", "277", "309"], "common_violations": ["局限空間進入前未辦許可及氣體測定", "高架作業護欄不符規定", "電氣設備未接地或漏電斷路器", "個人防護具未提供或未確認使用"], "note": "條文最多（超過300條），各類設施均有詳細規範"}, "職業安全衛生管理辦法": {"rank": 3, "focus_articles": ["11", "12之1", "14", "23", "27"], "common_violations": ["職業安全衛生委員會未每季召開", "安全衛生管理計畫流於形式", "自動檢查記錄不完整", "承攬管理計畫未訂定"], "note": "管理制度面違規，常與設施規則同時被裁罰"}, "危害性化學品標示及通識規則": {"rank": 4, "focus_articles": ["7", "10", "13", "16", "17"], "common_violations": ["容器GHS標示不完整或未更新", "SDS未放置於作業現場", "危害性化學品清單未建立或未更新", "勞工未接受SDS教育訓練"], "note": "製造業/化工業高頻違規，GHS標示常見格式錯誤"}, "缺氧症預防規則": {"rank": 5, "focus_articles": ["4", "5", "14", "22", "26之1"], "common_violations": ["進入局限空間前未測定氧氣及有害氣體", "未選任缺氧作業主管", "未訂定緊急避難及搶救方法", "勞工未受缺氧症預防教育訓練"], "note": "致死率高，稽查人員重點查核項目之一"}, "勞工作業環境監測實施辦法": {"rank": 6, "focus_articles": ["7", "12", "13", "14"], "common_violations": ["定期監測未辦理或逾期", "監測結果未告知勞工", "超過容許暴露標準未採取改善措施", "監測紀錄未保存3年"], "note": "化學品作業場所必查項目"}, "營造安全衛生設施標準": {"rank": 7, "focus_articles": ["5之1", "17之1", "19", "62", "155"], "common_violations": ["未訂定施工安全計畫", "墜落防護設施不足（護欄/安全網）", "開挖作業無擋土支撐", "起重機械無合格證書"], "note": "營造業職災比例最高，稽查頻率最高行業"}, "高架作業勞工保護措施標準": {"rank": 8, "focus_articles": ["3", "5", "6", "8"], "common_violations": ["未提供安全帶及安全母索", "作業前未評估環境風險", "安全設施設置不符標準"], "note": "墜落是營造業最主要死亡原因"}, "特定化學物質危害預防標準": {"rank": 9, "focus_articles": ["6", "7", "20", "38"], "common_violations": ["密閉設備未達規定", "局部排氣裝置風速不足", "作業主管未選任", "定期實施自動檢查"], "note": "致癌物（甲類）違規有最嚴裁罰"}, "高溫作業勞工作息時間標準": {"rank": 10, "focus_articles": ["3", "4", "7", "8"], "common_violations": ["未量測WBGT值", "未依WBGT調整作息比例", "未提供防暑飲水", "勞工未接受熱危害預防訓練"], "note": "夏季重點查核，職業性熱中暑為職業病"}};
   const CNS_ISO = {"職業安全衛生法": [{"code": "ILO-OSH 2001", "title": "職業安全衛生管理系統指引"}], "職業安全衛生管理辦法": [{"code": "ISO 45001:2018", "title": "職業安全衛生管理系統"}, {"code": "CNS 45001:2019", "title": "職業安全衛生管理系統（臺灣國家標準）"}], "危害性化學品標示及通識規則": [{"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"}, {"code": "CNS 15030", "title": "化學品分類及標示"}], "危害性化學品評估及分級管理辦法": [{"code": "GHS Rev.9 (2021)", "title": "化學品全球調和制度"}, {"code": "ISO 31000:2018", "title": "風險管理指引"}], "勞工作業場所容許暴露標準": [{"code": "ACGIH TLV-TWA/STEL", "title": "美國工業衛生師協會容許暴露值"}, {"code": "NIOSH REL", "title": "美國職業安全衛生研究所建議暴露值"}], "勞工作業環境監測實施辦法": [{"code": "ISO 11171", "title": "顆粒污染量測方法"}, {"code": "NIOSH Method Manual", "title": "美國NIOSH採樣分析方法手冊"}], "鍋爐及壓力容器安全規則": [{"code": "ASME BPVC", "title": "美國機械工程師學會鍋爐及壓力容器規範"}, {"code": "CNS 2160 系列", "title": "鍋爐及壓力容器相關國家標準"}], "起重升降機具安全規則": [{"code": "ISO 4301 系列", "title": "起重機分類與設計規範"}, {"code": "CNS 14253", "title": "吊掛用鋼索安全規範"}], "缺氧症預防規則": [{"code": "ANSI/ASSP Z117.1", "title": "局限空間安全要求"}], "異常氣壓危害預防標準": [{"code": "EN 14153 系列", "title": "潛水作業安全歐洲標準"}, {"code": "ISO 11107", "title": "潛水呼吸氣體標準"}], "高壓氣體勞工安全規則": [{"code": "ISO 11114 系列", "title": "氣瓶閥門相容性標準"}, {"code": "CNS 4620", "title": "高壓氣體安全規則（臺灣）"}], "特定化學物質危害預防標準": [{"code": "IARC 致癌物分類", "title": "國際癌症研究機構致癌物分級"}, {"code": "ACGIH A1/A2", "title": "確定/疑似人類致癌物分類"}], "有機溶劑中毒預防規則": [{"code": "ACGIH TLV-TWA", "title": "各有機溶劑容許暴露值"}, {"code": "GHS Skin/Resp. Sensitizer", "title": "皮膚/呼吸道致敏標示"}], "粉塵危害預防標準": [{"code": "ISO 7708", "title": "空氣品質—粒徑分組採樣定義"}, {"code": "ACGIH TLV-TWA（可呼吸性粉塵）", "title": "可呼吸性粉塵濃度限值"}], "職業安全衛生設施規則": [{"code": "ISO 45001:2018 §8.1", "title": "作業規劃與控制"}, {"code": "IEC 60364", "title": "建築物電氣裝置安全標準"}], "高溫作業勞工作息時間標準": [{"code": "ISO 7933:2004", "title": "熱環境—預測熱緊迫分析（PHS模型）"}, {"code": "ACGIH WBGT TLV", "title": "濕球黑球溫度容許暴露值"}], "新化學物質登記管理辦法": [{"code": "REACH (EU)", "title": "歐盟化學品登記、評估、授權及限制"}, {"code": "K-REACH (KR)", "title": "韓國化學物質登記及評估法"}]};
-  const SOURCE_STATUS = [{"name": "勞動部新聞稿", "org": "勞動部", "type": "news", "ok": true, "count": 60, "ts": "2026-09-30 18:33"}, {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "type": "news", "ok": true, "count": 60, "ts": "2026-09-30 18:33"}, {"name": "職安署公布欄", "org": "勞動部職業安全衛生署", "type": "notice", "ok": true, "count": 60, "ts": "2026-09-30 18:33"}, {"name": "職安署活動訊息", "org": "勞動部職業安全衛生署", "type": "event", "ok": true, "count": 60, "ts": "2026-09-30 18:33"}, {"name": "勞動部公布欄", "org": "勞動部", "type": "notice", "ok": true, "count": 60, "ts": "2026-09-30 18:33"}, {"name": "職安署教育訓練", "org": "勞動部職業安全衛生署", "type": "event", "ok": false, "count": 0, "ts": "2026-09-30 18:33"}];
-  const XML_CACHE_INFO = {"exists": true, "age_days": 0.9, "count": 108, "ts": "2026-09-29 20:06"};
+  const SOURCE_STATUS = [{"name": "勞動部新聞稿", "org": "勞動部", "type": "news", "ok": true, "count": 60, "ts": "2026-09-30 23:03"}, {"name": "職安署新聞稿", "org": "勞動部職業安全衛生署", "type": "news", "ok": true, "count": 60, "ts": "2026-09-30 23:03"}, {"name": "職安署公布欄", "org": "勞動部職業安全衛生署", "type": "notice", "ok": true, "count": 60, "ts": "2026-09-30 23:03"}, {"name": "職安署活動訊息", "org": "勞動部職業安全衛生署", "type": "event", "ok": true, "count": 60, "ts": "2026-09-30 23:03"}, {"name": "勞動部公布欄", "org": "勞動部", "type": "notice", "ok": true, "count": 60, "ts": "2026-09-30 23:03"}, {"name": "職安署教育訓練", "org": "勞動部職業安全衛生署", "type": "event", "ok": false, "count": 0, "ts": "2026-09-30 23:03"}];
+  const XML_CACHE_INFO = {"exists": true, "age_days": 1.1, "count": 108, "ts": "2026-09-29 20:06"};
   const TIER_LABEL = {act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告",guide:"技術指引"};
   const STORE_KEY = "osh_state_v2";
   let state;
