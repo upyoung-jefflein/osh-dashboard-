@@ -4605,7 +4605,9 @@ def send_update_email(changed_laws: list, new_laws: list, news_items: list) -> N
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER", "")
     smtp_pass = os.environ.get("SMTP_PASS", "")
-    notify_to = os.environ.get("NOTIFY_EMAIL", smtp_user)
+    notify_to_raw = os.environ.get("NOTIFY_EMAIL", smtp_user)
+    notify_to_list = [e.strip() for e in notify_to_raw.split(",") if e.strip()]
+    notify_to = ", ".join(notify_to_list)
     dashboard_url = os.environ.get(
         "DASHBOARD_URL", "https://upyoung-jefflein.github.io/osh-dashboard-/"
     )
@@ -4697,7 +4699,7 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
             server.ehlo()
             server.starttls()
             server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, [notify_to], msg.as_string())
+            server.sendmail(smtp_user, notify_to_list, msg.as_string())
 
         print(f"  Email 通知已發送至 {notify_to}（主旨：{subject}）")
     except Exception as exc:
