@@ -4595,6 +4595,115 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
 # main
 # ============================================================
 
+def send_update_email(changed_laws: list, new_laws: list, news_items: list) -> None:
+    """當法規有異動時發送 Email 通知。設定由環境變數提供，未設定則略過。"""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
+    notify_to = os.environ.get("NOTIFY_EMAIL", smtp_user)
+    dashboard_url = os.environ.get(
+        "DASHBOARD_URL", "https://upyoung-jefflein.github.io/osh-dashboard-/"
+    )
+
+    if not smtp_user or not smtp_pass or not notify_to:
+        print("  Email 通知：未設定 SMTP_USER / SMTP_PASS，略過。")
+        return
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    parts = []
+    if new_laws:
+        parts.append(f"新增 {len(new_laws)} 筆")
+    if changed_laws:
+        parts.append(f"異動 {len(changed_laws)} 筆")
+    subject = (
+        f"[職安法規觀測站] {today} 法規更新：{'、'.join(parts)}"
+        if parts
+        else f"[職安法規觀測站] {today} 無法規異動"
+    )
+
+    def law_list(items, max_show=12):
+        shown = items[:max_show]
+        rest = len(items) - max_show
+        rows = "".join(f"<li style='margin-bottom:4px'>{n}</li>" for n in shown)
+        if rest > 0:
+            rows += f"<li style='color:#6b7280'>…另有 {rest} 筆</li>"
+        return f"<ul style='margin:0 0 16px;padding-left:20px'>{rows}</ul>"
+
+    html = f"""<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:620px;
+margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
+<div style="background:#9c2b22;color:#fff;padding:16px 22px;border-radius:8px 8px 0 0">
+  <h2 style="margin:0;font-size:18px">🏭 職安法規觀測站</h2>
+  <p style="margin:4px 0 0;font-size:12px;opacity:.8">{today} 每日更新報告</p>
+</div>
+<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;
+  padding:22px 24px;border-radius:0 0 8px 8px">"""
+
+    if new_laws:
+        html += f"""
+  <h3 style="color:#166534;font-size:15px;margin:0 0 8px">★ 新增法規（{len(new_laws)} 筆）</h3>
+  {law_list(new_laws)}"""
+
+    if changed_laws:
+        html += f"""
+  <h3 style="color:#92400e;font-size:15px;margin:0 0 8px">↑ 法規異動（{len(changed_laws)} 筆）</h3>
+  {law_list(changed_laws)}"""
+
+    if not new_laws and not changed_laws:
+        html += "<p style='color:#6b7280'>今日無法規異動。</p>"
+
+    top_news = [n for n in news_items if n.get("title")][:5]
+    if top_news:
+        html += """
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0">
+  <h3 style="font-size:15px;margin:0 0 8px">📰 最新相關動態</h3>
+  <ul style="margin:0 0 16px;padding-left:20px">"""
+        for n in top_news:
+            link = n.get("link", "")
+            title = n.get("title", "")
+            html += (
+                f"<li style='margin-bottom:6px'>"
+                f"<a href='{link}' style='color:#1d4ed8;text-decoration:none'>{title}</a>"
+                f"</li>"
+            )
+        html += "</ul>"
+
+    html += f"""
+  <div style="text-align:center;margin-top:24px">
+    <a href="{dashboard_url}" style="background:#9c2b22;color:#fff;padding:10px 28px;
+      border-radius:6px;text-decoration:none;font-weight:600;font-size:14px">
+      查看完整觀測站 →
+    </a>
+  </div>
+  <p style="color:#9ca3af;font-size:11px;margin-top:20px;text-align:center;line-height:1.5">
+    本郵件由 GitHub Actions 自動發送。<br>
+    如需停止通知，請在 GitHub Secrets 移除 NOTIFY_EMAIL。
+  </p>
+</div>
+</body></html>"""
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"職安法規觀測站 <{smtp_user}>"
+        msg["To"] = notify_to
+        msg.attach(MIMEText(html, "html", "utf-8"))
+
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, [notify_to], msg.as_string())
+
+        print(f"  Email 通知已發送至 {notify_to}（主旨：{subject}）")
+    except Exception as exc:
+        print(f"  Email 通知失敗：{exc}", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="產生職安法規觀測站儀表板")
     parser.add_argument("--law-xml", type=Path, help="全國法規資料庫公開資料的 XML 檔路徑（選填）")
@@ -4631,6 +4740,8 @@ def main():
     XML_CACHE = Path("osh_xml_records.json")
 
     registry = STATIC_REGISTRY
+    changed_laws: list[str] = []
+    new_laws_detected: list[str] = []
     if not args.news_only:
         if args.fetch_xml:
             all_xml_records: list[dict] = []
@@ -4649,6 +4760,8 @@ def main():
                         _old = {r["name"]: r.get("最新異動日期_roc", "") for r in json.loads(XML_CACHE.read_text(encoding="utf-8"))}
                         _changed = [r["name"] for r in all_xml_records if _old.get(r["name"]) != r.get("最新異動日期_roc", "")]
                         _new_laws = [r["name"] for r in all_xml_records if r["name"] not in _old]
+                        changed_laws = _changed
+                        new_laws_detected = _new_laws
                         if _changed:
                             print(f"  ↑ 法規異動 {len(_changed)} 筆：{'、'.join(_changed[:6])}{'…' if len(_changed) > 6 else ''}")
                         if _new_laws:
@@ -4713,6 +4826,9 @@ def main():
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
                source_status=source_status, xml_cache_info=xml_cache_info)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
+
+    if args.fetch_xml and (changed_laws or new_laws_detected):
+        send_update_email(changed_laws, new_laws_detected, news)
 
 
 if __name__ == "__main__":

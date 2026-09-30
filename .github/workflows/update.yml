@@ -35,6 +35,9 @@ jobs:
       - name: 下載最新法規 XML 並重建 Dashboard
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_USER:      ${{ secrets.SMTP_USER }}
+          SMTP_PASS:      ${{ secrets.SMTP_PASS }}
+          NOTIFY_EMAIL:   ${{ secrets.NOTIFY_EMAIL }}
         run: python osh_dashboard.py --fetch-xml -o docs/index.html
 
       - name: 提交並推送更新
