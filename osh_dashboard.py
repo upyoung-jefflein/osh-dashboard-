@@ -5059,15 +5059,16 @@ def main():
             print(f"法規：自動使用快取 {XML_CACHE}（{len(all_xml_records)} 筆），合併後共 {len(registry)} 筆。")
 
     # 計算法規快取新鮮度
+    # 以紀錄內的實際擷取日期計算新鮮度（檔案 mtime 在 CI checkout 後永遠是當下，無法反映資料新舊）
     xml_cache_info: dict = {"exists": False, "age_days": None, "count": 0}
     if XML_CACHE.exists():
-        import time as _time
-        age_sec = _time.time() - XML_CACHE.stat().st_mtime
+        _recs = json.loads(XML_CACHE.read_text(encoding="utf-8"))
+        _fetched = max((r.get("資料擷取日期", "") for r in _recs), default="")
         xml_cache_info = {
             "exists": True,
-            "age_days": round(age_sec / 86400, 1),
-            "count": len(all_xml_records) if 'all_xml_records' in dir() else 0,
-            "ts": datetime.fromtimestamp(XML_CACHE.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+            "age_days": (date.today() - date.fromisoformat(_fetched)).days if _fetched else None,
+            "count": len(_recs),
+            "ts": _fetched,
         }
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
