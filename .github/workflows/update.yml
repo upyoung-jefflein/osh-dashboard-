@@ -40,12 +40,22 @@ jobs:
         run: python osh_dashboard.py -o docs/index.html
 
       - name: 提交並推送更新
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          git add docs/index.html osh_xml_records.json osh_law_diffs.json
-          if git diff --staged --quiet; then
-            echo "無法規或新聞異動，略過 commit。"
-          else
+          commit_and_push() {
+            git add docs/index.html
+            if git diff --staged --quiet; then
+              echo "無異動，略過 commit。"
+              return 0
+            fi
             git commit -m "auto: 定期更新 $(date -u +%Y-%m-%d)"
-            # push 失敗時（有人剛推），pull rebase 後再試一次
-            git push || (git pull --rebase -X ours origin main && git push)
+            git push
+          }
+          if ! commit_and_push; then
+            # 有人剛推（例如本機排程的法規更新）：以最新遠端重新生成，避免合併時蓋掉對方的資料
+            git fetch origin
+            git reset --hard origin/main
+            python osh_dashboard.py -o docs/index.html
+            commit_and_push
           fi
