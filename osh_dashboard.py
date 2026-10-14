@@ -1518,15 +1518,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     padding:8px 12px; background:var(--card); border-bottom:2px solid var(--border);
     white-space:nowrap; text-transform:uppercase; letter-spacing:.07em; }}
   .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; transition:background .12s; font-variant-numeric:tabular-nums; }}
-  .registry-table td:first-child,.registry-table td:nth-child(2){{ vertical-align:middle; }}
-  /* 名稱欄：取得剩餘空間；其他短欄：收縮到內容寬度 */
-  .registry-table th:nth-child(3),.registry-table td:nth-child(3){{ min-width:180px; }}
+  .registry-table td:first-child{{ vertical-align:middle; }}
+  /* 名稱欄（第2欄）：取得剩餘空間；其他短欄：收縮到內容寬度 */
+  .registry-table th:nth-child(2),.registry-table td:nth-child(2){{ min-width:180px; }}
   .registry-table th:nth-child(1),.registry-table td:nth-child(1),
-  .registry-table th:nth-child(2),.registry-table td:nth-child(2),
+  .registry-table th:nth-child(3),.registry-table td:nth-child(3),
   .registry-table th:nth-child(4),.registry-table td:nth-child(4),
   .registry-table th:nth-child(5),.registry-table td:nth-child(5),
-  .registry-table th:nth-child(6),.registry-table td:nth-child(6),
-  .registry-table th:nth-child(7),.registry-table td:nth-child(7){{ width:1%; white-space:nowrap; }}
+  .registry-table th:nth-child(6),.registry-table td:nth-child(6){{ width:1%; white-space:nowrap; }}
   .registry-table tr:last-child td{{ border-bottom:none; }}
   .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
   .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
@@ -1927,10 +1926,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .std-chip-title{{ font-weight:400; color:var(--ink-soft); }}
   /* ── 稽查重點badge（表格）── */
   .inspect-badge{{ display:inline-flex; align-items:center; gap:2px; font-size:9.5px; font-weight:700; color:#b91c1c; background:#fee2e2; border:1px solid #fca5a5; border-radius:3px; padding:1px 5px; white-space:nowrap; }}
-  /* ── 訂閱法規按鈕 ── */
-  .sub-btn{{ border:none; background:transparent; cursor:pointer; font-size:15px; padding:0 2px; opacity:.5; transition:opacity .2s; }}
-  .sub-btn:hover{{ opacity:1; }}
-  .sub-btn.on{{ opacity:1; color:#f59e0b; }}
+  /* ── 收藏法規的更新提示 ── */
   .sub-notice{{ background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:7px 12px; font-size:12.5px; color:#78350f; margin-bottom:12px; }}
   [data-theme="dark"] .sub-notice{{ background:rgba(120,53,15,.2); color:#fcd34d; }}
   /* ── 並排對比 modal ── */
@@ -1971,6 +1967,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .guide-result-item{{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:13px; }}
   .guide-result-item:last-child{{ border:none; }}
   .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:12px; text-decoration:underline; }}
+  .guide-result-item{{ flex-wrap:wrap; }}
+  .guide-result-item .guide-jump-btn{{ text-align:left; }}
+  .guide-result-item .guide-mark-btn, .guide-mark-all{{ margin-left:auto; flex-shrink:0; white-space:nowrap; text-decoration:none;
+    font-size:11.5px; padding:3px 10px; border:1px solid #2563eb; border-radius:99px; color:#2563eb; background:rgba(37,99,235,.06); cursor:pointer; font-family:inherit; }}
+  .guide-mark-all{{ margin-left:6px; }}
+  .guide-marked{{ margin-left:auto; flex-shrink:0; white-space:nowrap; font-size:11.5px; color:#2563eb; font-weight:600; }}
+  [data-theme="dark"] .guide-result-item .guide-mark-btn, [data-theme="dark"] .guide-mark-all, [data-theme="dark"] .guide-marked{{ color:#93c5fd; border-color:#60a5fa; }}
+  .guide-note{{ font-size:12px; color:var(--ink-soft); margin:-8px 0 14px; line-height:1.6; }}
   /* ── 合規稽核 Checklist ── */
   .checklist-section{{ margin-top:16px; }}
   .checklist-section h3{{ font-size:13px; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
@@ -2058,14 +2062,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .view-btns button {{ padding:4px 8px; font-size:10.5px; }}
     /* 法規表格：手機隱藏非核心欄位，只保留收藏、名稱、日期 */
     .registry-table {{ min-width:auto; }}
+    .registry-table th:nth-child(3),
+    .registry-table td:nth-child(3),
     .registry-table th:nth-child(4),
     .registry-table td:nth-child(4),
-    .registry-table th:nth-child(5),
-    .registry-table td:nth-child(5),
-    .registry-table th:nth-child(7),
-    .registry-table td:nth-child(7) {{ display:none; }}
-    /* 觸控目標：收藏/訂閱/分頁按鈕放大 */
-    .star-btn, .sub-btn {{ font-size:18px; padding:6px 5px; }}
+    .registry-table th:nth-child(6),
+    .registry-table td:nth-child(6) {{ display:none; }}
+    /* 觸控目標：收藏/分頁按鈕放大 */
+    .star-btn {{ font-size:18px; padding:6px 5px; }}
     #drawer-close {{ padding:10px 12px; font-size:22px; }}
     .reg-pager button {{ min-width:36px; min-height:36px; font-size:13px; }}
     /* 搜尋欄全寬 */
@@ -2179,8 +2183,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="reg-controls">
       <span class="label">篩選：</span>
       <button data-lawfilter="all" class="active">全部</button>
-      <button data-lawfilter="starred">已收藏</button>
-      <button data-lawfilter="subscribed">🔔 已訂閱</button>
+      <button data-lawfilter="starred">★ 已收藏</button>
       <button data-lawfilter="recent3m">近3月修正</button>
       <button data-lawfilter="recent">近1年修正</button>
       <button data-lawfilter="unread">● 未讀</button>
@@ -2196,6 +2199,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="sep"></div>
       <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
       <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 判斷</button>
+      <button onclick="exportAppTable()" style="font-size:12px">📥 鑑別表</button>
       <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 罰則</button>
       <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查</button>
       <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
@@ -2225,7 +2229,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <span class="legend-label">修正狀態</span>
         <span class="legend-item"><span class="badge recent">近期修正</span>近3個月內有修正</span>
         <span class="legend-item"><span class="badge" style="background:#ef4444;color:#fff;padding:1px 7px;border-radius:3px;font-size:11px">未生效</span>已修正但尚未施行</span>
-        <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>訂閱後有新修正</span>
+        <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>收藏後有新修正</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">衝擊分析</span>
@@ -2288,7 +2292,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="risk-matrix-tooltip" id="rmTooltip"></div>
     <div class="table-scroll" id="mainTableScroll">
       <table class="registry-table">
-        <thead><tr><th></th><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
+        <thead><tr><th></th><th>法規名稱</th><th>分類</th><th>位階</th><th>最新修正日期</th><th>資料來源</th></tr></thead>
         <tbody id="registryBody"></tbody>
       </table>
     </div>
@@ -2376,6 +2380,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <div id="guide-modal" class="guide-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="guide-box">
     <h3>⚖ 法規適用性判斷</h3>
+    <p class="guide-note">先依事業類別與危害初篩，再把適用的法規一鍵標記；要逐條調整，請到法規抽屜使用「📌 標記適用」。標記結果可用「📥 鑑別表」匯出。</p>
     <div class="guide-q">
       <label>事業類別</label>
       <select id="guide-industry">
@@ -2485,8 +2490,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.readLater || typeof state.readLater !== "object") state.readLater = {{}};
   if (!Array.isArray(state.mutedKeywords)) state.mutedKeywords = [];
   if (typeof state.autoMarkRead === "undefined") state.autoMarkRead = false;
-  if (!state.subscribedLaws || typeof state.subscribedLaws !== "object") state.subscribedLaws = {{}};
   if (!state.lawLastSeen || typeof state.lawLastSeen !== "object") state.lawLastSeen = {{}};
+  // 「訂閱」已併入「收藏」：舊訂閱視為收藏；收藏法規以目前版本為基準，之後有新修正才提示
+  if (state.subscribedLaws && typeof state.subscribedLaws === "object")
+    Object.keys(state.subscribedLaws).forEach(function(n) {{ state.starredLaws[n] = true; }});
+  delete state.subscribedLaws;
+  REGISTRY.forEach(function(r) {{
+    if (state.starredLaws[r.name] && !state.lawLastSeen[r.name] && r.date) state.lawLastSeen[r.name] = r.date;
+  }});
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
   if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
   if (!state.appArts || typeof state.appArts !== "object") state.appArts = {{}};
@@ -3017,38 +3028,35 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }});
   }}
 
-  // ─── 法規訂閱 ────────────────────────────────────────────────
-  function toggleSubscribeLaw(name) {{
-    if (!state.subscribedLaws) state.subscribedLaws = {{}};
-    if (state.subscribedLaws[name]) {{
-      delete state.subscribedLaws[name];
+  // ─── 法規收藏（收藏的法規有新修正時會提示）────────────────────
+  function toggleStarLaw(name) {{
+    if (state.starredLaws[name]) {{
+      delete state.starredLaws[name];
     }} else {{
-      state.subscribedLaws[name] = true;
-      if (!state.lawLastSeen) state.lawLastSeen = {{}};
+      state.starredLaws[name] = true;
       // 記錄目前版本，之後才能偵測新修訂
       var r = REGISTRY.find(function(x) {{ return x.name === name; }});
       if (r && r.date) state.lawLastSeen[name] = r.date;
     }}
     save(); renderRegistry();
+    return !!state.starredLaws[name];
   }}
-  function checkSubscriptionUpdates() {{
-    if (!state.subscribedLaws) return;
+  function checkStarredUpdates() {{
     var updated = REGISTRY.filter(function(r) {{
-      return state.subscribedLaws[r.name] &&
-             state.lawLastSeen && state.lawLastSeen[r.name] &&
+      return state.starredLaws[r.name] && state.lawLastSeen[r.name] &&
              r.date && r.date > state.lawLastSeen[r.name];
     }});
     if (updated.length) {{
-      var msg = '🔔 ' + updated.length + ' 筆訂閱法規已更新：' + updated.map(function(r) {{ return r.name; }}).join('、');
+      var msg = '★ ' + updated.length + ' 筆收藏法規已更新：' + updated.map(function(r) {{ return r.name; }}).join('、');
       var toast = document.getElementById('notif-toast');
       toast.textContent = msg;
       toast.classList.add('show');
       toast.onclick = function() {{
         toast.classList.remove('show');
         document.querySelectorAll("[data-lawfilter]").forEach(function(b) {{
-          b.classList.toggle("active", b.dataset.lawfilter === "subscribed");
+          b.classList.toggle("active", b.dataset.lawfilter === "starred");
         }});
-        lawFilter = "subscribed"; renderRegistry();
+        lawFilter = "starred"; renderRegistry();
         switchTab("registry");
       }};
       setTimeout(function() {{ toast.classList.remove('show'); }}, 12000);
@@ -3194,19 +3202,44 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       result.innerHTML = '<p style="color:var(--ink-soft);font-size:13px">找不到符合條件的法規，請放寬篩選條件。</p>';
       return;
     }}
-    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆適用法規：</p>' +
+    var markable = relevant.filter(function(r) {{ return (r.articles || []).length && !hasAppMarks(r.name); }});
+    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：' +
+      (markable.length ? ' <button class="guide-mark-all" type="button">📌 全部標為適用（' + markable.length + ' 筆）</button>' : '') + '</p>' +
       relevant.map(function(r) {{
-        return '<div class="guide-result-item">' +
+        var total = (r.articles || []).length;
+        var n = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
+        var mark = !total ? ''
+          : n ? '<span class="guide-marked">✓ 已標 ' + n + '/' + total + ' 條</span>'
+          : '<button class="guide-mark-btn" type="button">📌 標為適用</button>';
+        return '<div class="guide-result-item" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' +
           '<span class="cat-tag">' + (r.cat||'') + '</span>' +
-          '<button class="guide-jump-btn" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + r.name + '</button>' +
+          '<button class="guide-jump-btn" type="button">' + r.name + '</button>' + mark +
           '</div>';
       }}).join('');
+    function byName(name) {{ return REGISTRY.find(function(x) {{ return x.name === name; }}); }}
     result.querySelectorAll('.guide-jump-btn').forEach(function(btn) {{
       btn.onclick = function() {{
         document.getElementById('guide-modal').classList.remove('open');
-        jumpToLaw(btn.dataset.law);
+        jumpToLaw(btn.parentNode.dataset.law);
       }};
     }});
+    result.querySelectorAll('.guide-mark-btn').forEach(function(btn) {{
+      btn.onclick = function() {{
+        markLawApplicable(byName(btn.parentNode.dataset.law));
+        save(); renderRegistry(); runGuide();
+      }};
+    }});
+    var allBtn = result.querySelector('.guide-mark-all');
+    if (allBtn) allBtn.onclick = function() {{
+      if (!confirm('將下列 ' + markable.length + ' 筆法規的所有條文標為「適用」？\\n之後可在各法規抽屜逐條調整或清除。')) return;
+      markable.forEach(markLawApplicable);
+      save(); renderRegistry(); runGuide();
+    }};
+  }}
+
+  function markLawApplicable(r) {{
+    var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
+    (r.articles || []).forEach(function(no) {{ a[no] = true; }});
   }}
 
   function buildCatFilters() {{
@@ -3231,7 +3264,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     let rows = REGISTRY.slice();
     if (catFilter !== "all") rows = rows.filter(r => r.cat === catFilter);
     if (lawFilter === "starred") rows = rows.filter(r => state.starredLaws[r.name]);
-    if (lawFilter === "subscribed") rows = rows.filter(r => state.subscribedLaws && state.subscribedLaws[r.name]);
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
@@ -3320,8 +3352,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
       const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
       const starred = state.starredLaws[r.name];
-      const isSub = !!(state.subscribedLaws && state.subscribedLaws[r.name]);
-      const hasUpdate = isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
+      const hasUpdate = !!starred && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
       const isUnread = (isnew || recent || recent3m) && !state.readLaws[r.name];
       const statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : '';
       const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
@@ -3364,7 +3395,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }})();
       return '<tr' + (isUnread ? ' class="law-unread"' : '') + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
         '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + impactBadge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
@@ -3402,20 +3432,85 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     document.querySelectorAll(".star-btn").forEach(btn => {{
-      btn.onclick = () => {{
-        const name = btn.dataset.law;
-        if (state.starredLaws[name]) delete state.starredLaws[name];
-        else state.starredLaws[name] = true;
-        save(); renderRegistry();
-      }};
-    }});
-    document.querySelectorAll(".sub-btn[data-sublaw]").forEach(btn => {{
-      btn.onclick = () => toggleSubscribeLaw(btn.dataset.sublaw);
+      btn.onclick = () => toggleStarLaw(btn.dataset.law);
     }});
     document.querySelectorAll(".rname-btn").forEach(btn => {{
       btn.onclick = () => openDrawer(_regRows[+btn.dataset.idx]);
     }});
     updateUnreadLawCount();
+  }}
+
+  // ─── 法規鑑別表匯出（SheetJS 於點擊時才載入，不增加頁面載入量）──────
+  var _xlsxLoading = null;
+  function _loadXlsx() {{
+    if (window.XLSX) return Promise.resolve();
+    if (!_xlsxLoading) _xlsxLoading = new Promise(function(res, rej) {{
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res;
+      s.onerror = function() {{ _xlsxLoading = null; rej(new Error('xlsx load failed')); }};
+      document.head.appendChild(s);
+    }});
+    return _xlsxLoading;
+  }}
+  function showClipToast(msg) {{
+    var t = document.getElementById('clip-toast');
+    if (!t) return;
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function() {{ t.classList.remove('show'); }}, 3200);
+  }}
+  function _artCmp(a, b) {{
+    var x = a.split('-').map(Number), y = b.split('-').map(Number);
+    return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0));
+  }}
+
+  function exportAppTable() {{
+    var laws = REGISTRY.filter(function(r) {{ return hasAppMarks(r.name); }});
+    if (!laws.length) {{
+      showClipToast('尚未標記適用條文：請先用「🎯 判斷」初篩，或在法規抽屜按「📌 標記適用」');
+      return;
+    }}
+    laws.sort(function(a, b) {{
+      var ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
+      if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
+      var tierOrder = {{act:0, reg:1, dir:2, notice:3}};
+      if (a.tier !== b.tier) return (tierOrder[a.tier] || 9) - (tierOrder[b.tier] || 9);
+      return a.name.localeCompare(b.name, 'zh-Hant');
+    }});
+    showClipToast('正在產生鑑別表…');
+    _loadXlsx().then(function() {{
+      var lawRows = [['序', '法規名稱', '位階', '分類', '主管機關', '最新修正日', '效力狀態', '適用條數', '總條數',
+        '適用條文', '近期修正涉及條文', '全文連結', '權責部門', '符合狀態', '佐證文件／程序書編號', '備註']];
+      var artRows = [['法規名稱', '條號', '條文摘要（前200字）', '近期修正', '修正日期', '符合狀態', '佐證文件／程序書編號', '備註']];
+      laws.forEach(function(r, i) {{
+        var nos = Object.keys(state.appArts[r.name]).sort(_artCmp);
+        var imp = impactNos(r);
+        lawRows.push([i + 1, r.name, TIER_LABEL[r.tier] || r.tier, r.cat || '', r.authority || '', r.date || '待確認',
+          r.status || '現行', nos.length, (r.articles || []).length,
+          nos.map(function(n) {{ return '第' + n + '條'; }}).join('、'),
+          imp.length ? imp.map(function(n) {{ return '第' + n + '條'; }}).join('、') : '',
+          r.source || '', '', '', '', '']);
+        var recent = isRecent(r.date) || r.status === '未生效';
+        var chg = {{}};
+        if (recent) lawChanges(r).forEach(function(c) {{ chg[c.no] = CHG_LABEL[c.type][0]; }});
+        nos.forEach(function(no) {{
+          artRows.push([r.name, '第' + no + '條', (r.article_previews && r.article_previews[no]) || '',
+            chg[no] || '', chg[no] ? (r.date || '') : '', '', '', '']);
+        }});
+      }});
+      var wb = XLSX.utils.book_new();
+      var ws1 = XLSX.utils.aoa_to_sheet(lawRows);
+      ws1['!cols'] = [4, 30, 8, 10, 16, 12, 8, 8, 8, 40, 24, 40, 14, 12, 22, 24].map(function(w) {{ return {{wch: w}}; }});
+      var ws2 = XLSX.utils.aoa_to_sheet(artRows);
+      ws2['!cols'] = [30, 10, 70, 10, 12, 12, 22, 24].map(function(w) {{ return {{wch: w}}; }});
+      XLSX.utils.book_append_sheet(wb, ws1, '法規鑑別表');
+      XLSX.utils.book_append_sheet(wb, ws2, '條文明細');
+      var d = new Date(), p = function(n) {{ return String(n).padStart(2, '0'); }};
+      XLSX.writeFile(wb, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
+      showClipToast('已匯出 ' + laws.length + ' 部法規的鑑別表');
+    }}).catch(function() {{
+      showClipToast('匯出失敗：無法載入 Excel 元件，請確認網路連線後重試');
+    }});
   }}
 
   function _escHtml(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
@@ -3498,17 +3593,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function openDrawer(r) {{
     const pcode = r.pcode || "";
     const artBase = pcode ? "https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=" + pcode + "&flno=" : "";
-    const isSub = !!(state.subscribedLaws && state.subscribedLaws[r.name]);
+    const isStar = !!state.starredLaws[r.name];
 
-    // 標題 + 訂閱按鈕
+    // 標題 + 收藏按鈕
     document.getElementById("drawer-title").innerHTML =
       '<a href="' + r.source + '" target="_blank" rel="noopener">' + r.name + ' ↗</a>' +
-      '<button class="sub-btn' + (isSub ? ' on' : '') + '" id="sub-btn-drawer" title="' + (isSub ? '取消訂閱' : '訂閱此法規，修訂時提醒') + '" data-sublaw="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' + (isSub ? '🔔' : '🔕') + '</button>';
-    document.getElementById("sub-btn-drawer").onclick = function() {{ toggleSubscribeLaw(r.name); }};
+      '<button class="star-btn' + (isStar ? ' on' : '') + '" id="star-btn-drawer" title="收藏（修正時提示）">' + (isStar ? '★' : '☆') + '</button>';
+    document.getElementById("star-btn-drawer").onclick = function() {{
+      var on = toggleStarLaw(r.name);
+      this.classList.toggle('on', on); this.textContent = on ? '★' : '☆';
+    }};
 
-    // 法規訂閱異動通知
+    // 收藏法規的異動提示
     var noticeHtml = '';
-    if (isSub && state.lawLastSeen && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name]) {{
+    if (isStar && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name]) {{
       noticeHtml = '<div class="sub-notice">⚠ 此法規自您上次查看後已於 ' + r.date + ' 修訂，請注意更新內容。</div>';
     }}
 
@@ -3818,8 +3916,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }};
       var appAll = document.getElementById('art-app-all');
       if (appAll) appAll.onclick = function() {{
-        var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
-        (r.articles || []).forEach(function(no) {{ a[no] = true; }});
+        markLawApplicable(r);
         save(); _refreshAppUI(r);
       }};
       var appClear = document.getElementById('art-app-clear');
@@ -4646,7 +4743,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     renderNews();
     updateBadges();
     checkNewArticles();
-    checkSubscriptionUpdates();
+    checkStarredUpdates();
   }}, 300);
   renderRegistry();
   renderDirectives();
