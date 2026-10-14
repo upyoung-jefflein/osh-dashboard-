@@ -9,6 +9,7 @@ if ((Test-Path $log) -and (Get-Item $log).Length -gt 1MB) { Move-Item $log "$log
 Start-Transcript -Path $log -Append | Out-Null
 
 $env:PYTHONIOENCODING = 'utf-8'
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
 # Task Scheduler may start with a stale environment; read mail settings straight from the user profile.
 foreach ($name in 'SMTP_USER', 'SMTP_PASS', 'NOTIFY_EMAIL', 'GEMINI_API_KEY') {
     $val = [Environment]::GetEnvironmentVariable($name, 'User')
@@ -30,7 +31,9 @@ for ($attempt = 1; $attempt -le 2 -and -not $ok; $attempt++) {
     git diff --staged --quiet
     if ($LASTEXITCODE -eq 0) { Write-Output 'no changes'; $ok = $true; break }
 
-    git commit -m "auto(local): law update $(Get-Date -Format 'yyyy-MM-dd')"
+    # Fresh clone has no user identity; pass it per-command instead of editing git config.
+    git -c user.name=JeffLein -c user.email=jeff.lein@upyoung.com.tw commit -m "auto(local): law update $(Get-Date -Format 'yyyy-MM-dd')"
+    if ($LASTEXITCODE -ne 0) { Write-Output "git commit failed (exit $LASTEXITCODE)"; continue }
     git push
     if ($LASTEXITCODE -eq 0) { $ok = $true } else { Write-Output 'push rejected, retrying from fresh origin/main' }
 }
