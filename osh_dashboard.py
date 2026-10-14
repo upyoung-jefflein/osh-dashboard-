@@ -2193,8 +2193,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
     <div class="reg-controls">
       <span class="label">排序：</span>
-      <button data-sort="cat" class="active">依分類</button>
-      <button data-sort="date">依修正日期</button>
+      <button data-sort="cat">依分類</button>
+      <button data-sort="date" class="active">依修正日期</button>
       <button data-sort="name">依名稱</button>
       <div class="sep"></div>
       <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
@@ -2502,7 +2502,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
   if (!state.appArts || typeof state.appArts !== "object") state.appArts = {{}};
 
-  let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "cat";
+  let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "date";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
@@ -3440,18 +3440,109 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     updateUnreadLawCount();
   }}
 
-  // ─── 法規鑑別表匯出（SheetJS 於點擊時才載入，不增加頁面載入量）──────
-  var _xlsxLoading = null;
-  function _loadXlsx() {{
-    if (window.XLSX) return Promise.resolve();
-    if (!_xlsxLoading) _xlsxLoading = new Promise(function(res, rej) {{
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = res;
-      s.onerror = function() {{ _xlsxLoading = null; rej(new Error('xlsx load failed')); }};
-      document.head.appendChild(s);
+  // ─── 法規鑑別表匯出（自行產生 .xlsx，不依賴外部元件；於點擊當下同步下載）────
+  var _crcTable = null;
+  function _crc32(u8) {{
+    if (!_crcTable) {{
+      _crcTable = new Uint32Array(256);
+      for (var n = 0; n < 256; n++) {{
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        _crcTable[n] = c >>> 0;
+      }}
+    }}
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < u8.length; i++) crc = _crcTable[(crc ^ u8[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }}
+  // 不壓縮（store）的最小 zip；.xlsx 本質上就是 zip 包 XML
+  function _zipStore(files) {{
+    var enc = new TextEncoder(), parts = [], central = [], offset = 0, cdSize = 0;
+    files.forEach(function(f) {{
+      var name = enc.encode(f.name), data = enc.encode(f.text), crc = _crc32(data);
+      var lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+      lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true);
+      lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(lh.buffer), name, data);
+      var ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+      ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true);
+      ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+      ch.setUint32(42, offset, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      cdSize += 46 + name.length;
+      offset += 30 + name.length + data.length;
     }});
-    return _xlsxLoading;
+    var end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]),
+      {{type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}});
+  }}
+  function _xmlEsc(s) {{
+    return String(s).replace(/[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }}
+  function _sheetXml(rows, widths) {{
+    var cols = '<cols>' + widths.map(function(w, i) {{
+      return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
+    }}).join('') + '</cols>';
+    var body = rows.map(function(row, ri) {{
+      var st = ri === 0 ? ' s="1"' : ' s="2"';
+      return '<row r="' + (ri + 1) + '">' + row.map(function(v, ci) {{
+        var ref = String.fromCharCode(65 + ci) + (ri + 1);
+        if (typeof v === 'number') return '<c r="' + ref + '"' + st + '><v>' + v + '</v></c>';
+        if (v === '' || v == null) return '<c r="' + ref + '"' + st + '/>';
+        return '<c r="' + ref + '"' + st + ' t="inlineStr"><is><t xml:space="preserve">' + _xmlEsc(v) + '</t></is></c>';
+      }}).join('') + '</row>';
+    }}).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      cols + '<sheetData>' + body + '</sheetData>' +
+      '<autoFilter ref="A1:' + String.fromCharCode(64 + widths.length) + rows.length + '"/></worksheet>';
+  }}
+  function _buildXlsx(sheets) {{
+    var X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    var NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    var RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    var CT = 'application/vnd.openxmlformats-officedocument.spreadsheetml.';
+    var files = [
+      {{name: '[Content_Types].xml', text: X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="' + CT + 'sheet.main+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="' + CT + 'styles+xml"/>' +
+        sheets.map(function(s, i) {{ return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="' + CT + 'worksheet+xml"/>'; }}).join('') +
+        '</Types>'}},
+      {{name: '_rels/.rels', text: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="' + RNS + '/officeDocument" Target="xl/workbook.xml"/></Relationships>'}},
+      {{name: 'xl/workbook.xml', text: X + '<workbook xmlns="' + NS + '" xmlns:r="' + RNS + '"><sheets>' +
+        sheets.map(function(s, i) {{ return '<sheet name="' + _xmlEsc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }}).join('') +
+        '</sheets></workbook>'}},
+      {{name: 'xl/_rels/workbook.xml.rels', text: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        sheets.map(function(s, i) {{ return '<Relationship Id="rId' + (i + 1) + '" Type="' + RNS + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }}).join('') +
+        '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + RNS + '/styles" Target="styles.xml"/></Relationships>'}},
+      {{name: 'xl/styles.xml', text: X + '<styleSheet xmlns="' + NS + '">' +
+        '<fonts count="2"><font><sz val="11"/><name val="Microsoft JhengHei"/></font><font><b/><sz val="11"/><name val="Microsoft JhengHei"/></font></fonts>' +
+        '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFE7E1D0"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+        '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+        '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+        '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>' +
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'}}
+    ];
+    sheets.forEach(function(s, i) {{ files.push({{name: 'xl/worksheets/sheet' + (i + 1) + '.xml', text: _sheetXml(s.rows, s.widths)}}); }});
+    return _zipStore(files);
+  }}
+  function _downloadBlob(blob, filename) {{
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(function() {{ document.body.removeChild(a); URL.revokeObjectURL(url); }}, 1500);
   }}
   function showClipToast(msg) {{
     var t = document.getElementById('clip-toast');
@@ -3470,15 +3561,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       showClipToast('尚未標記適用條文：請先用「🎯 判斷」初篩，或在法規抽屜按「📌 標記適用」');
       return;
     }}
-    laws.sort(function(a, b) {{
-      var ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
-      if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
-      var tierOrder = {{act:0, reg:1, dir:2, notice:3}};
-      if (a.tier !== b.tier) return (tierOrder[a.tier] || 9) - (tierOrder[b.tier] || 9);
-      return a.name.localeCompare(b.name, 'zh-Hant');
-    }});
-    showClipToast('正在產生鑑別表…');
-    _loadXlsx().then(function() {{
+    try {{
+      laws.sort(function(a, b) {{
+        var ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
+        if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
+        var tierOrder = {{act:0, reg:1, dir:2, notice:3}};
+        if (a.tier !== b.tier) return (tierOrder[a.tier] || 9) - (tierOrder[b.tier] || 9);
+        return a.name.localeCompare(b.name, 'zh-Hant');
+      }});
       var lawRows = [['序', '法規名稱', '位階', '分類', '主管機關', '最新修正日', '效力狀態', '適用條數', '總條數',
         '適用條文', '近期修正涉及條文', '全文連結', '權責部門', '符合狀態', '佐證文件／程序書編號', '備註']];
       var artRows = [['法規名稱', '條號', '條文摘要（前200字）', '近期修正', '修正日期', '符合狀態', '佐證文件／程序書編號', '備註']];
@@ -3490,27 +3580,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           nos.map(function(n) {{ return '第' + n + '條'; }}).join('、'),
           imp.length ? imp.map(function(n) {{ return '第' + n + '條'; }}).join('、') : '',
           r.source || '', '', '', '', '']);
-        var recent = isRecent(r.date) || r.status === '未生效';
         var chg = {{}};
-        if (recent) lawChanges(r).forEach(function(c) {{ chg[c.no] = CHG_LABEL[c.type][0]; }});
+        if (isRecent(r.date) || r.status === '未生效') lawChanges(r).forEach(function(c) {{ chg[c.no] = CHG_LABEL[c.type][0]; }});
         nos.forEach(function(no) {{
           artRows.push([r.name, '第' + no + '條', (r.article_previews && r.article_previews[no]) || '',
             chg[no] || '', chg[no] ? (r.date || '') : '', '', '', '']);
         }});
       }});
-      var wb = XLSX.utils.book_new();
-      var ws1 = XLSX.utils.aoa_to_sheet(lawRows);
-      ws1['!cols'] = [4, 30, 8, 10, 16, 12, 8, 8, 8, 40, 24, 40, 14, 12, 22, 24].map(function(w) {{ return {{wch: w}}; }});
-      var ws2 = XLSX.utils.aoa_to_sheet(artRows);
-      ws2['!cols'] = [30, 10, 70, 10, 12, 12, 22, 24].map(function(w) {{ return {{wch: w}}; }});
-      XLSX.utils.book_append_sheet(wb, ws1, '法規鑑別表');
-      XLSX.utils.book_append_sheet(wb, ws2, '條文明細');
+      var blob = _buildXlsx([
+        {{name: '法規鑑別表', rows: lawRows, widths: [4, 30, 8, 10, 16, 12, 8, 8, 8, 40, 24, 40, 14, 12, 22, 24]}},
+        {{name: '條文明細', rows: artRows, widths: [30, 10, 70, 10, 12, 12, 22, 24]}}
+      ]);
       var d = new Date(), p = function(n) {{ return String(n).padStart(2, '0'); }};
-      XLSX.writeFile(wb, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
+      _downloadBlob(blob, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
       showClipToast('已匯出 ' + laws.length + ' 部法規的鑑別表');
-    }}).catch(function() {{
-      showClipToast('匯出失敗：無法載入 Excel 元件，請確認網路連線後重試');
-    }});
+    }} catch (e) {{
+      showClipToast('匯出失敗：' + (e && e.message ? e.message : e));
+    }}
   }}
 
   function _escHtml(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
@@ -4126,10 +4212,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   function jumpToLaw(name) {{
     switchTab("registry");
-    catFilter = "all"; lawFilter = "all"; sortMode = "cat";
+    catFilter = "all"; lawFilter = "all"; sortMode = "date";
     document.querySelectorAll(".cat-btn").forEach(function(b, i) {{ b.classList.toggle("active", i === 0); }});
     document.querySelectorAll("[data-lawfilter]").forEach(function(b) {{ b.classList.toggle("active", b.dataset.lawfilter === "all"); }});
-    document.querySelectorAll("[data-sort]").forEach(function(b) {{ b.classList.toggle("active", b.dataset.sort === "cat"); }});
+    document.querySelectorAll("[data-sort]").forEach(function(b) {{ b.classList.toggle("active", b.dataset.sort === "date"); }});
     document.getElementById("lawSearch").value = name;
     renderRegistry();
     window.scrollTo({{top: 0, behavior: "smooth"}});
