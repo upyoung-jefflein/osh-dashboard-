@@ -42,7 +42,7 @@ jobs:
 
       - name: 提交並推送更新
         run: |
-          git add docs/index.html osh_xml_records.json
+          git add docs/index.html osh_xml_records.json osh_law_diffs.json
           if git diff --staged --quiet; then
             echo "無法規或新聞異動，略過 commit。"
           else

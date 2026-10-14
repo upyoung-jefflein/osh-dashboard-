@@ -1145,8 +1145,155 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "latest_revision": _parse_latest_revision(_text(law.find("沿革內容"))),
             "has_table": has_table,
             "資料擷取日期": fetched_at,
+            "_full": _all_content,
         })
     return records
+
+
+# ============================================================
+# 條文新舊對照（前版取自全國法規資料庫「歷史法規」頁）
+# ============================================================
+
+LAW_DIFF_CACHE = Path("osh_law_diffs.json")
+_OLDVER_URL = "https://law.moj.gov.tw/LawClass/LawOldVer.aspx?pcode={pcode}"
+_OLDVER_ART = re.compile(
+    r'<div class="col-no">\s*第\s*([\d\-]+)\s*條\s*</div>\s*<div class="col-data[^"]*">(.*?)</div>', re.S)
+
+
+def _norm_article(text: str) -> str:
+    # 原文為固定寬度折行，去除中文間的折行空白；款、目前換行以利閱讀
+    t = re.sub(r"\s+", " ", text or "").strip()
+    t = re.sub(r" (?=[^\x00-\x7f])|(?<=[^\x00-\x7f]) ", "", t)
+    return re.sub(r"(?<=[。：；])(?=(?:[一二三四五六七八九十]+、|（[一二三四五六七八九十]+）))", "\n", t)
+
+
+def _art_sort_key(no: str) -> tuple:
+    return tuple(int(p) if p.isdigit() else 0 for p in no.split("-"))
+
+
+def _fetch_prev_version(pcode: str) -> tuple[str, dict[str, str]] | None:
+    import html as _html
+    import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    try:
+        # 法務部憑證缺 Subject Key Identifier，Python 3.13 嚴格驗證會失敗（同 XML 下載）
+        resp = requests.get(_OLDVER_URL.format(pcode=pcode), headers={"User-Agent": USER_AGENT},
+                            timeout=60, verify=False)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"  前版條文下載失敗（{pcode}）：{e}", file=sys.stderr)
+        return None
+    page = resp.text
+    m = re.search(r"修正日期[^<]*</th>\s*<td[^>]*>(.*?)</td>", page, re.S)
+    ver = re.sub(r"<[^>]+>|\s+", "", m.group(1)) if m else ""
+    arts = {}
+    for no, body in _OLDVER_ART.findall(page):
+        text = _norm_article(_html.unescape(re.sub(r"<[^>]+>", "", body)))
+        if text not in ("（刪除）", "(刪除)"):
+            arts[no] = text
+    if arts:
+        return ver, arts
+    if "參數資料有誤" in page:
+        return "", {}  # 資料庫無此法規的歷史版本
+    return None
+
+
+def _diff_segments(old: str, new: str) -> list[list[str]]:
+    """逐字比對，回傳 [["=",相同] / ["-",刪除] / ["+",新增]]；夾在變動間 ≤2 字的相同片段併入變動，避免碎裂。"""
+    import difflib
+    sm = difflib.SequenceMatcher(None, old, new, autojunk=False)
+    raw = []
+    for op, i1, i2, j1, j2 in sm.get_opcodes():
+        if op == "equal":
+            raw.append(["=", old[i1:i2]])
+            continue
+        if i2 > i1:
+            raw.append(["-", old[i1:i2]])
+        if j2 > j1:
+            raw.append(["+", new[j1:j2]])
+    out: list[list[str]] = []
+    for i, (op, txt) in enumerate(raw):
+        if op == "=" and len(txt) <= 2 and 0 < i < len(raw) - 1:
+            op = "~"
+        if op == "=":
+            out.append([op, txt])
+            continue
+        if not out or out[-1][0] == "=":
+            out += [["-", ""], ["+", ""]]
+        if op in "-~":
+            out[-2][1] += txt
+        if op in "+~":
+            out[-1][1] += txt
+    return [s for s in out if s[1]]
+
+
+def load_law_diffs() -> dict:
+    if not LAW_DIFF_CACHE.exists():
+        return {}
+    try:
+        return json.loads(LAW_DIFF_CACHE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def update_law_diffs(xml_records: list[dict]) -> dict:
+    """對最新異動日期有變的法規下載前版條文並與現行條文比對；未變者沿用快取。"""
+    from concurrent.futures import ThreadPoolExecutor
+    cache = load_law_diffs()
+    today = date.today()
+    result: dict = {}
+    todo: list[dict] = []
+    for r in xml_records:
+        name, rev = r["name"], r.get("最新異動日期_roc", "")
+        ent = cache.get(name)
+        if ent and ent.get("rev") == rev:
+            # 剛修正時歷史頁可能尚未更新而比對不出差異：90 天內每天重試
+            iso = roc_to_iso(rev)
+            recheck = (not ent.get("changes") and ent.get("checked") != today.isoformat()
+                       and iso and (today - date.fromisoformat(iso)).days <= 90)
+            if not recheck:
+                result[name] = ent
+                continue
+        if r.get("pcode") and r.get("_full") is not None and r.get("status") != "廢止":
+            todo.append(r)
+
+    # 法務部歷史頁回應約 20 秒，限 4 條並行以免對官方網站造成負擔
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        prevs = list(pool.map(lambda r: _fetch_prev_version(r["pcode"]), todo))
+
+    for r, prev in zip(todo, prevs):
+        name, rev, full = r["name"], r.get("最新異動日期_roc", ""), r["_full"]
+        ent = cache.get(name)
+        if prev is None:
+            if ent and ent.get("rev") == rev:
+                result[name] = ent
+            continue
+        ver, old = prev
+        if not old:
+            result[name] = {"rev": rev, "prev_ver": "", "checked": today.isoformat(), "changes": []}
+            continue
+        new = {no: _norm_article(t) for no, t in full.items()}
+        changes = []
+        for no, text in new.items():
+            if no not in old:
+                changes.append({"no": no, "type": "add", "segs": [["+", text]]})
+            elif old[no] != text:
+                changes.append({"no": no, "type": "mod", "segs": _diff_segments(old[no], text)})
+        for no, text in old.items():
+            if no not in new:
+                changes.append({"no": no, "type": "del", "segs": [["-", text]]})
+        changes.sort(key=lambda c: _art_sort_key(c["no"]))
+        result[name] = {"rev": rev, "prev_ver": ver, "checked": today.isoformat(), "changes": changes}
+    LAW_DIFF_CACHE.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    failed = sum(1 for p in prevs if p is None)
+    if any(p == ("", {}) for p in prevs):
+        print(f"  其中 {sum(1 for p in prevs if p == ('', {}))} 部於資料庫無歷史版本，已記錄不再重抓。")
+    print(f"條文對照：{len(result)} 部法規（本次下載前版 {len(todo)} 部，失敗 {failed} 部），"
+          f"{LAW_DIFF_CACHE.stat().st_size // 1024} KB。")
+    return result
+
+
+def _cacheable(records: list[dict]) -> list[dict]:
+    return [{k: v for k, v in r.items() if k != "_full"} for r in records]
 
 
 def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dict]:
@@ -1487,6 +1634,47 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   [data-theme="dark"] .chg-chip.chg-added{{ background:rgba(52,211,153,.08); color:#34d399; }}
   [data-theme="dark"] .chg-chip.chg-deleted{{ background:rgba(252,165,165,.08); color:#fca5a5; }}
   .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
+  /* 條文新舊對照 / 衝擊分析 */
+  .impact-badge{{ display:inline-flex; align-items:center; font-size:10.5px; padding:1px 7px; margin-left:4px;
+    border-radius:99px; font-weight:700; background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5;
+    white-space:nowrap; vertical-align:middle; }}
+  [data-theme="dark"] .impact-badge{{ background:rgba(185,28,28,.2); color:#fca5a5; border-color:#b91c1c; }}
+  .diff-head{{ font-size:12px; color:var(--ink-soft); margin-bottom:6px; }}
+  .diff-counts{{ display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }}
+  .impact-box{{ font-size:12.5px; padding:8px 12px; border-radius:6px; margin-bottom:10px; line-height:1.6; }}
+  .impact-box.hit{{ background:#fef2f2; color:#991b1b; border:1px solid #fca5a5; font-weight:600; }}
+  .impact-box.none{{ background:#f0fdf4; color:#166534; border:1px solid #86efac; }}
+  .impact-box.unset{{ background:var(--hover); color:var(--ink-soft); border:1px dashed var(--border); }}
+  .impact-sub{{ font-weight:400; font-size:11.5px; }}
+  [data-theme="dark"] .impact-box.hit{{ background:rgba(185,28,28,.15); color:#fca5a5; border-color:#7f1d1d; }}
+  [data-theme="dark"] .impact-box.none{{ background:rgba(22,101,52,.15); color:#86efac; border-color:#166534; }}
+  .diff-tools{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }}
+  .diff-card{{ border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--card); }}
+  .diff-card.is-hit{{ border-color:#fca5a5; }}
+  .diff-card summary{{ display:flex; align-items:center; gap:6px; padding:8px 10px; cursor:pointer;
+    list-style:none; flex-wrap:wrap; }}
+  .diff-card summary::-webkit-details-marker{{ display:none; }}
+  .diff-card summary::before{{ content:"▸"; color:var(--ink-soft); font-size:11px; }}
+  .diff-card[open] summary::before{{ content:"▾"; }}
+  .diff-no{{ font-weight:700; font-size:13px; }}
+  .impact-tag{{ font-size:10.5px; color:#b91c1c; font-weight:700; }}
+  [data-theme="dark"] .impact-tag{{ color:#fca5a5; }}
+  .app-pin{{ margin-left:auto; font-size:11px; padding:3px 9px; border:1px solid var(--border); border-radius:99px;
+    background:transparent; color:var(--ink-soft); cursor:pointer; font-family:inherit; white-space:nowrap; }}
+  .app-pin.on{{ border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,.07); font-weight:600; }}
+  [data-theme="dark"] .app-pin.on{{ border-color:#60a5fa; color:#93c5fd; background:rgba(96,165,250,.12); }}
+  .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
+  .diff-body del{{ background:#fee2e2; color:#991b1b; text-decoration:line-through; }}
+  .diff-body ins{{ background:#dcfce7; color:#166534; text-decoration:underline; text-decoration-color:#16a34a; }}
+  [data-theme="dark"] .diff-body del{{ background:rgba(185,28,28,.3); color:#fecaca; }}
+  [data-theme="dark"] .diff-body ins{{ background:rgba(22,101,52,.35); color:#bbf7d0; }}
+  .art-chip-app{{ box-shadow:inset 0 0 0 2px #2563eb; }}
+  .art-chip-app::before{{ content:"📌"; font-size:9px; margin-right:2px; }}
+  [data-theme="dark"] .art-chip-app{{ box-shadow:inset 0 0 0 2px #60a5fa; }}
+  .art-app-cnt{{ font-size:11px; color:#2563eb; font-weight:600; align-self:center; white-space:nowrap; }}
+  [data-theme="dark"] .art-app-cnt{{ color:#93c5fd; }}
+  .art-app-hint{{ font-size:11.5px; color:#2563eb; background:rgba(37,99,235,.06); border-radius:4px;
+    padding:5px 10px; margin-bottom:6px; }}
   .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:12px 14px;
     margin-bottom:8px; font-size:12.5px; border:1px solid var(--border); }}
   .latest-rev-block h4{{ font-size:11px; font-weight:700; color:var(--ink-soft);
@@ -1592,6 +1780,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .art-copy-btn{{ padding:7px 14px; font-size:12px; }}
     .chg-chip{{ font-size:10px; padding:1px 5px; }}
     .latest-rev-block .art-chip{{ padding:5px 11px; font-size:12px; }}
+    .app-pin{{ padding:6px 12px; font-size:12px; }}
+    .diff-card summary{{ padding:10px 10px; }}
+    .diff-body{{ font-size:13.5px; padding:4px 10px 12px; }}
+    .impact-badge{{ font-size:10px; padding:1px 5px; }}
     #law-drawer{{ width:100vw; }}
   }}
   /* ── AI 摘要顯示（卡片內） ── */
@@ -1992,6 +2184,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-lawfilter="recent3m">近3月修正</button>
       <button data-lawfilter="recent">近1年修正</button>
       <button data-lawfilter="unread">● 未讀</button>
+      <button data-lawfilter="impact">⚡ 影響本公司</button>
       <span id="unread-law-count" class="unread-law-count"></span>
       <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
     </div>
@@ -2033,6 +2226,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <span class="legend-item"><span class="badge recent">近期修正</span>近3個月內有修正</span>
         <span class="legend-item"><span class="badge" style="background:#ef4444;color:#fff;padding:1px 7px;border-radius:3px;font-size:11px">未生效</span>已修正但尚未施行</span>
         <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>訂閱後有新修正</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">衝擊分析</span>
+        <span class="legend-item"><span class="impact-badge">⚡ 影響 N 條</span>近 12 個月的修正涉及你在抽屜「📌 標記適用」的條文（含適用法規中的新增條文）</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">稽查</span>
@@ -2271,6 +2468,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const CNS_ISO = {cns_iso_json};
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
+  const LAW_DIFFS = {law_diffs_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告",guide:"技術指引"}};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -2291,6 +2489,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.lawLastSeen || typeof state.lawLastSeen !== "object") state.lawLastSeen = {{}};
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
   if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
+  if (!state.appArts || typeof state.appArts !== "object") state.appArts = {{}};
 
   let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "cat";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
@@ -2375,7 +2574,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function isRecent(d) {{ return !!d && new Date(d) >= cutoff12m; }}
   function isRecent3m(d) {{ return !!d && new Date(d) >= cutoff3m; }}
   function isNewLaw(r) {{ return !!(r.note && r.note.includes("新訂定")); }}
+
+  // ── 條文新舊對照 / 衝擊分析
+  function lawChanges(r) {{ var d = LAW_DIFFS[r.name]; return (d && d.changes) || []; }}
+  function hasAppMarks(name) {{ var a = state.appArts[name]; return !!(a && Object.keys(a).length); }}
+  function isAppArt(name, no) {{ var a = state.appArts[name]; return !!(a && a[no]); }}
+  // 新增條文：只要該法規有標記適用條文就需重新鑑別；修正/刪除：須為標記適用的條文
+  function isImpact(r, c) {{ return c.type === 'add' ? hasAppMarks(r.name) : isAppArt(r.name, c.no); }}
+  function impactNos(r) {{
+    if (!(isRecent(r.date) || r.status === '未生效')) return [];
+    return lawChanges(r).filter(function(c) {{ return isImpact(r, c); }}).map(function(c) {{ return c.no; }});
+  }}
+  function _chgCountChips(changes) {{
+    var n = {{mod:0, add:0, del:0}};
+    changes.forEach(function(c) {{ n[c.type]++; }});
+    var chips = [];
+    if (n.mod) chips.push('<span class="chg-chip chg-modified">✏ 修正 ' + n.mod + ' 條</span>');
+    if (n.add) chips.push('<span class="chg-chip chg-added">＋增 ' + n.add + ' 條</span>');
+    if (n.del) chips.push('<span class="chg-chip chg-deleted">✕刪 ' + n.del + ' 條</span>');
+    return chips.join('');
+  }}
+
   function _chgSummary(r) {{
+    var ch = lawChanges(r);
+    if (ch.length) return _chgCountChips(ch);
     var lr = r.latest_revision;
     if (!lr) return '';
     if (lr.is_full) return '<span class="chg-chip chg-modified">全文修正</span>';
@@ -3013,6 +3235,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
+    if (lawFilter === "impact")   rows = rows.filter(r => impactNos(r).length > 0);
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
     const q = document.getElementById("lawSearch").value.trim();
@@ -3116,6 +3339,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
       var inspBadge = INSPECTION_FOCUS.hasOwnProperty(r.name)
         ? '<span class="inspect-badge">🔍 稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
+      var impN = impactNos(r).length;
+      var impactBadge = impN ? '<span class="impact-badge">⚡ 影響 ' + impN + ' 條</span>' : '';
       // 風險評分點點（1~5 顆）
       (function() {{
         var rs = 0;
@@ -3140,7 +3365,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       return '<tr' + (isUnread ? ' class="law-unread"' : '') + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td><button class="sub-btn' + (isSub ? ' on' : '') + '" data-sublaw="' + r.name.replace(/"/g, '&quot;') + '" title="' + (isSub ? '取消訂閱' : '訂閱此法規') + '">' + (isSub ? '🔔' : '🔕') + '</button></td>' +
-        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + impactBadge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -3193,6 +3418,83 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     updateUnreadLawCount();
   }}
 
+  function _escHtml(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
+  var CHG_LABEL = {{ mod:['修正','chg-modified'], add:['增訂','chg-added'], del:['刪除','chg-deleted'] }};
+
+  // openSet：要展開的條號集合；null = 預設（有影響的展開，否則展開前 3 條）
+  function _diffSectionHtml(r, openSet) {{
+    var d = LAW_DIFFS[r.name], ch = d.changes;
+    var hits = ch.filter(function(c) {{ return isImpact(r, c); }});
+    var marked = hasAppMarks(r.name);
+    var h = '<h3>修正條文對照（' + ch.length + ' 條）</h3>';
+    h += '<div class="diff-head">前版 ' + _escHtml(d.prev_ver || '—') + ' → 現行 ' + (r.date || '') + (r.status === '未生效' ? '（尚未施行）' : '') + '</div>';
+    h += '<div class="diff-counts">' + _chgCountChips(ch) + '</div>';
+    if (!marked) {{
+      h += '<div class="impact-box unset">尚未標記適用條文。按各條的「📌 標記適用」，或在下方「條文索引」使用「📌 標記適用」模式，就能看出這次修正影響哪些條文。</div>';
+    }} else if (hits.length) {{
+      h += '<div class="impact-box hit">⚡ 本次修正影響你標記適用的 ' + hits.length + ' 條：第' + hits.map(function(c) {{ return c.no; }}).join('、') + '條' +
+        (hits.some(function(c) {{ return c.type === 'add'; }}) ? '<br><span class="impact-sub">含新增條文，請重新鑑別是否適用。</span>' : '') + '</div>';
+    }} else {{
+      h += '<div class="impact-box none">✓ 本次修正未涉及你標記適用的條文。</div>';
+    }}
+    h += '<div class="diff-tools">' +
+      '<button type="button" class="art-copy-btn" data-diffact="expand">全部展開</button>' +
+      '<button type="button" class="art-copy-btn" data-diffact="collapse">全部收合</button>' +
+      '</div>';
+    var ordered = hits.concat(ch.filter(function(c) {{ return hits.indexOf(c) < 0; }}));
+    ordered.forEach(function(c, i) {{
+      var hit = hits.indexOf(c) >= 0, app = isAppArt(r.name, c.no);
+      var open = openSet ? openSet.has(c.no) : (hits.length ? hit : i < 3);
+      var lab = CHG_LABEL[c.type];
+      var body = c.segs.map(function(s) {{
+        var t = _escHtml(s[1]);
+        return s[0] === '-' ? '<del>' + t + '</del>' : s[0] === '+' ? '<ins>' + t + '</ins>' : t;
+      }}).join('');
+      h += '<details class="diff-card' + (hit ? ' is-hit' : '') + '" data-no="' + c.no + '"' + (open ? ' open' : '') + '>' +
+        '<summary><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span>' +
+        (hit ? '<span class="impact-tag">⚡ 影響</span>' : '') +
+        '<button type="button" class="app-pin' + (app ? ' on' : '') + '" data-no="' + c.no + '">' + (app ? '📌 已標記適用' : '📌 標記適用') + '</button>' +
+        '</summary><div class="diff-body">' + body + '</div></details>';
+    }});
+    return h;
+  }}
+
+  function _bindDiff(r) {{
+    var wrap = document.getElementById('diff-wrap');
+    if (!wrap) return;
+    wrap.onclick = function(e) {{
+      var pin = e.target.closest('.app-pin');
+      if (pin) {{ e.preventDefault(); toggleAppArt(r, pin.dataset.no); return; }}
+      var act = e.target.closest('[data-diffact]');
+      if (act) wrap.querySelectorAll('.diff-card').forEach(function(dc) {{ dc.open = act.dataset.diffact === 'expand'; }});
+    }};
+  }}
+
+  function toggleAppArt(r, no) {{
+    var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
+    if (a[no]) delete a[no]; else a[no] = true;
+    if (!Object.keys(a).length) delete state.appArts[r.name];
+    save();
+    _refreshAppUI(r);
+  }}
+
+  function _refreshAppUI(r) {{
+    var wrap = document.getElementById('diff-wrap');
+    if (wrap) {{
+      var openSet = new Set([].map.call(wrap.querySelectorAll('.diff-card[open]'), function(dc) {{ return dc.dataset.no; }}));
+      wrap.innerHTML = _diffSectionHtml(r, openSet);
+    }}
+    document.querySelectorAll('#art-chips-wrap .art-chip[data-artno]').forEach(function(c) {{
+      c.classList.toggle('art-chip-app', isAppArt(r.name, c.dataset.artno));
+    }});
+    var cnt = document.getElementById('art-app-cnt');
+    if (cnt) {{
+      var n = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
+      cnt.textContent = n ? '已標記 ' + n + ' 條適用' : '';
+    }}
+    renderRegistry();
+  }}
+
   function openDrawer(r) {{
     const pcode = r.pcode || "";
     const artBase = pcode ? "https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=" + pcode + "&flno=" : "";
@@ -3242,7 +3544,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     // 最新修正詳情
     var lr = r.latest_revision;
-    if (lr && (lr.is_full || (lr.modified && lr.modified.length) || (lr.added && lr.added.length) || (lr.deleted && lr.deleted.length))) {{
+    if (lawChanges(r).length) {{
+      html += '<div class="drawer-section diff-section" id="diff-wrap">' + _diffSectionHtml(r, null) + '</div>';
+    }} else if (lr && (lr.is_full || (lr.modified && lr.modified.length) || (lr.added && lr.added.length) || (lr.deleted && lr.deleted.length))) {{
       var lrDate = r.date || '';
       html += '<div class="drawer-section"><div class="latest-rev-block">';
       html += '<h4>最新修正' + (lrDate ? '　' + lrDate : '') + '</h4>';
@@ -3397,10 +3701,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號或條文內容…" autocomplete="off">';
       html += '<button class="art-copy-btn" id="art-ms-btn" title="切換多選模式後點擊條文可批次複製引用">☑ 多選</button>';
       html += '<button class="art-copy-btn" id="art-cp-btn" style="display:none">複製引用（<span id="art-sel-cnt">0</span>）</button>';
+      html += '<button class="art-copy-btn" id="art-app-btn">📌 標記適用</button>';
+      html += '<span id="art-app-tools" style="display:none">' +
+        '<button class="art-copy-btn" id="art-app-all">整部適用</button>' +
+        '<button class="art-copy-btn" id="art-app-clear">清除標記</button></span>';
+      var _appN = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
+      html += '<span class="art-app-cnt" id="art-app-cnt">' + (_appN ? '已標記 ' + _appN + ' 條適用' : '') + '</span>';
       html += '</div>';
+      html += '<div class="art-app-hint" id="art-app-hint" style="display:none">點選條文即可標記／取消「適用本公司」，再按一次「📌 標記適用」結束。</div>';
       // ②③ chip 產生函式（用 data-prev 取代 title，手機也能展開預覽）
       function _mkChip(no) {{
-        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '');
+        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '') +
+          (isAppArt(r.name, no) ? ' art-chip-app' : '');
         var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
         var dprev = prev ? ' data-prev="' + prev + '"' : '';
         var href = artBase ? artBase + encodeURIComponent(no) : '';
@@ -3474,6 +3786,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     document.getElementById("drawer-body").innerHTML = html;
+    _bindDiff(r);
 
     // 綁定 checklist 事件（避免 onclick 字串的引號問題）
     var ckInputs = document.querySelectorAll('#drawer-body .ck-input');
@@ -3488,8 +3801,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var srch   = document.getElementById('art-srch');
       var wrap   = document.getElementById('art-chips-wrap');
       var cntEl  = document.getElementById('art-sel-cnt');
-      var multiMode = false;
+      var multiMode = false, appMode = false;
       var sel = new Set();
+      var appBtn = document.getElementById('art-app-btn');
+      var appTools = document.getElementById('art-app-tools');
+      var appHint = document.getElementById('art-app-hint');
+      function setAppMode(on) {{
+        appMode = on;
+        if (appBtn) appBtn.classList.toggle('active', on);
+        if (appTools) appTools.style.display = on ? '' : 'none';
+        if (appHint) appHint.style.display = on ? '' : 'none';
+      }}
+      if (appBtn) appBtn.onclick = function() {{
+        if (multiMode && msBtn) msBtn.click();
+        setAppMode(!appMode);
+      }};
+      var appAll = document.getElementById('art-app-all');
+      if (appAll) appAll.onclick = function() {{
+        var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
+        (r.articles || []).forEach(function(no) {{ a[no] = true; }});
+        save(); _refreshAppUI(r);
+      }};
+      var appClear = document.getElementById('art-app-clear');
+      if (appClear) appClear.onclick = function() {{
+        if (!hasAppMarks(r.name) || !confirm('清除「' + r.name + '」所有適用標記？')) return;
+        delete state.appArts[r.name];
+        save(); _refreshAppUI(r);
+      }};
       function showToast(msg) {{
         var t = document.getElementById('clip-toast');
         if (!t) return;
@@ -3499,6 +3837,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
       // ⑤ 多選切換
       if (msBtn) msBtn.onclick = function() {{
+        if (appMode) setAppMode(false);
         multiMode = !multiMode;
         msBtn.classList.toggle('active', multiMode);
         cpBtn.style.display = multiMode ? '' : 'none';
@@ -3531,6 +3870,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (wrap) wrap.addEventListener('click', function(e) {{
         var chip = e.target.closest('.art-chip');
         if (!chip || !chip.dataset.artno) return;
+        if (appMode) {{ e.preventDefault(); toggleAppArt(r, chip.dataset.artno); return; }}
         if (multiMode) {{
           e.preventDefault();
           var no = chip.dataset.artno;
@@ -4455,7 +4795,8 @@ def enrich_news_summaries(news: list[dict], api_key: str) -> None:
 
 
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
-               source_status: list[dict] | None = None, xml_cache_info: dict | None = None):
+               source_status: list[dict] | None = None, xml_cache_info: dict | None = None,
+               law_diffs: dict | None = None):
     from urllib.parse import quote as _urlq
     _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
 
@@ -4483,7 +4824,11 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         inspection_focus_json=json.dumps(INSPECTION_FOCUS_LAWS, ensure_ascii=False),
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
-        xml_cache_json=json.dumps(xml_cache_info or {{}}, ensure_ascii=False),
+        xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
+        law_diffs_json=json.dumps(
+            {n: {"prev_ver": d.get("prev_ver", ""), "changes": d["changes"]}
+             for n, d in (law_diffs or {}).items() if d.get("changes")},
+            ensure_ascii=False, separators=(",", ":")),
     )
     output_path.write_text(html, encoding="utf-8")
 
@@ -4641,6 +4986,7 @@ def main():
     registry = STATIC_REGISTRY
     changed_laws: list[str] = []
     new_laws_detected: list[str] = []
+    law_diffs = load_law_diffs()
     if not args.news_only:
         if args.fetch_xml:
             all_xml_records: list[dict] = []
@@ -4673,6 +5019,8 @@ def main():
                 registry = merge_registry(STATIC_REGISTRY, all_xml_records)
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
+                law_diffs = update_law_diffs(all_xml_records)
+                all_xml_records = _cacheable(all_xml_records)
                 XML_CACHE.write_text(
                     json.dumps(all_xml_records, ensure_ascii=False, separators=(",", ":")),
                     encoding="utf-8",
@@ -4697,7 +5045,7 @@ def main():
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 解析出 {len(xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
                 XML_CACHE.write_text(
-                    json.dumps(xml_records, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(_cacheable(xml_records), ensure_ascii=False, separators=(",", ":")),
                     encoding="utf-8",
                 )
                 print(f"已更新法規快取 {XML_CACHE}（{len(xml_records)} 筆）。")
@@ -4723,7 +5071,7 @@ def main():
         }
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
-               source_status=source_status, xml_cache_info=xml_cache_info)
+               source_status=source_status, xml_cache_info=xml_cache_info, law_diffs=law_diffs)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
     if args.fetch_xml and (changed_laws or new_laws_detected):
