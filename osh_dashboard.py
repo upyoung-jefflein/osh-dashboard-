@@ -1950,8 +1950,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <p class="section-note">從勞動部及職業安全衛生署官方新聞稿擷取職安相關公告，自動去重後依日期排序。</p>
     <input class="search" id="newsSearch" placeholder="搜尋標題關鍵字…">
     <div class="controls">
-      <button data-filter="all" class="active">全部<span class="filter-badge" id="badge-all"></span></button>
-      <button data-filter="unread">未讀<span class="filter-badge" id="badge-unread"></span></button>
+      <button data-filter="all">全部<span class="filter-badge" id="badge-all"></span></button>
+      <button data-filter="unread" class="active">未讀<span class="filter-badge" id="badge-unread"></span></button>
       <button data-filter="starred">已收藏<span class="filter-badge" id="badge-starred"></span></button>
       <button data-filter="readlater">稍後閱讀<span class="rl-badge" id="badge-rl"></span></button>
     </div>
@@ -2292,7 +2292,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
   if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
 
-  let newsFilter = "all", lawFilter = "all", catFilter = "all", sortMode = "cat";
+  let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "cat";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
