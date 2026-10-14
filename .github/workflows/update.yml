@@ -32,13 +32,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
 
-      - name: 下載最新法規 XML 並重建 Dashboard
+      # GitHub runner 連不到法務部網站，法規 XML 改由本機排程（scripts/daily_update.ps1）下載並推送；
+      # 這裡只更新新聞，法規沿用 repo 內的 osh_xml_records.json。
+      - name: 更新新聞並重建 Dashboard
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SMTP_USER:      ${{ secrets.SMTP_USER }}
-          SMTP_PASS:      ${{ secrets.SMTP_PASS }}
-          NOTIFY_EMAIL:   ${{ secrets.NOTIFY_EMAIL }}
-        run: python osh_dashboard.py --fetch-xml -o docs/index.html
+        run: python osh_dashboard.py -o docs/index.html
 
       - name: 提交並推送更新
         run: |
