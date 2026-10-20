@@ -1420,6 +1420,79 @@ def write_fulltext(records: list[dict], path: Path) -> None:
     print(f"全文索引：{len(data)} 部法規，{path.stat().st_size // 1024} KB。")
 
 
+# ============================================================
+# 修法預告草案（公共政策網路參與平台，眾開講）
+# ============================================================
+
+DRAFT_CACHE = Path("osh_drafts.json")
+DRAFT_KEYWORDS = [
+    "職業安全衛生", "職業災害", "職業病", "勞工健康", "母性健康", "勞動檢查", "危險性機械", "危險性工作場所",
+    "職場霸凌", "危害性化學品", "營造安全衛生", "作業環境監測", "工程安全", "缺氧症", "特定化學物質",
+    "勞工安全衛生", "高壓氣體勞工", "鍋爐及壓力容器", "起重升降機具", "勞動部職業安全衛生署",
+]
+_JOIN_SEARCH = "https://join.gov.tw/policies/search?keyword={kw}&page={page}"
+_JOIN_DETAIL = "https://join.gov.tw/policies/detail/{uid}"
+
+
+def _fetch_join_drafts() -> list[dict] | None:
+    """以關鍵字搜尋平台，取回標題含「預告／草案」且與職安相關者；全部請求失敗時回傳 None。"""
+    from datetime import timedelta, timezone
+    from urllib.parse import quote
+    import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    tw = timezone(timedelta(hours=8))
+    to_iso = lambda ms: datetime.fromtimestamp(ms / 1000, tw).date().isoformat() if ms else ""
+    found: dict[str, dict] = {}
+    any_ok = False
+    for kw in DRAFT_KEYWORDS:
+        for page in range(1, 6):
+            try:
+                resp = requests.get(_JOIN_SEARCH.format(kw=quote(kw), page=page),
+                                    headers={"User-Agent": USER_AGENT}, timeout=30, verify=False)
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as e:
+                print(f"  預告草案搜尋失敗（{kw} 第{page}頁）：{e}", file=sys.stderr)
+                break
+            any_ok = True
+            for it in data.get("result", []):
+                title = it.get("policyTitle") or ""
+                if not re.search(r"預告|草案", title) or not it.get("policyUid"):
+                    continue
+                org = " ".join(filter(None, [it.get("pubGovName"), it.get("undertakeGov"), it.get("gazetteOrganDisplayName")]))
+                if not (any(k in title for k in OSH_KEYWORDS) or "職業安全衛生署" in org):
+                    continue
+                found[it["policyUid"]] = {
+                    "uid": it["policyUid"],
+                    "title": title.strip(),
+                    "publish": to_iso(it.get("publishDate")),
+                    "offline": to_iso(it.get("offlineDate")),
+                    "org": it.get("pubGovName") or it.get("gazetteOrganDisplayName") or "",
+                    "url": _JOIN_DETAIL.format(uid=it["policyUid"]),
+                }
+            if page >= int(data.get("totalPages") or 1):
+                break
+    return list(found.values()) if any_ok else None
+
+
+def update_drafts() -> tuple[list[dict], list[dict]]:
+    """更新草案快取；回傳（全部草案，本次新出現者）。首次建立快取時不視為「新」，避免一次寄出全部歷史資料。"""
+    cache = _read_json(DRAFT_CACHE).get("items", {})
+    first_run = not DRAFT_CACHE.exists()
+    fresh = _fetch_join_drafts()
+    new: list[dict] = []
+    if fresh is None:
+        print("  預告草案：平台無法連線，沿用快取。", file=sys.stderr)
+    else:
+        for it in fresh:
+            if it["uid"] not in cache and not first_run:
+                new.append(it)
+            cache[it["uid"]] = it
+        DRAFT_CACHE.write_text(json.dumps({"items": cache}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"預告草案：共 {len(cache)} 筆（本次新增 {len(new)} 筆）。")
+    items = sorted(cache.values(), key=lambda x: x.get("publish", ""), reverse=True)
+    return items, sorted(new, key=lambda x: x.get("publish", ""), reverse=True)
+
+
 def _cacheable(records: list[dict]) -> list[dict]:
     return [{k: v for k, v in r.items() if k != "_full"} for r in records]
 
@@ -1779,6 +1852,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     background:var(--card); color:var(--ink); font-family:inherit; }}
   .chg-controls input{{ flex:1; min-width:180px; }}
   .chg-date{{ font-size:12px; color:var(--ink-soft); }}
+  .chg-modes{{ margin-bottom:12px; }}
+  .draft-badge{{ margin-left:4px; font-weight:700; color:#b91c1c; }}
+  .draft-card{{ border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:8px; background:var(--card); }}
+  .draft-title{{ font-weight:600; font-size:14px; line-height:1.6; margin-bottom:6px; }}
+  .draft-meta{{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:var(--ink-soft); align-items:center; }}
+  .draft-st{{ padding:1px 9px; border-radius:99px; font-weight:700; font-size:11.5px; border:1px solid currentColor; }}
+  .draft-st.open{{ color:#b91c1c; background:rgba(185,28,28,.08); }}
+  .draft-st.done{{ color:#15803d; background:rgba(22,101,52,.08); }}
+  .draft-st.end{{ color:var(--ink-soft); }}
+  .draft-links{{ display:flex; gap:12px; align-items:center; margin-top:8px; font-size:12.5px; flex-wrap:wrap; }}
+  .draft-links a{{ color:var(--blue,#2563eb); text-decoration:none; }}
   .chg-open{{ margin-left:auto; }}
   .pen-table{{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }}
   .pen-table th{{ text-align:left; padding:8px 10px; background:var(--hover); border-bottom:2px solid var(--border); white-space:nowrap; font-size:12px; }}
@@ -2254,7 +2338,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-section-label">法規</div>
   <button class="sidebar-btn active" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
-  <button class="sidebar-btn" data-tab="changes"><span class="snav-icon">🔄</span><span class="snav-label">最近異動條文</span></button>
+  <button class="sidebar-btn" data-tab="changes"><span class="snav-icon">🔄</span><span class="snav-label">異動與預告</span></button>
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
   <div class="sidebar-section-label">動態</div>
   <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
@@ -2431,20 +2515,39 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </section>
 
   <section class="tabpanel" id="tab-changes">
-    <h2>最近異動條文</h2>
-    <p class="section-note">跨法規彙整近期被修正、增訂或刪除的條文，並以紅（刪除）、綠（新增）標出前後差異；點法規名稱展開條文，「開啟法規」可看完整內容與更早的修正。</p>
-    <div class="chg-controls">
-      <select id="chgDays">
-        <option value="30">近 30 天</option>
-        <option value="90" selected>近 90 天</option>
-        <option value="180">近 180 天</option>
-        <option value="365">近 1 年</option>
-      </select>
-      <select id="chgCat"><option value="all">全部分類</option></select>
-      <input id="chgSearch" placeholder="搜尋異動內容或條號…" autocomplete="off">
+    <h2>異動與預告</h2>
+    <div class="reg-controls chg-modes">
+      <button data-chgmode="changes" class="active">已公布的條文異動</button>
+      <button data-chgmode="drafts">預告中的草案<span id="draftBadge" class="draft-badge"></span></button>
     </div>
-    <div class="registry-meta" id="chgMeta"></div>
-    <div id="changesList"></div>
+    <div id="chgPaneChanges">
+      <p class="section-note">跨法規彙整近期被修正、增訂或刪除的條文，並以紅（刪除）、綠（新增）標出前後差異；點法規名稱展開條文，「開啟法規」可看完整內容與更早的修正。</p>
+      <div class="chg-controls">
+        <select id="chgDays">
+          <option value="30">近 30 天</option>
+          <option value="90" selected>近 90 天</option>
+          <option value="180">近 180 天</option>
+          <option value="365">近 1 年</option>
+        </select>
+        <select id="chgCat"><option value="all">全部分類</option></select>
+        <input id="chgSearch" placeholder="搜尋異動內容或條號…" autocomplete="off">
+      </div>
+      <div class="registry-meta" id="chgMeta"></div>
+      <div id="changesList"></div>
+    </div>
+    <div id="chgPaneDrafts" style="display:none">
+      <p class="section-note">來自行政院「公共政策網路參與平臺」的職安相關法規預告（每日更新）。預告期間可對草案表達意見；法規正式公布後，會在這裡註明。</p>
+      <div class="chg-controls">
+        <select id="draftRange">
+          <option value="open">預告中（可表達意見）</option>
+          <option value="180">近 6 個月</option>
+          <option value="365" selected>近 1 年</option>
+          <option value="all">全部</option>
+        </select>
+      </div>
+      <div class="registry-meta" id="draftMeta"></div>
+      <div id="draftList"></div>
+    </div>
   </section>
 
   <section class="tabpanel" id="tab-lookup">
@@ -2613,6 +2716,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
   const LAW_DIFFS = {law_diffs_json};
+  const DRAFTS = {drafts_json};
   const TIER_LABEL = {{act:"法律",reg:"法規命令",dir:"行政規則",notice:"公告",guide:"技術指引"}};
   const STORE_KEY = "osh_state_v2";
   let state;
@@ -4359,6 +4463,64 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById('chgSearch').addEventListener('input', function() {{ clearTimeout(t); t = setTimeout(renderChanges, 250); }});
   }})();
 
+  // ─── 修法預告草案 ────────────────────────────────────────────
+  function _draftLaw(title) {{
+    var m = title.match(/「([^」]+)」/) || title.match(/預告(.+?)(?:部分條文|修正草案|條文草案|草案)/);
+    var nm = m ? m[1].trim() : '';
+    return nm ? REGISTRY.find(function(r) {{ return r.name === nm; }}) : null;
+  }}
+  function _draftOpen(d) {{ return !!d.offline && d.offline >= _isoDaysAgo(0); }}
+  function renderDrafts() {{
+    var range = document.getElementById('draftRange').value, today = _isoDaysAgo(0);
+    var cutoff = (range === 'open' || range === 'all') ? '' : _isoDaysAgo(+range);
+    var list = DRAFTS.filter(function(d) {{ return range === 'open' ? _draftOpen(d) : (d.publish || '') >= cutoff; }});
+    list.sort(function(a, b) {{
+      var oa = _draftOpen(a), ob = _draftOpen(b);
+      if (oa !== ob) return oa ? -1 : 1;
+      return (b.publish || '').localeCompare(a.publish || '');
+    }});
+    var openN = DRAFTS.filter(_draftOpen).length;
+    document.getElementById('draftMeta').textContent = '共 ' + list.length + ' 筆' + (openN ? '，其中 ' + openN + ' 筆預告中' : '');
+    var box = document.getElementById('draftList');
+    if (!list.length) {{
+      box.innerHTML = '<div class="diff-head">' + (range === 'open' ? '目前沒有預告中的職安相關草案。' : '此期間沒有預告資料。') + '</div>';
+      return;
+    }}
+    box.innerHTML = list.map(function(d, i) {{
+      var law = _draftLaw(d.title), st;
+      if (_draftOpen(d)) {{
+        var left = Math.round((new Date(d.offline) - new Date(today)) / 86400000);
+        st = '<span class="draft-st open">預告中・' + (left > 0 ? '剩 ' + left + ' 天' : '今日截止') + '</span>';
+      }} else if (law && law.date && law.date >= d.publish) {{
+        st = '<span class="draft-st done">預告後法規已於 ' + law.date + ' 修正</span>';
+      }} else {{
+        st = '<span class="draft-st end">預告期已結束</span>';
+      }}
+      var title = _escHtml(d.title.replace(/^.*?公告[：:]/, ''));
+      return '<div class="draft-card"><div class="draft-title">' + title + '</div>' +
+        '<div class="draft-meta">' + st + '<span>' + _escHtml(d.org || '') + '</span><span>公告 ' + (d.publish || '—') + '</span><span>意見截止 ' + (d.offline || '—') + '</span></div>' +
+        '<div class="draft-links"><a href="' + d.url + '" target="_blank" rel="noopener">前往公共政策平台 ↗</a>' +
+        (law ? '<button type="button" class="art-copy-btn draft-open" data-i="' + i + '">開啟法規</button>' : '') + '</div></div>';
+    }}).join('');
+    box.querySelectorAll('.draft-open').forEach(function(b) {{
+      b.onclick = function() {{ openDrawer(_draftLaw(list[+b.dataset.i].title)); }};
+    }});
+  }}
+  (function() {{
+    var openN = DRAFTS.filter(_draftOpen).length;
+    document.getElementById('draftBadge').textContent = openN ? ' ' + openN : '';
+    document.querySelectorAll('[data-chgmode]').forEach(function(b) {{
+      b.onclick = function() {{
+        document.querySelectorAll('[data-chgmode]').forEach(function(x) {{ x.classList.toggle('active', x === b); }});
+        var drafts = b.dataset.chgmode === 'drafts';
+        document.getElementById('chgPaneChanges').style.display = drafts ? 'none' : '';
+        document.getElementById('chgPaneDrafts').style.display = drafts ? '' : 'none';
+        if (drafts) renderDrafts(); else renderChanges();
+      }};
+    }});
+    document.getElementById('draftRange').addEventListener('change', renderDrafts);
+  }})();
+
   function switchTab(tabName) {{
     document.querySelectorAll(".sidebar-btn, .bottom-nav button").forEach(function(b) {{
       b.classList.toggle("active", b.dataset.tab === tabName);
@@ -4367,7 +4529,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       p.classList.remove("active");
     }});
     document.getElementById("tab-" + tabName).classList.add("active");
-    if (tabName === "changes") renderChanges();
+    if (tabName === "changes") {{
+      if (document.getElementById('chgPaneDrafts').style.display === 'none') renderChanges(); else renderDrafts();
+    }}
   }}
   document.querySelectorAll(".sidebar-btn, .bottom-nav button").forEach(function(btn) {{
     btn.addEventListener("click", function() {{ switchTab(this.dataset.tab); }});
@@ -5031,7 +5195,8 @@ def enrich_news_summaries(news: list[dict], api_key: str) -> None:
 
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
                source_status: list[dict] | None = None, xml_cache_info: dict | None = None,
-               law_diffs: dict | None = None, hist_counts: dict | None = None):
+               law_diffs: dict | None = None, hist_counts: dict | None = None,
+               drafts: list | None = None):
     from urllib.parse import quote as _urlq
     _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
 
@@ -5060,6 +5225,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
         xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
+        drafts_json=json.dumps(drafts or [], ensure_ascii=False, separators=(",", ":")),
         law_diffs_json=json.dumps(
             {n: {"prev_ver": d.get("prev_ver", ""), "changes": d["changes"], "hist": (hist_counts or {}).get(n, 0)}
              for n, d in (law_diffs or {}).items() if d.get("changes")},
@@ -5073,7 +5239,8 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
 # ============================================================
 
 def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
-                          law_diffs: dict | None, dashboard_url: str) -> tuple[str, str]:
+                          law_diffs: dict | None, dashboard_url: str,
+                          new_drafts: list | None = None) -> tuple[str, str]:
     """組出 Email 主旨與 HTML 內文（不寄送）。"""
     today = datetime.now().strftime("%Y-%m-%d")
     parts = []
@@ -5081,6 +5248,8 @@ def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
         parts.append(f"新增 {len(new_laws)} 筆")
     if changed_laws:
         parts.append(f"異動 {len(changed_laws)} 筆")
+    if new_drafts:
+        parts.append(f"新預告 {len(new_drafts)} 筆")
     subject = (
         f"[職安法規觀測站] {today} 法規更新：{'、'.join(parts)}"
         if parts
@@ -5166,7 +5335,18 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
         if len(changed_only) > len(shown):
             html += f"<p style='color:#6b7280;font-size:12px'>…另有 {len(changed_only) - len(shown)} 筆，請至觀測站查看。</p>"
 
-    if not new_laws and not changed_only:
+    if new_drafts:
+        items = "".join(
+            f"<li style='margin-bottom:8px'><a href='{esc(d['url'])}' style='color:#1d4ed8;text-decoration:none'>"
+            f"{esc(re.sub(r'^.*?公告[：:]', '', d['title']))}</a><br>"
+            f"<span style='color:#6b7280;font-size:12px'>{esc(d.get('org') or '')}　公告 {esc(d.get('publish') or '')}"
+            f"　意見截止 {esc(d.get('offline') or '—')}</span></li>"
+            for d in new_drafts[:10])
+        html += f"""
+  <h3 style="color:#1d4ed8;font-size:15px;margin:0 0 8px">📣 新預告草案（{len(new_drafts)} 筆）</h3>
+  <ul style='margin:0 0 16px;padding-left:20px'>{items}</ul>"""
+
+    if not new_laws and not changed_only and not new_drafts:
         html += "<p style='color:#6b7280'>今日無法規異動。</p>"
 
     top_news = [n for n in news_items if n.get("title")][:5]
@@ -5203,7 +5383,7 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
 
 
 def send_update_email(changed_laws: list, new_laws: list, news_items: list,
-                      law_diffs: dict | None = None) -> None:
+                      law_diffs: dict | None = None, new_drafts: list | None = None) -> None:
     """當法規有異動時發送 Email 通知。設定由環境變數提供，未設定則略過。"""
     import smtplib
     from email.mime.multipart import MIMEMultipart
@@ -5224,7 +5404,7 @@ def send_update_email(changed_laws: list, new_laws: list, news_items: list,
         print("  Email 通知：未設定 SMTP_USER / SMTP_PASS，略過。")
         return
 
-    subject, html = _compose_update_email(changed_laws, new_laws, news_items, law_diffs, dashboard_url)
+    subject, html = _compose_update_email(changed_laws, new_laws, news_items, law_diffs, dashboard_url, new_drafts)
 
     try:
         msg = MIMEMultipart("alternative")
@@ -5370,13 +5550,19 @@ def main():
             "ts": _fetched,
         }
 
+    if args.news_only:
+        drafts = sorted(_read_json(DRAFT_CACHE).get("items", {}).values(), key=lambda x: x.get("publish", ""), reverse=True)
+        new_drafts: list[dict] = []
+    else:
+        drafts, new_drafts = update_drafts()
+
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
                source_status=source_status, xml_cache_info=xml_cache_info, law_diffs=law_diffs,
-               hist_counts=load_history_counts(args.output.parent / "history"))
+               hist_counts=load_history_counts(args.output.parent / "history"), drafts=drafts)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
-    if args.fetch_xml and (changed_laws or new_laws_detected):
-        send_update_email(changed_laws, new_laws_detected, news, law_diffs)
+    if args.fetch_xml and (changed_laws or new_laws_detected or new_drafts):
+        send_update_email(changed_laws, new_laws_detected, news, law_diffs, new_drafts)
 
 
 if __name__ == "__main__":
