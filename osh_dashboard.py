@@ -1754,23 +1754,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   [data-theme="dark"] .chg-chip.chg-added{{ background:rgba(52,211,153,.08); color:#34d399; }}
   [data-theme="dark"] .chg-chip.chg-deleted{{ background:rgba(252,165,165,.08); color:#fca5a5; }}
   .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
-  /* 條文新舊對照 / 衝擊分析 */
-  .impact-badge{{ display:inline-flex; align-items:center; font-size:10.5px; padding:1px 7px; margin-left:4px;
-    border-radius:99px; font-weight:700; background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5;
-    white-space:nowrap; vertical-align:middle; }}
-  [data-theme="dark"] .impact-badge{{ background:rgba(185,28,28,.2); color:#fca5a5; border-color:#b91c1c; }}
+  /* 條文新舊對照 */
   .diff-head{{ font-size:12px; color:var(--ink-soft); margin-bottom:6px; }}
   .diff-counts{{ display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }}
-  .impact-box{{ font-size:12.5px; padding:8px 12px; border-radius:6px; margin-bottom:10px; line-height:1.6; }}
-  .impact-box.hit{{ background:#fef2f2; color:#991b1b; border:1px solid #fca5a5; font-weight:600; }}
-  .impact-box.none{{ background:#f0fdf4; color:#166534; border:1px solid #86efac; }}
-  .impact-box.unset{{ background:var(--hover); color:var(--ink-soft); border:1px dashed var(--border); }}
-  .impact-sub{{ font-weight:400; font-size:11.5px; }}
-  [data-theme="dark"] .impact-box.hit{{ background:rgba(185,28,28,.15); color:#fca5a5; border-color:#7f1d1d; }}
-  [data-theme="dark"] .impact-box.none{{ background:rgba(22,101,52,.15); color:#86efac; border-color:#166534; }}
   .diff-tools{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }}
   .diff-card{{ border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--card); }}
-  .diff-card.is-hit{{ border-color:#fca5a5; }}
   /* summary 本身不用 flex（舊版 iOS Safari 不支援），改在裡面包一層 .diff-sum */
   .diff-card summary{{ display:block; padding:8px 10px; cursor:pointer; list-style:none; }}
   .diff-card summary::-webkit-details-marker{{ display:none; }}
@@ -1778,24 +1766,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .diff-sum::before{{ content:"▸"; color:var(--ink-soft); font-size:11px; }}
   .diff-card[open] > summary .diff-sum::before{{ content:"▾"; }}
   .diff-no{{ font-weight:700; font-size:13px; }}
-  .impact-tag{{ font-size:10.5px; color:#b91c1c; font-weight:700; }}
-  [data-theme="dark"] .impact-tag{{ color:#fca5a5; }}
-  .app-pin{{ margin-left:auto; font-size:11px; padding:3px 9px; border:1px solid var(--border); border-radius:99px;
-    background:transparent; color:var(--ink-soft); cursor:pointer; font-family:inherit; white-space:nowrap; }}
-  .app-pin.on{{ border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,.07); font-weight:600; }}
-  [data-theme="dark"] .app-pin.on{{ border-color:#60a5fa; color:#93c5fd; background:rgba(96,165,250,.12); }}
   .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
-  .tip-wrap{{ position:relative; display:inline-flex; }}
-  .tip-card{{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:340px; max-width:90vw;
-    background:var(--card); border:1px solid var(--border); border-radius:6px; padding:10px 14px;
-    font-size:12.5px; line-height:1.7; box-shadow:0 6px 24px rgba(0,0,0,.25); white-space:normal; text-align:left; }}
-  .tip-card ol{{ margin:4px 0 6px 18px; }}
-  .tip-card small{{ color:var(--ink-soft); }}
-  @media (hover:hover) {{ .tip-wrap:hover .tip-card{{ display:block; }} }}
-  .tip-card.show{{ display:block; }}
-  @media (max-width:640px) {{
-    .tip-card{{ position:fixed; left:12px; right:12px; top:auto; bottom:72px; width:auto; max-width:none; }}
-  }}
   .hist-section{{ border-bottom:none; }}
   #hist-body{{ margin-top:8px; }}
   .hist-step-body{{ padding:2px 8px 8px; }}
@@ -1804,13 +1775,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .diff-body ins{{ background:#dcfce7; color:#166534; text-decoration:underline; text-decoration-color:#16a34a; }}
   [data-theme="dark"] .diff-body del{{ background:rgba(185,28,28,.3); color:#fecaca; }}
   [data-theme="dark"] .diff-body ins{{ background:rgba(22,101,52,.35); color:#bbf7d0; }}
-  .art-chip-app{{ box-shadow:inset 0 0 0 2px #2563eb; }}
-  .art-chip-app::before{{ content:"📌"; font-size:9px; margin-right:2px; }}
-  [data-theme="dark"] .art-chip-app{{ box-shadow:inset 0 0 0 2px #60a5fa; }}
-  .art-app-cnt{{ font-size:11px; color:#2563eb; font-weight:600; align-self:center; white-space:nowrap; }}
-  [data-theme="dark"] .art-app-cnt{{ color:#93c5fd; }}
-  .art-app-hint{{ font-size:11.5px; color:#2563eb; background:rgba(37,99,235,.06); border-radius:4px;
-    padding:5px 10px; margin-bottom:6px; }}
   .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:12px 14px;
     margin-bottom:8px; font-size:12.5px; border:1px solid var(--border); }}
   .latest-rev-block h4{{ font-size:11px; font-weight:700; color:var(--ink-soft);
@@ -1916,10 +1880,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .art-copy-btn{{ padding:7px 14px; font-size:12px; }}
     .chg-chip{{ font-size:10px; padding:1px 5px; }}
     .latest-rev-block .art-chip{{ padding:5px 11px; font-size:12px; }}
-    .app-pin{{ padding:6px 12px; font-size:12px; }}
     .diff-card summary{{ padding:10px 10px; }}
     .diff-body{{ font-size:13.5px; padding:4px 10px 12px; }}
-    .impact-badge{{ font-size:10px; padding:1px 5px; }}
     #law-drawer{{ width:100vw; }}
   }}
   /* ── AI 摘要顯示（卡片內） ── */
@@ -2106,12 +2068,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:12px; text-decoration:underline; }}
   .guide-result-item{{ flex-wrap:wrap; }}
   .guide-result-item .guide-jump-btn{{ text-align:left; }}
-  .guide-result-item .guide-mark-btn, .guide-mark-all{{ margin-left:auto; flex-shrink:0; white-space:nowrap; text-decoration:none;
-    font-size:11.5px; padding:3px 10px; border:1px solid #2563eb; border-radius:99px; color:#2563eb; background:rgba(37,99,235,.06); cursor:pointer; font-family:inherit; }}
-  .guide-mark-all{{ margin-left:6px; }}
-  .guide-marked{{ margin-left:auto; flex-shrink:0; white-space:nowrap; font-size:11.5px; color:#2563eb; font-weight:600; }}
-  [data-theme="dark"] .guide-result-item .guide-mark-btn, [data-theme="dark"] .guide-mark-all, [data-theme="dark"] .guide-marked{{ color:#93c5fd; border-color:#60a5fa; }}
-  .guide-note{{ font-size:12px; color:var(--ink-soft); margin:-8px 0 14px; line-height:1.6; }}
   /* ── 合規稽核 Checklist ── */
   .checklist-section{{ margin-top:16px; }}
   .checklist-section h3{{ font-size:13px; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
@@ -2326,7 +2282,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button data-lawfilter="recent3m">近3月修正</button>
       <button data-lawfilter="recent">近1年修正</button>
       <button data-lawfilter="unread">● 未讀</button>
-      <button data-lawfilter="impact">⚡ 影響本公司</button>
       <span id="unread-law-count" class="unread-law-count"></span>
       <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
     </div>
@@ -2338,18 +2293,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="sep"></div>
       <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
       <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 判斷</button>
-      <span class="tip-wrap">
-        <button onclick="exportAppTable()" style="font-size:12px" id="export-btn">📥 鑑別表</button>
-        <div class="tip-card" id="tip-card">
-          <b>📥 鑑別表</b>：把你標為「適用」的法規與條文匯出成 Excel，當作法規鑑別清單（例如 ISO 45001 稽核用）。
-          <ol>
-            <li>用「🎯 判斷」初篩並一鍵標記，或在法規抽屜按「📌 標記適用」逐條標記</li>
-            <li>按「📥 鑑別表」另存成 .xlsx</li>
-            <li>在 Excel 補填權責部門、符合狀態、佐證文件</li>
-          </ol>
-          <small>標記只存在這個瀏覽器；法規修正後需重新匯出才會更新。手機請長按此按鈕查看說明。</small>
-        </div>
-      </span>
       <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 罰則</button>
       <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查</button>
       <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
@@ -2380,10 +2323,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <span class="legend-item"><span class="badge recent">近期修正</span>近3個月內有修正</span>
         <span class="legend-item"><span class="badge" style="background:#ef4444;color:#fff;padding:1px 7px;border-radius:3px;font-size:11px">未生效</span>已修正但尚未施行</span>
         <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>收藏後有新修正</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-label">衝擊分析</span>
-        <span class="legend-item"><span class="impact-badge">⚡ 影響 N 條</span>近 12 個月的修正涉及你在抽屜「📌 標記適用」的條文（含適用法規中的新增條文）</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">稽查</span>
@@ -2530,7 +2469,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <div id="guide-modal" class="guide-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="guide-box">
     <h3>⚖ 法規適用性判斷</h3>
-    <p class="guide-note">先依事業類別與危害初篩，再把適用的法規一鍵標記；要逐條調整，請到法規抽屜使用「📌 標記適用」。標記結果可用「📥 鑑別表」匯出。</p>
     <div class="guide-q">
       <label>事業類別</label>
       <select id="guide-industry">
@@ -2650,7 +2588,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }});
   if (!state.checklists || typeof state.checklists !== "object") state.checklists = {{}};
   if (!state.readLaws || typeof state.readLaws !== "object") state.readLaws = {{}};
-  if (!state.appArts || typeof state.appArts !== "object") state.appArts = {{}};
 
   let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "date";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
@@ -2736,16 +2673,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function isRecent3m(d) {{ return !!d && new Date(d) >= cutoff3m; }}
   function isNewLaw(r) {{ return !!(r.note && r.note.includes("新訂定")); }}
 
-  // ── 條文新舊對照 / 衝擊分析
+  // ── 條文新舊對照
   function lawChanges(r) {{ var d = LAW_DIFFS[r.name]; return (d && d.changes) || []; }}
-  function hasAppMarks(name) {{ var a = state.appArts[name]; return !!(a && Object.keys(a).length); }}
-  function isAppArt(name, no) {{ var a = state.appArts[name]; return !!(a && a[no]); }}
-  // 新增條文：只要該法規有標記適用條文就需重新鑑別；修正/刪除：須為標記適用的條文
-  function isImpact(r, c) {{ return c.type === 'add' ? hasAppMarks(r.name) : isAppArt(r.name, c.no); }}
-  function impactNos(r) {{
-    if (!(isRecent(r.date) || r.status === '未生效')) return [];
-    return lawChanges(r).filter(function(c) {{ return isImpact(r, c); }}).map(function(c) {{ return c.no; }});
-  }}
   function _chgCountChips(changes) {{
     var n = {{mod:0, add:0, del:0}};
     changes.forEach(function(c) {{ n[c.type]++; }});
@@ -3352,44 +3281,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       result.innerHTML = '<p style="color:var(--ink-soft);font-size:13px">找不到符合條件的法規，請放寬篩選條件。</p>';
       return;
     }}
-    var markable = relevant.filter(function(r) {{ return (r.articles || []).length && !hasAppMarks(r.name); }});
-    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：' +
-      (markable.length ? ' <button class="guide-mark-all" type="button">📌 全部標為適用（' + markable.length + ' 筆）</button>' : '') + '</p>' +
+    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：</p>' +
       relevant.map(function(r) {{
-        var total = (r.articles || []).length;
-        var n = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
-        var mark = !total ? ''
-          : n ? '<span class="guide-marked">✓ 已標 ' + n + '/' + total + ' 條</span>'
-          : '<button class="guide-mark-btn" type="button">📌 標為適用</button>';
         return '<div class="guide-result-item" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' +
           '<span class="cat-tag">' + (r.cat||'') + '</span>' +
-          '<button class="guide-jump-btn" type="button">' + r.name + '</button>' + mark +
+          '<button class="guide-jump-btn" type="button">' + r.name + '</button>' +
           '</div>';
       }}).join('');
-    function byName(name) {{ return REGISTRY.find(function(x) {{ return x.name === name; }}); }}
     result.querySelectorAll('.guide-jump-btn').forEach(function(btn) {{
       btn.onclick = function() {{
         document.getElementById('guide-modal').classList.remove('open');
         jumpToLaw(btn.parentNode.dataset.law);
       }};
     }});
-    result.querySelectorAll('.guide-mark-btn').forEach(function(btn) {{
-      btn.onclick = function() {{
-        markLawApplicable(byName(btn.parentNode.dataset.law));
-        save(); renderRegistry(); runGuide();
-      }};
-    }});
-    var allBtn = result.querySelector('.guide-mark-all');
-    if (allBtn) allBtn.onclick = function() {{
-      if (!confirm('將下列 ' + markable.length + ' 筆法規的所有條文標為「適用」？\\n之後可在各法規抽屜逐條調整或清除。')) return;
-      markable.forEach(markLawApplicable);
-      save(); renderRegistry(); runGuide();
-    }};
-  }}
-
-  function markLawApplicable(r) {{
-    var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
-    (r.articles || []).forEach(function(no) {{ a[no] = true; }});
   }}
 
   function buildCatFilters() {{
@@ -3417,7 +3321,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
-    if (lawFilter === "impact")   rows = rows.filter(r => impactNos(r).length > 0);
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
     const q = document.getElementById("lawSearch").value.trim();
@@ -3520,8 +3423,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
       var inspBadge = INSPECTION_FOCUS.hasOwnProperty(r.name)
         ? '<span class="inspect-badge">🔍 稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
-      var impN = impactNos(r).length;
-      var impactBadge = impN ? '<span class="impact-badge">⚡ 影響 ' + impN + ' 條</span>' : '';
       // 風險評分點點（1~5 顆）
       (function() {{
         var rs = 0;
@@ -3545,7 +3446,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }})();
       return '<tr' + (isUnread ? ' class="law-unread"' : '') + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
         '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + impactBadge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
+        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
           (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
         '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
         '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -3590,231 +3491,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     updateUnreadLawCount();
   }}
 
-  // ─── 法規鑑別表匯出（自行產生 .xlsx，不依賴外部元件；於點擊當下同步下載）────
-  var _crcTable = null;
-  function _crc32(u8) {{
-    if (!_crcTable) {{
-      _crcTable = new Uint32Array(256);
-      for (var n = 0; n < 256; n++) {{
-        var c = n;
-        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        _crcTable[n] = c >>> 0;
-      }}
-    }}
-    var crc = 0xFFFFFFFF;
-    for (var i = 0; i < u8.length; i++) crc = _crcTable[(crc ^ u8[i]) & 0xFF] ^ (crc >>> 8);
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-  }}
-  // 不壓縮（store）的最小 zip；.xlsx 本質上就是 zip 包 XML
-  function _zipStore(files) {{
-    var enc = new TextEncoder(), parts = [], central = [], offset = 0, cdSize = 0;
-    files.forEach(function(f) {{
-      var name = enc.encode(f.name), data = enc.encode(f.text), crc = _crc32(data);
-      var lh = new DataView(new ArrayBuffer(30));
-      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
-      lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true);
-      lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
-      parts.push(new Uint8Array(lh.buffer), name, data);
-      var ch = new DataView(new ArrayBuffer(46));
-      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
-      ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true);
-      ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
-      ch.setUint32(42, offset, true);
-      central.push(new Uint8Array(ch.buffer), name);
-      cdSize += 46 + name.length;
-      offset += 30 + name.length + data.length;
-    }});
-    var end = new DataView(new ArrayBuffer(22));
-    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
-    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
-    return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]),
-      {{type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}});
-  }}
-  function _xmlEsc(s) {{
-    return String(s).replace(/[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }}
-  function _sheetXml(rows, widths) {{
-    var cols = '<cols>' + widths.map(function(w, i) {{
-      return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
-    }}).join('') + '</cols>';
-    var body = rows.map(function(row, ri) {{
-      var st = ri === 0 ? ' s="1"' : ' s="2"';
-      return '<row r="' + (ri + 1) + '">' + row.map(function(v, ci) {{
-        var ref = String.fromCharCode(65 + ci) + (ri + 1);
-        if (typeof v === 'number') return '<c r="' + ref + '"' + st + '><v>' + v + '</v></c>';
-        if (v === '' || v == null) return '<c r="' + ref + '"' + st + '/>';
-        return '<c r="' + ref + '"' + st + ' t="inlineStr"><is><t xml:space="preserve">' + _xmlEsc(v) + '</t></is></c>';
-      }}).join('') + '</row>';
-    }}).join('');
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
-      cols + '<sheetData>' + body + '</sheetData>' +
-      '<autoFilter ref="A1:' + String.fromCharCode(64 + widths.length) + rows.length + '"/></worksheet>';
-  }}
-  function _buildXlsx(sheets) {{
-    var X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-    var NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
-    var RNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
-    var CT = 'application/vnd.openxmlformats-officedocument.spreadsheetml.';
-    var files = [
-      {{name: '[Content_Types].xml', text: X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-        '<Default Extension="xml" ContentType="application/xml"/>' +
-        '<Override PartName="/xl/workbook.xml" ContentType="' + CT + 'sheet.main+xml"/>' +
-        '<Override PartName="/xl/styles.xml" ContentType="' + CT + 'styles+xml"/>' +
-        sheets.map(function(s, i) {{ return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="' + CT + 'worksheet+xml"/>'; }}).join('') +
-        '</Types>'}},
-      {{name: '_rels/.rels', text: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-        '<Relationship Id="rId1" Type="' + RNS + '/officeDocument" Target="xl/workbook.xml"/></Relationships>'}},
-      {{name: 'xl/workbook.xml', text: X + '<workbook xmlns="' + NS + '" xmlns:r="' + RNS + '"><sheets>' +
-        sheets.map(function(s, i) {{ return '<sheet name="' + _xmlEsc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }}).join('') +
-        '</sheets></workbook>'}},
-      {{name: 'xl/_rels/workbook.xml.rels', text: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-        sheets.map(function(s, i) {{ return '<Relationship Id="rId' + (i + 1) + '" Type="' + RNS + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }}).join('') +
-        '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + RNS + '/styles" Target="styles.xml"/></Relationships>'}},
-      {{name: 'xl/styles.xml', text: X + '<styleSheet xmlns="' + NS + '">' +
-        '<fonts count="2"><font><sz val="11"/><name val="Microsoft JhengHei"/></font><font><b/><sz val="11"/><name val="Microsoft JhengHei"/></font></fonts>' +
-        '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
-        '<fill><patternFill patternType="solid"><fgColor rgb="FFE7E1D0"/><bgColor indexed="64"/></patternFill></fill></fills>' +
-        '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
-        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
-        '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
-        '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>' +
-        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>' +
-        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'}}
-    ];
-    sheets.forEach(function(s, i) {{ files.push({{name: 'xl/worksheets/sheet' + (i + 1) + '.xml', text: _sheetXml(s.rows, s.widths)}}); }});
-    return _zipStore(files);
-  }}
-  // 支援「另存新檔」對話框的瀏覽器（Chrome / Edge 桌機版）讓使用者選位置與檔名；其他瀏覽器退回直接下載
-  function _saveBlobAs(blob, filename) {{
-    function fallback() {{
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = filename; a.style.display = 'none';
-      document.body.appendChild(a); a.click();
-      setTimeout(function() {{ document.body.removeChild(a); URL.revokeObjectURL(url); }}, 1500);
-      return Promise.resolve(true);
-    }}
-    if (!window.showSaveFilePicker) return fallback();
-    return window.showSaveFilePicker({{
-      suggestedName: filename,
-      types: [{{description: 'Excel 活頁簿', accept: {{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']}}}}]
-    }}).then(function(handle) {{
-      return handle.createWritable().then(function(w) {{ return w.write(blob).then(function() {{ return w.close(); }}); }});
-    }}).then(function() {{ return true; }}, function(e) {{
-      if (e && e.name === 'AbortError') return false;
-      return fallback();
-    }});
-  }}
-  // 觸控裝置沒有「滑鼠停留」：長按「鑑別表」顯示說明卡，點其他地方關閉
-  (function() {{
-    var btn = document.getElementById('export-btn'), card = document.getElementById('tip-card');
-    if (!btn || !card) return;
-    var timer = null, longPressed = false;
-    btn.addEventListener('touchstart', function() {{
-      longPressed = false;
-      timer = setTimeout(function() {{ longPressed = true; card.classList.add('show'); }}, 500);
-    }}, {{passive: true}});
-    ['touchend', 'touchmove', 'touchcancel'].forEach(function(ev) {{
-      btn.addEventListener(ev, function() {{ clearTimeout(timer); }}, {{passive: true}});
-    }});
-    btn.addEventListener('click', function(e) {{ if (longPressed) {{ e.stopImmediatePropagation(); e.preventDefault(); longPressed = false; }} }}, true);
-    btn.addEventListener('contextmenu', function(e) {{ e.preventDefault(); }});
-    document.addEventListener('click', function() {{ card.classList.remove('show'); }});
-  }})();
-  function showClipToast(msg) {{
-    var t = document.getElementById('clip-toast');
-    if (!t) return;
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(function() {{ t.classList.remove('show'); }}, 3200);
-  }}
-  function _artCmp(a, b) {{
-    var x = a.split('-').map(Number), y = b.split('-').map(Number);
-    return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0));
-  }}
-
-  function exportAppTable() {{
-    var laws = REGISTRY.filter(function(r) {{ return hasAppMarks(r.name); }});
-    if (!laws.length) {{
-      showClipToast('尚未標記適用條文：請先用「🎯 判斷」初篩，或在法規抽屜按「📌 標記適用」');
-      return;
-    }}
-    try {{
-      laws.sort(function(a, b) {{
-        var ci = CATEGORIES.indexOf(a.cat), cj = CATEGORIES.indexOf(b.cat);
-        if (ci !== cj) return (ci < 0 ? 999 : ci) - (cj < 0 ? 999 : cj);
-        var tierOrder = {{act:0, reg:1, dir:2, notice:3}};
-        if (a.tier !== b.tier) return (tierOrder[a.tier] || 9) - (tierOrder[b.tier] || 9);
-        return a.name.localeCompare(b.name, 'zh-Hant');
-      }});
-      var lawRows = [['序', '法規名稱', '位階', '分類', '主管機關', '最新修正日', '效力狀態', '適用條數', '總條數',
-        '適用條文', '近期修正涉及條文', '全文連結', '權責部門', '符合狀態', '佐證文件／程序書編號', '備註']];
-      var artRows = [['法規名稱', '條號', '條文摘要（前200字）', '近期修正', '修正日期', '修正前條文', '修正後條文', '符合狀態', '佐證文件／程序書編號', '備註']];
-      var segText = function(c, skip) {{ return c.segs.filter(function(s) {{ return s[0] !== skip; }}).map(function(s) {{ return s[1]; }}).join(''); }};
-      laws.forEach(function(r, i) {{
-        var nos = Object.keys(state.appArts[r.name]).sort(_artCmp);
-        var imp = impactNos(r);
-        lawRows.push([i + 1, r.name, TIER_LABEL[r.tier] || r.tier, r.cat || '', r.authority || '', r.date || '待確認',
-          r.status || '現行', nos.length, (r.articles || []).length,
-          nos.map(function(n) {{ return '第' + n + '條'; }}).join('、'),
-          imp.length ? imp.map(function(n) {{ return '第' + n + '條'; }}).join('、') : '',
-          r.source || '', '', '', '', '']);
-        var chg = {{}};
-        if (isRecent(r.date) || r.status === '未生效') lawChanges(r).forEach(function(c) {{ chg[c.no] = c; }});
-        nos.forEach(function(no) {{
-          var c = chg[no];
-          artRows.push([r.name, '第' + no + '條', (r.article_previews && r.article_previews[no]) || '',
-            c ? CHG_LABEL[c.type][0] : '', c ? (r.date || '') : '',
-            c ? segText(c, '+') : '', c ? segText(c, '-') : '', '', '', '']);
-        }});
-      }});
-      var blob = _buildXlsx([
-        {{name: '法規鑑別表', rows: lawRows, widths: [4, 30, 8, 10, 16, 12, 8, 8, 8, 40, 24, 40, 14, 12, 22, 24]}},
-        {{name: '條文明細', rows: artRows, widths: [30, 10, 60, 10, 12, 60, 60, 12, 22, 24]}}
-      ]);
-      var d = new Date(), p = function(n) {{ return String(n).padStart(2, '0'); }};
-      _saveBlobAs(blob, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx')
-        .then(function(saved) {{ showClipToast(saved ? '已匯出 ' + laws.length + ' 部法規的鑑別表' : '已取消匯出'); }});
-    }} catch (e) {{
-      showClipToast('匯出失敗：' + (e && e.message ? e.message : e));
-    }}
-  }}
-
   function _escHtml(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
   var CHG_LABEL = {{ mod:['修正','chg-modified'], add:['增訂','chg-added'], del:['刪除','chg-deleted'] }};
 
-  // openSet：要展開的條號集合；null = 預設（有影響的展開，否則展開前 3 條）
-  function _diffSectionHtml(r, openSet) {{
+  // 前 3 條預設展開，其餘收合
+  function _diffSectionHtml(r) {{
     var d = LAW_DIFFS[r.name], ch = d.changes;
-    var hits = ch.filter(function(c) {{ return isImpact(r, c); }});
-    var marked = hasAppMarks(r.name);
     var h = '<h3>修正條文對照（' + ch.length + ' 條）</h3>';
     h += '<div class="diff-head">前版 ' + _escHtml(d.prev_ver || '—') + ' → 現行 ' + (r.date || '') + (r.status === '未生效' ? '（尚未施行）' : '') + '</div>';
     h += '<div class="diff-counts">' + _chgCountChips(ch) + '</div>';
-    if (!marked) {{
-      h += '<div class="impact-box unset">尚未標記適用條文。按各條的「📌 標記適用」，或在下方「條文索引」使用「📌 標記適用」模式，就能看出這次修正影響哪些條文。</div>';
-    }} else if (hits.length) {{
-      h += '<div class="impact-box hit">⚡ 本次修正影響你標記適用的 ' + hits.length + ' 條：第' + hits.map(function(c) {{ return c.no; }}).join('、') + '條' +
-        (hits.some(function(c) {{ return c.type === 'add'; }}) ? '<br><span class="impact-sub">含新增條文，請重新鑑別是否適用。</span>' : '') + '</div>';
-    }} else {{
-      h += '<div class="impact-box none">✓ 本次修正未涉及你標記適用的條文。</div>';
-    }}
     h += '<div class="diff-tools">' +
       '<button type="button" class="art-copy-btn" data-diffact="expand">全部展開</button>' +
       '<button type="button" class="art-copy-btn" data-diffact="collapse">全部收合</button>' +
       '</div>';
-    var ordered = hits.concat(ch.filter(function(c) {{ return hits.indexOf(c) < 0; }}));
-    ordered.forEach(function(c, i) {{
-      var hit = hits.indexOf(c) >= 0, app = isAppArt(r.name, c.no);
-      var open = openSet ? openSet.has(c.no) : (hits.length ? hit : i < 3);
+    ch.forEach(function(c, i) {{
       var lab = CHG_LABEL[c.type];
-      h += '<details class="diff-card' + (hit ? ' is-hit' : '') + '" data-no="' + c.no + '"' + (open ? ' open' : '') + '>' +
-        '<summary><div class="diff-sum"><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span>' +
-        (hit ? '<span class="impact-tag">⚡ 影響</span>' : '') +
-        '<button type="button" class="app-pin' + (app ? ' on' : '') + '" data-no="' + c.no + '">' + (app ? '📌 已標記適用' : '📌 標記適用') + '</button>' +
-        '</div></summary><div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
+      h += '<details class="diff-card" data-no="' + c.no + '"' + (i < 3 ? ' open' : '') + '>' +
+        '<summary><div class="diff-sum"><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span></div></summary>' +
+        '<div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
     }});
     return h;
   }}
@@ -3850,7 +3544,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .then(function(res) {{ if (!res.ok) throw new Error(res.status); return res.json(); }})
         .then(function(d) {{ body.innerHTML = _histHtml(d); body.dataset.open = '1'; btn.textContent = '收合更早的修正'; btn.disabled = false; }})
         .catch(function() {{
-          body.innerHTML = '<div class="impact-box unset">無法載入歷史版本資料（需由網站開啟，直接開啟本機檔案時不支援）。</div>';
+          body.innerHTML = '<div class="diff-head">無法載入歷史版本資料（需由網站開啟，直接開啟本機檔案時不支援）。</div>';
           btn.textContent = label; btn.disabled = false;
         }});
     }};
@@ -3860,36 +3554,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var wrap = document.getElementById('diff-wrap');
     if (!wrap) return;
     wrap.onclick = function(e) {{
-      var pin = e.target.closest('.app-pin');
-      if (pin) {{ e.preventDefault(); toggleAppArt(r, pin.dataset.no); return; }}
       var act = e.target.closest('[data-diffact]');
       if (act) wrap.querySelectorAll('.diff-card').forEach(function(dc) {{ dc.open = act.dataset.diffact === 'expand'; }});
     }};
-  }}
-
-  function toggleAppArt(r, no) {{
-    var a = state.appArts[r.name] || (state.appArts[r.name] = {{}});
-    if (a[no]) delete a[no]; else a[no] = true;
-    if (!Object.keys(a).length) delete state.appArts[r.name];
-    save();
-    _refreshAppUI(r);
-  }}
-
-  function _refreshAppUI(r) {{
-    var wrap = document.getElementById('diff-wrap');
-    if (wrap) {{
-      var openSet = new Set([].map.call(wrap.querySelectorAll('.diff-card[open]'), function(dc) {{ return dc.dataset.no; }}));
-      wrap.innerHTML = _diffSectionHtml(r, openSet);
-    }}
-    document.querySelectorAll('#art-chips-wrap .art-chip[data-artno]').forEach(function(c) {{
-      c.classList.toggle('art-chip-app', isAppArt(r.name, c.dataset.artno));
-    }});
-    var cnt = document.getElementById('art-app-cnt');
-    if (cnt) {{
-      var n = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
-      cnt.textContent = n ? '已標記 ' + n + ' 條適用' : '';
-    }}
-    renderRegistry();
   }}
 
   function openDrawer(r) {{
@@ -3945,7 +3612,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // 最新修正詳情
     var lr = r.latest_revision;
     if (lawChanges(r).length) {{
-      html += '<div class="drawer-section diff-section" id="diff-wrap">' + _diffSectionHtml(r, null) + '</div>';
+      html += '<div class="drawer-section diff-section" id="diff-wrap">' + _diffSectionHtml(r) + '</div>';
       if (LAW_DIFFS[r.name].hist) html += '<div class="drawer-section hist-section">' +
         '<button type="button" class="art-copy-btn" id="hist-btn">🕘 查看更早的修正（' + LAW_DIFFS[r.name].hist + ' 次）</button>' +
         '<div id="hist-body"></div></div>';
@@ -4104,18 +3771,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '<input class="art-search" id="art-srch" type="text" placeholder="搜尋條號或條文內容…" autocomplete="off">';
       html += '<button class="art-copy-btn" id="art-ms-btn" title="切換多選模式後點擊條文可批次複製引用">☑ 多選</button>';
       html += '<button class="art-copy-btn" id="art-cp-btn" style="display:none">複製引用（<span id="art-sel-cnt">0</span>）</button>';
-      html += '<button class="art-copy-btn" id="art-app-btn">📌 標記適用</button>';
-      html += '<span id="art-app-tools" style="display:none">' +
-        '<button class="art-copy-btn" id="art-app-all">整部適用</button>' +
-        '<button class="art-copy-btn" id="art-app-clear">清除標記</button></span>';
-      var _appN = state.appArts[r.name] ? Object.keys(state.appArts[r.name]).length : 0;
-      html += '<span class="art-app-cnt" id="art-app-cnt">' + (_appN ? '已標記 ' + _appN + ' 條適用' : '') + '</span>';
       html += '</div>';
-      html += '<div class="art-app-hint" id="art-app-hint" style="display:none">點選條文即可標記／取消「適用本公司」，再按一次「📌 標記適用」結束。</div>';
       // ②③ chip 產生函式（用 data-prev 取代 title，手機也能展開預覽）
       function _mkChip(no) {{
-        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '') +
-          (isAppArt(r.name, no) ? ' art-chip-app' : '');
+        var cls = 'art-chip' + (penaltySet.has(no) ? ' art-chip-penalty' : addedSet.has(no) ? ' art-chip-added' : '');
         var prev = previews[no] ? previews[no].replace(/"/g,'&quot;') : '';
         var dprev = prev ? ' data-prev="' + prev + '"' : '';
         var href = artBase ? artBase + encodeURIComponent(no) : '';
@@ -4205,32 +3864,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var srch   = document.getElementById('art-srch');
       var wrap   = document.getElementById('art-chips-wrap');
       var cntEl  = document.getElementById('art-sel-cnt');
-      var multiMode = false, appMode = false;
+      var multiMode = false;
       var sel = new Set();
-      var appBtn = document.getElementById('art-app-btn');
-      var appTools = document.getElementById('art-app-tools');
-      var appHint = document.getElementById('art-app-hint');
-      function setAppMode(on) {{
-        appMode = on;
-        if (appBtn) appBtn.classList.toggle('active', on);
-        if (appTools) appTools.style.display = on ? '' : 'none';
-        if (appHint) appHint.style.display = on ? '' : 'none';
-      }}
-      if (appBtn) appBtn.onclick = function() {{
-        if (multiMode && msBtn) msBtn.click();
-        setAppMode(!appMode);
-      }};
-      var appAll = document.getElementById('art-app-all');
-      if (appAll) appAll.onclick = function() {{
-        markLawApplicable(r);
-        save(); _refreshAppUI(r);
-      }};
-      var appClear = document.getElementById('art-app-clear');
-      if (appClear) appClear.onclick = function() {{
-        if (!hasAppMarks(r.name) || !confirm('清除「' + r.name + '」所有適用標記？')) return;
-        delete state.appArts[r.name];
-        save(); _refreshAppUI(r);
-      }};
       function showToast(msg) {{
         var t = document.getElementById('clip-toast');
         if (!t) return;
@@ -4240,7 +3875,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
       // ⑤ 多選切換
       if (msBtn) msBtn.onclick = function() {{
-        if (appMode) setAppMode(false);
         multiMode = !multiMode;
         msBtn.classList.toggle('active', multiMode);
         cpBtn.style.display = multiMode ? '' : 'none';
@@ -4273,7 +3907,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (wrap) wrap.addEventListener('click', function(e) {{
         var chip = e.target.closest('.art-chip');
         if (!chip || !chip.dataset.artno) return;
-        if (appMode) {{ e.preventDefault(); toggleAppArt(r, chip.dataset.artno); return; }}
         if (multiMode) {{
           e.preventDefault();
           var no = chip.dataset.artno;
