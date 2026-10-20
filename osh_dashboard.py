@@ -1784,11 +1784,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .app-pin.on{{ border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,.07); font-weight:600; }}
   [data-theme="dark"] .app-pin.on{{ border-color:#60a5fa; color:#93c5fd; background:rgba(96,165,250,.12); }}
   .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
-  .reg-controls .tip-btn{{ padding:1px 7px; border-radius:50%; color:var(--ink-soft); margin-left:-2px; }}
-  .tip-pop{{ background:var(--card); border:1px solid var(--border); border-radius:6px; padding:10px 14px;
-    font-size:12.5px; line-height:1.7; margin:0 0 8px; box-shadow:var(--shadow); max-width:560px; }}
-  .tip-pop ol{{ margin:4px 0 6px 18px; }}
-  .tip-pop small{{ color:var(--ink-soft); }}
+  .tip-wrap{{ position:relative; display:inline-flex; }}
+  .tip-card{{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:340px; max-width:90vw;
+    background:var(--card); border:1px solid var(--border); border-radius:6px; padding:10px 14px;
+    font-size:12.5px; line-height:1.7; box-shadow:0 6px 24px rgba(0,0,0,.25); white-space:normal; text-align:left; }}
+  .tip-card ol{{ margin:4px 0 6px 18px; }}
+  .tip-card small{{ color:var(--ink-soft); }}
+  @media (hover:hover) {{ .tip-wrap:hover .tip-card{{ display:block; }} }}
+  .tip-card.show{{ display:block; }}
+  @media (max-width:640px) {{
+    .tip-card{{ position:fixed; left:12px; right:12px; top:auto; bottom:72px; width:auto; max-width:none; }}
+  }}
   .hist-section{{ border-bottom:none; }}
   #hist-body{{ margin-top:8px; }}
   .hist-step-body{{ padding:2px 8px 8px; }}
@@ -2329,7 +2335,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="sep"></div>
       <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
       <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 判斷</button>
-      <button onclick="exportAppTable()" style="font-size:12px" title="把標記為「適用」的法規與條文匯出成 Excel 法規鑑別清單">📥 鑑別表</button><button class="tip-btn" type="button" onclick="toggleTip(event)" aria-label="鑑別表使用說明">ⓘ</button>
+      <span class="tip-wrap">
+        <button onclick="exportAppTable()" style="font-size:12px" id="export-btn">📥 鑑別表</button>
+        <div class="tip-card" id="tip-card">
+          <b>📥 鑑別表</b>：把你標為「適用」的法規與條文匯出成 Excel，當作法規鑑別清單（例如 ISO 45001 稽核用）。
+          <ol>
+            <li>用「🎯 判斷」初篩並一鍵標記，或在法規抽屜按「📌 標記適用」逐條標記</li>
+            <li>按「📥 鑑別表」另存成 .xlsx</li>
+            <li>在 Excel 補填權責部門、符合狀態、佐證文件</li>
+          </ol>
+          <small>標記只存在這個瀏覽器；法規修正後需重新匯出才會更新。手機請長按此按鈕查看說明。</small>
+        </div>
+      </span>
       <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 罰則</button>
       <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查</button>
       <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
@@ -2339,15 +2356,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button data-regview="graph">🕸 圖譜</button>
         <button data-regview="matrix">📊 矩陣</button>
       </div>
-    </div>
-    <div id="tip-pop" class="tip-pop" style="display:none" onclick="event.stopPropagation()">
-      <b>📥 鑑別表</b>：把你標為「適用」的法規與條文匯出成 Excel，當作法規鑑別清單（例如 ISO 45001 稽核用）。
-      <ol>
-        <li>用「🎯 判斷」初篩並一鍵標記，或在法規抽屜按「📌 標記適用」逐條標記</li>
-        <li>按「📥 鑑別表」另存成 .xlsx</li>
-        <li>在 Excel 補填權責部門、符合狀態、佐證文件</li>
-      </ol>
-      <small>標記只存在這個瀏覽器；法規修正後需重新匯出才會更新。</small>
     </div>
     <div id="legend-panel">
       <div class="legend-row">
@@ -3697,12 +3705,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       return fallback();
     }});
   }}
-  function toggleTip(e) {{
-    e.stopPropagation();
-    var p = document.getElementById('tip-pop');
-    p.style.display = p.style.display === 'none' ? 'block' : 'none';
-  }}
-  document.addEventListener('click', function() {{ var p = document.getElementById('tip-pop'); if (p) p.style.display = 'none'; }});
+  // 觸控裝置沒有「滑鼠停留」：長按「鑑別表」顯示說明卡，點其他地方關閉
+  (function() {{
+    var btn = document.getElementById('export-btn'), card = document.getElementById('tip-card');
+    if (!btn || !card) return;
+    var timer = null, longPressed = false;
+    btn.addEventListener('touchstart', function() {{
+      longPressed = false;
+      timer = setTimeout(function() {{ longPressed = true; card.classList.add('show'); }}, 500);
+    }}, {{passive: true}});
+    ['touchend', 'touchmove', 'touchcancel'].forEach(function(ev) {{
+      btn.addEventListener(ev, function() {{ clearTimeout(timer); }}, {{passive: true}});
+    }});
+    btn.addEventListener('click', function(e) {{ if (longPressed) {{ e.stopImmediatePropagation(); e.preventDefault(); longPressed = false; }} }}, true);
+    btn.addEventListener('contextmenu', function(e) {{ e.preventDefault(); }});
+    document.addEventListener('click', function() {{ card.classList.remove('show'); }});
+  }})();
   function showClipToast(msg) {{
     var t = document.getElementById('clip-toast');
     if (!t) return;
