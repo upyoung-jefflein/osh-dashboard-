@@ -1701,7 +1701,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
     opacity:0; pointer-events:none; transition:opacity .25s; cursor:pointer; }}
   #drawer-overlay.open{{ opacity:1; pointer-events:auto; }}
-  #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh;
+  #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh; height:100dvh;
     background:var(--card); z-index:201; box-shadow:-6px 0 32px rgba(0,0,0,.18);
     border-left:1px solid var(--border);
     transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
@@ -1771,11 +1771,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .diff-tools{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }}
   .diff-card{{ border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--card); }}
   .diff-card.is-hit{{ border-color:#fca5a5; }}
-  .diff-card summary{{ display:flex; align-items:center; gap:6px; padding:8px 10px; cursor:pointer;
-    list-style:none; flex-wrap:wrap; }}
+  /* summary 本身不用 flex（舊版 iOS Safari 不支援），改在裡面包一層 .diff-sum */
+  .diff-card summary{{ display:block; padding:8px 10px; cursor:pointer; list-style:none; }}
   .diff-card summary::-webkit-details-marker{{ display:none; }}
-  .diff-card summary::before{{ content:"▸"; color:var(--ink-soft); font-size:11px; }}
-  .diff-card[open] summary::before{{ content:"▾"; }}
+  .diff-sum{{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
+  .diff-sum::before{{ content:"▸"; color:var(--ink-soft); font-size:11px; }}
+  .diff-card[open] > summary .diff-sum::before{{ content:"▾"; }}
   .diff-no{{ font-weight:700; font-size:13px; }}
   .impact-tag{{ font-size:10.5px; color:#b91c1c; font-weight:700; }}
   [data-theme="dark"] .impact-tag{{ color:#fca5a5; }}
@@ -2240,6 +2241,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .drawer-footer-bar button {{ flex:1; padding:14px; background:var(--stamp); color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; font-weight:600; letter-spacing:.04em; }}
     /* 底部安全區域 */
     .notif-toast {{ padding-bottom:max(10px, env(safe-area-inset-bottom,0px)); }}
+    /* iPhone Safari：輸入框字級小於 16px 會在點入時自動放大頁面，造成版面偏移、右側被切掉 */
+    input, select, textarea {{ font-size:16px !important; }}
   }}
   /* 手機：有 safe area notch（iPhone 等）補償 */
   @media(max-width:640px) and (orientation:portrait) {{
@@ -3808,10 +3811,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var open = openSet ? openSet.has(c.no) : (hits.length ? hit : i < 3);
       var lab = CHG_LABEL[c.type];
       h += '<details class="diff-card' + (hit ? ' is-hit' : '') + '" data-no="' + c.no + '"' + (open ? ' open' : '') + '>' +
-        '<summary><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span>' +
+        '<summary><div class="diff-sum"><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span>' +
         (hit ? '<span class="impact-tag">⚡ 影響</span>' : '') +
         '<button type="button" class="app-pin' + (app ? ' on' : '') + '" data-no="' + c.no + '">' + (app ? '📌 已標記適用' : '📌 標記適用') + '</button>' +
-        '</summary><div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
+        '</div></summary><div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
     }});
     return h;
   }}
@@ -3828,11 +3831,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     return d.steps.map(function(s) {{
       var cards = s.changes.length ? s.changes.map(function(c) {{
         var lab = CHG_LABEL[c.type];
-        return '<details class="diff-card"><summary><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span></summary>' +
+        return '<details class="diff-card"><summary><div class="diff-sum"><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span></div></summary>' +
           '<div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
       }}).join('') : '<div class="diff-head">兩版條文無差異</div>';
-      return '<details class="diff-card hist-step"><summary><span class="diff-no">' + s.from + ' → ' + s.to + '</span>' +
-        _chgCountChips(s.changes) + '</summary><div class="hist-step-body">' + cards + '</div></details>';
+      return '<details class="diff-card hist-step"><summary><div class="diff-sum"><span class="diff-no">' + s.from + ' → ' + s.to + '</span>' +
+        _chgCountChips(s.changes) + '</div></summary><div class="hist-step-body">' + cards + '</div></details>';
     }}).join('');
   }}
   function _bindHist(r) {{
