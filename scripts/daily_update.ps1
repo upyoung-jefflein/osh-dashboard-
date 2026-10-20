@@ -27,7 +27,7 @@ for ($attempt = 1; $attempt -le 2 -and -not $ok; $attempt++) {
     py osh_dashboard.py --fetch-xml -o docs/index.html
     if ($LASTEXITCODE -ne 0) { Write-Output "generator failed (exit $LASTEXITCODE)"; continue }
 
-    git add docs/index.html docs/history osh_xml_records.json osh_law_diffs.json osh_law_snapshots.json
+    git add docs/index.html docs/history docs/fulltext.json osh_xml_records.json osh_law_diffs.json osh_law_snapshots.json
     git diff --staged --quiet
     if ($LASTEXITCODE -eq 0) { Write-Output 'no changes'; $ok = $true; break }
 

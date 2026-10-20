@@ -1413,6 +1413,13 @@ def load_history_counts(hist_dir: Path) -> dict:
     return out
 
 
+def write_fulltext(records: list[dict], path: Path) -> None:
+    """全部法規的條文全文（條號 → 內容），供網頁搜尋時才載入；頁面內嵌的 search_text 只有前 3000 字。"""
+    data = {r["name"]: r["_full"] for r in records if r.get("_full")}
+    path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"全文索引：{len(data)} 部法規，{path.stat().st_size // 1024} KB。")
+
+
 def _cacheable(records: list[dict]) -> list[dict]:
     return [{k: v for k, v in r.items() if k != "_full"} for r in records]
 
@@ -1767,6 +1774,29 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .diff-card[open] > summary .diff-sum::before{{ content:"▾"; }}
   .diff-no{{ font-weight:700; font-size:13px; }}
   .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
+  .chg-controls{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }}
+  .chg-controls select, .chg-controls input{{ font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:4px;
+    background:var(--card); color:var(--ink); font-family:inherit; }}
+  .chg-controls input{{ flex:1; min-width:180px; }}
+  .chg-date{{ font-size:12px; color:var(--ink-soft); }}
+  .chg-open{{ margin-left:auto; }}
+  .pen-table{{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }}
+  .pen-table th{{ text-align:left; padding:8px 10px; background:var(--hover); border-bottom:2px solid var(--border); white-space:nowrap; font-size:12px; }}
+  .pen-table th.pen-th{{ cursor:pointer; user-select:none; }}
+  .pen-table th.pen-th.on{{ color:var(--stamp); }}
+  .pen-table td{{ padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }}
+  .pen-table tbody tr{{ cursor:pointer; }}
+  .pen-table tbody tr:hover td{{ background:var(--hover); }}
+  .pen-law{{ font-weight:600; min-width:150px; }}
+  .pen-no, .pen-fine{{ white-space:nowrap; font-variant-numeric:tabular-nums; }}
+  .pen-fine{{ color:#b91c1c; font-weight:600; }}
+  .pen-text{{ color:var(--ink-soft); min-width:220px; }}
+  @media (max-width:640px) {{
+    .pen-table{{ min-width:0; }}
+    .pen-opt, .pen-text{{ display:none; }}
+    .pen-law{{ min-width:0; }}
+    .pen-table td, .pen-table th{{ padding:8px 6px; }}
+  }}
   .hist-section{{ border-bottom:none; }}
   #hist-body{{ margin-top:8px; }}
   .hist-step-body{{ padding:2px 8px 8px; }}
@@ -2224,6 +2254,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-section-label">法規</div>
   <button class="sidebar-btn active" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
+  <button class="sidebar-btn" data-tab="changes"><span class="snav-icon">🔄</span><span class="snav-label">最近異動條文</span></button>
   <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
   <div class="sidebar-section-label">動態</div>
   <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
@@ -2232,6 +2263,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <main class="main-area">
 <nav class="bottom-nav" id="bottomNav">
   <button data-tab="registry" class="active"><span class="bn-icon">📋</span><span>法規</span></button>
+  <button data-tab="changes"><span class="bn-icon">🔄</span><span>異動</span></button>
   <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
   <button data-tab="news"><span class="bn-icon">📰</span><span>動態</span></button>
 </nav>
@@ -2301,6 +2333,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button data-regview="timeline">📅 時間軸</button>
         <button data-regview="graph">🕸 圖譜</button>
         <button data-regview="matrix">📊 矩陣</button>
+        <button data-regview="penalty">💰 罰則表</button>
       </div>
     </div>
     <div id="legend-panel">
@@ -2378,6 +2411,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div id="lawTimeline"></div>
     <div id="lawGraph"></div>
     <div id="riskMatrix"></div>
+    <div id="penaltyView" style="display:none"></div>
     <div class="risk-matrix-tooltip" id="rmTooltip"></div>
     <div class="table-scroll" id="mainTableScroll">
       <table class="registry-table">
@@ -2394,6 +2428,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <tbody id="directiveBody"></tbody>
       </table>
     </div>
+  </section>
+
+  <section class="tabpanel" id="tab-changes">
+    <h2>最近異動條文</h2>
+    <p class="section-note">跨法規彙整近期被修正、增訂或刪除的條文，並以紅（刪除）、綠（新增）標出前後差異；點法規名稱展開條文，「開啟法規」可看完整內容與更早的修正。</p>
+    <div class="chg-controls">
+      <select id="chgDays">
+        <option value="30">近 30 天</option>
+        <option value="90" selected>近 90 天</option>
+        <option value="180">近 180 天</option>
+        <option value="365">近 1 年</option>
+      </select>
+      <select id="chgCat"><option value="all">全部分類</option></select>
+      <input id="chgSearch" placeholder="搜尋異動內容或條號…" autocomplete="off">
+    </div>
+    <div class="registry-meta" id="chgMeta"></div>
+    <div id="changesList"></div>
   </section>
 
   <section class="tabpanel" id="tab-lookup">
@@ -3325,6 +3376,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
     const q = document.getElementById("lawSearch").value.trim();
     var fuseActive = false;
+    var baseRows = rows;
+    // 完整條文搜尋：命中的條號（全文檔載入後才有；載入完成會自動重繪）
+    var ftHits = {{}};
+    if (q.length >= 2) {{
+      ensureFulltext();
+      if (FT) Object.keys(FT).forEach(function(name) {{
+        var arts = FT[name], nos = Object.keys(arts).filter(function(no) {{ return arts[no].includes(q); }});
+        if (nos.length) ftHits[name] = nos;
+      }});
+    }}
     if (q) {{
       if (q.length >= 2 && window.Fuse) {{
         if (!_fuseIndex) _fuseIndex = new Fuse(REGISTRY, {{
@@ -3337,6 +3398,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         fuseActive = true;
       }} else {{
         rows = rows.filter(r => r.name.includes(q)||(r.scope&&r.scope.includes(q))||(r.note&&r.note.includes(q))||(r.authority&&r.authority.includes(q))||(r.search_text&&r.search_text.includes(q)));
+      }}
+      // 條文全文命中但名稱／摘要沒命中的法規，補在後面
+      if (Object.keys(ftHits).length) {{
+        var have = new Set(rows.map(r => r.name));
+        rows = rows.concat(baseRows.filter(r => ftHits[r.name] && !have.has(r.name)));
       }}
     }}
 
@@ -3367,6 +3433,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById("lawTimeline").style.display = regViewMode === "timeline" ? "block" : "none";
     document.getElementById("lawGraph").style.display = regViewMode === "graph" ? "block" : "none";
     document.getElementById("riskMatrix").style.display = regViewMode === "matrix" ? "block" : "none";
+    document.getElementById("penaltyView").style.display = regViewMode === "penalty" ? "block" : "none";
+
+    if (regViewMode === "penalty") {{ _renderPenaltyView(rows); return; }}
 
     if (regViewMode === "timeline") {{
       document.getElementById("registryMeta").textContent = "時間軸：顯示 " + rows.length + " 筆，依最新修正日期排列";
@@ -3411,7 +3480,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
       // ③ 全文搜尋：標示透過條文內容命中的法規
       var artMatchBadge = '';
-      if (q && !r.name.includes(q) && r.search_text && r.search_text.includes(q) && r.article_previews) {{
+      if (q && !r.name.includes(q) && ftHits[r.name]) {{
+        var fn = ftHits[r.name];
+        artMatchBadge = '<span class="badge" style="background:#6d28d9;font-size:10px">條文符合：第' +
+          fn.slice(0,3).join('、') + (fn.length > 3 ? '…（共 ' + fn.length + ' 條）' : '') + '條</span>';
+      }} else if (q && !r.name.includes(q) && r.search_text && r.search_text.includes(q) && r.article_previews) {{
         var matchedNos = (r.articles || []).filter(function(no) {{
           return (r.article_previews[no] || '').includes(q);
         }});
@@ -4161,6 +4234,131 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     registryPage = 1;
     _lawDebounce = setTimeout(renderRegistry, 200);
   }});
+  // ─── 完整條文全文（搜尋時才載入 fulltext.json）──────────────
+  var FT = null, _ftState = '';
+  function ensureFulltext() {{
+    if (FT || _ftState) return;
+    _ftState = 'loading';
+    fetch('fulltext.json').then(function(res) {{ if (!res.ok) throw new Error(res.status); return res.json(); }})
+      .then(function(d) {{ FT = d; _ftState = 'ok'; renderRegistry(); }})
+      .catch(function() {{ _ftState = 'failed'; }});
+  }}
+
+  // ─── 罰則總覽表 ──────────────────────────────────────────────
+  var _penSort = {{key: 'fine_max', dir: -1}};
+  var _penList = [];
+  function _renderPenaltyView(rows) {{
+    var list = [];
+    rows.forEach(function(r) {{ (r.penalty_articles || []).forEach(function(pa) {{ list.push({{r: r, pa: pa}}); }}); }});
+    var k = _penSort.key, dir = _penSort.dir;
+    var val = {{
+      law: function(x) {{ return x.r.name; }},
+      no: function(x) {{ return parseFloat(String(x.pa.no).replace('-', '.')) || 0; }},
+      fine_max: function(x) {{ return x.pa.fine_max; }},
+      fine_min: function(x) {{ return x.pa.fine_min; }}
+    }}[k];
+    list.sort(function(a, b) {{
+      var va = val(a), vb = val(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1; if (vb == null) return -1;
+      var c = typeof va === 'string' ? va.localeCompare(vb, 'zh-Hant') : va - vb;
+      return c * dir || a.r.name.localeCompare(b.r.name, 'zh-Hant');
+    }});
+    _penList = list;
+    document.getElementById("registryMeta").textContent =
+      "罰則表：" + new Set(list.map(function(x) {{ return x.r.name; }})).size + " 部法規、" + list.length + " 條罰則條文（點欄位標題排序，點列可開啟法規）";
+    function th(label, key) {{
+      var on = _penSort.key === key;
+      return '<th data-pk="' + key + '" class="pen-th' + (on ? ' on' : '') + '">' + label + (on ? (dir < 0 ? ' ▾' : ' ▴') : '') + '</th>';
+    }}
+    var html = '<div class="table-scroll"><table class="pen-table"><thead><tr>' +
+      th('法規', 'law') + th('條號', 'no') + th('罰鍰（萬元）', 'fine_max') + '<th>刑責</th><th class="pen-opt">按次</th><th class="pen-opt">對象</th><th class="pen-text">條文摘要</th></tr></thead><tbody>';
+    html += list.map(function(x, i) {{
+      var pa = x.pa;
+      var fine = pa.fine_max ? (pa.fine_min ? pa.fine_min + '～' + pa.fine_max : '≤ ' + pa.fine_max) : '—';
+      var t = _escHtml((pa.text || '').replace(/\\s+/g, ' ')).slice(0, 90);
+      return '<tr data-pi="' + i + '"><td class="pen-law">' + _escHtml(x.r.name) + '</td><td class="pen-no">第' + _escHtml(pa.no) + '條</td>' +
+        '<td class="pen-fine">' + fine + '</td><td>' + (pa.criminal ? _escHtml(pa.criminal) : '—') + '</td>' +
+        '<td class="pen-opt">' + (pa.repeated ? '按次' : '') + '</td><td class="pen-opt">' + (pa.liable || []).map(_escHtml).join('、') + '</td>' +
+        '<td class="pen-text">' + t + (pa.text && pa.text.length > 90 ? '…' : '') + '</td></tr>';
+    }}).join('');
+    html += '</tbody></table></div>';
+    if (!list.length) html = '<div class="diff-head">目前篩選條件下沒有罰則條文。</div>';
+    var box = document.getElementById('penaltyView');
+    box.innerHTML = html;
+    box.querySelectorAll('.pen-th').forEach(function(h) {{
+      h.onclick = function() {{
+        var nk = h.dataset.pk;
+        _penSort = {{key: nk, dir: _penSort.key === nk ? -_penSort.dir : (nk === 'law' || nk === 'no' ? 1 : -1)}};
+        _renderPenaltyView(rows);
+      }};
+    }});
+    box.querySelectorAll('tbody tr').forEach(function(tr) {{
+      tr.onclick = function() {{ openDrawer(_penList[+tr.dataset.pi].r); }};
+    }});
+  }}
+
+  // ─── 最近異動條文（跨法規彙整）───────────────────────────────
+  function _isoDaysAgo(n) {{
+    var d = new Date(); d.setDate(d.getDate() - n);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }}
+  function _chgBodyHtml(changes, openFirst) {{
+    return changes.map(function(c, i) {{
+      var lab = CHG_LABEL[c.type];
+      return '<details class="diff-card"' + (i < openFirst ? ' open' : '') + '><summary><div class="diff-sum"><span class="diff-no">第' + _escHtml(c.no) + '條</span>' +
+        '<span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span></div></summary><div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
+    }}).join('');
+  }}
+  var _chgView = [];
+  function renderChanges() {{
+    var days = +document.getElementById('chgDays').value, cat = document.getElementById('chgCat').value;
+    var q = document.getElementById('chgSearch').value.trim();
+    var cutoff = _isoDaysAgo(days);
+    var list = REGISTRY.filter(function(r) {{
+      return r.date && r.date >= cutoff && (cat === 'all' || r.cat === cat) && lawChanges(r).length;
+    }}).map(function(r) {{
+      var ch = lawChanges(r);
+      if (q) ch = ch.filter(function(c) {{ return c.segs.map(function(s) {{ return s[1]; }}).join('').includes(q) || ('第' + c.no + '條').includes(q); }});
+      return {{r: r, ch: ch}};
+    }}).filter(function(x) {{ return x.ch.length; }}).sort(function(a, b) {{ return b.r.date.localeCompare(a.r.date) || a.r.name.localeCompare(b.r.name, 'zh-Hant'); }});
+    _chgView = list;
+    var total = list.reduce(function(n, x) {{ return n + x.ch.length; }}, 0);
+    document.getElementById('chgMeta').textContent = '近 ' + days + ' 天：' + list.length + ' 部法規、' + total + ' 條異動' + (q ? '（符合「' + q + '」）' : '');
+    var box = document.getElementById('changesList');
+    if (!list.length) {{
+      box.innerHTML = '<div class="diff-head">此期間沒有可顯示的條文異動。（僅涵蓋官方資料庫有前版可供比對的法規）</div>';
+      return;
+    }}
+    box.innerHTML = list.map(function(x, i) {{
+      return '<details class="diff-card chg-law" data-i="' + i + '"' + (q ? ' open' : '') + '><summary><div class="diff-sum">' +
+        '<span class="diff-no">' + _escHtml(x.r.name) + '</span><span class="chg-date">' + x.r.date + '</span>' +
+        (x.r.status === '未生效' ? '<span class="status-pending">未生效</span>' : '') + _chgCountChips(x.ch) +
+        '<button type="button" class="art-copy-btn chg-open" data-i="' + i + '">開啟法規 ↗</button></div></summary>' +
+        '<div class="hist-step-body">' + (q ? _chgBodyHtml(x.ch, 99) : '') + '</div></details>';
+    }}).join('');
+  }}
+  (function() {{
+    var box = document.getElementById('changesList');
+    box.addEventListener('toggle', function(e) {{
+      var d = e.target;
+      if (!d.classList || !d.classList.contains('chg-law') || !d.open) return;
+      var body = d.querySelector('.hist-step-body');
+      if (body && !body.innerHTML) body.innerHTML = _chgBodyHtml(_chgView[+d.dataset.i].ch, 2);
+    }}, true);
+    box.addEventListener('click', function(e) {{
+      var b = e.target.closest('.chg-open');
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      openDrawer(_chgView[+b.dataset.i].r);
+    }});
+    var cs = document.getElementById('chgCat');
+    CATEGORIES.forEach(function(c) {{ var o = document.createElement('option'); o.value = c; o.textContent = c; cs.appendChild(o); }});
+    ['chgDays', 'chgCat'].forEach(function(id) {{ document.getElementById(id).addEventListener('change', renderChanges); }});
+    var t = null;
+    document.getElementById('chgSearch').addEventListener('input', function() {{ clearTimeout(t); t = setTimeout(renderChanges, 250); }});
+  }})();
+
   function switchTab(tabName) {{
     document.querySelectorAll(".sidebar-btn, .bottom-nav button").forEach(function(b) {{
       b.classList.toggle("active", b.dataset.tab === tabName);
@@ -4169,6 +4367,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       p.classList.remove("active");
     }});
     document.getElementById("tab-" + tabName).classList.add("active");
+    if (tabName === "changes") renderChanges();
   }}
   document.querySelectorAll(".sidebar-btn, .bottom-nav button").forEach(function(btn) {{
     btn.addEventListener("click", function() {{ switchTab(this.dataset.tab); }});
@@ -5119,6 +5318,7 @@ def main():
                 print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
                 law_diffs = update_law_diffs(all_xml_records)
                 update_law_history(all_xml_records, args.output.parent / "history", args.history_budget)
+                write_fulltext(all_xml_records, args.output.parent / "fulltext.json")
                 all_xml_records = _cacheable(all_xml_records)
                 XML_CACHE.write_text(
                     json.dumps(all_xml_records, ensure_ascii=False, separators=(",", ":")),
