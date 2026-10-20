@@ -1143,6 +1143,7 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
             "search_text": search_text,
             "cross_refs": cross_refs,
             "latest_revision": _parse_latest_revision(_text(law.find("沿革內容"))),
+            "history_dates": _parse_history_dates(_text(law.find("沿革內容"))),
             "has_table": has_table,
             "資料擷取日期": fetched_at,
             "_full": _all_content,
@@ -1171,16 +1172,17 @@ def _art_sort_key(no: str) -> tuple:
     return tuple(int(p) if p.isdigit() else 0 for p in no.split("-"))
 
 
-def _fetch_prev_version(pcode: str) -> tuple[str, dict[str, str]] | None:
+def _fetch_prev_version(pcode: str, lnndate: str = "") -> tuple[str, dict[str, str]] | None:
+    """lnndate 為空 → 現行版的前一版；給 YYYYMMDD → 該公布日的版本。"""
     import html as _html
     import urllib3; urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    url = _OLDVER_URL.format(pcode=pcode) + (f"&lnndate={lnndate}&lser=001" if lnndate else "")
     try:
         # 法務部憑證缺 Subject Key Identifier，Python 3.13 嚴格驗證會失敗（同 XML 下載）
-        resp = requests.get(_OLDVER_URL.format(pcode=pcode), headers={"User-Agent": USER_AGENT},
-                            timeout=60, verify=False)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=60, verify=False)
         resp.raise_for_status()
     except Exception as e:
-        print(f"  前版條文下載失敗（{pcode}）：{e}", file=sys.stderr)
+        print(f"  前版條文下載失敗（{pcode} {lnndate}）：{e}", file=sys.stderr)
         return None
     page = resp.text
     m = re.search(r"修正日期[^<]*</th>\s*<td[^>]*>(.*?)</td>", page, re.S)
@@ -1226,19 +1228,80 @@ def _diff_segments(old: str, new: str) -> list[list[str]]:
     return [s for s in out if s[1]]
 
 
-def load_law_diffs() -> dict:
-    if not LAW_DIFF_CACHE.exists():
+def _compute_changes(old: dict[str, str], new: dict[str, str]) -> list[dict]:
+    """old/new：條號 → 已正規化條文。"""
+    changes = []
+    for no, text in new.items():
+        if no not in old:
+            changes.append({"no": no, "type": "add", "segs": [["+", text]]})
+        elif old[no] != text:
+            changes.append({"no": no, "type": "mod", "segs": _diff_segments(old[no], text)})
+    for no, text in old.items():
+        if no not in new:
+            changes.append({"no": no, "type": "del", "segs": [["-", text]]})
+    changes.sort(key=lambda c: _art_sort_key(c["no"]))
+    return changes
+
+
+def _zh_to_int(s: str) -> int:
+    digits = {"零": 0, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+    total = cur = 0
+    for ch in s:
+        if ch in digits:
+            cur = digits[ch]
+        elif ch == "百":
+            total += (cur or 1) * 100; cur = 0
+        elif ch == "十":
+            total += (cur or 1) * 10; cur = 0
+    return total + cur
+
+
+def _parse_history_dates(history_text: str) -> list[str]:
+    """沿革每一筆（以「N.中華民國」起頭）的第一個日期 → 升冪 ISO 日期（即各版本公布日）。"""
+    out = set()
+    pat = re.compile(r"中華民國([零一二三四五六七八九十百]+)年([零一二三四五六七八九十]+)月([零一二三四五六七八九十]+)日")
+    for entry in re.split(r"(?=\d+\.中華民國)", history_text or ""):
+        m = pat.search(entry[:60])
+        if not m or not re.match(r"\d+\.", entry):
+            continue
+        y, mo, d = (_zh_to_int(g) for g in m.groups())
+        try:
+            out.add(date(y + 1911, mo, d).isoformat())
+        except ValueError:
+            pass
+    return sorted(out)
+
+
+def _roc_label(rev: str) -> str:
+    iso = roc_to_iso(rev)
+    if not iso:
+        return ""
+    y, m, d = (int(x) for x in iso.split("-"))
+    return f"民國{y - 1911}年{m:02d}月{d:02d}日"
+
+
+def _read_json(path: Path) -> dict:
+    if not path.exists():
         return {}
     try:
-        return json.loads(LAW_DIFF_CACHE.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
 
 
+LAW_SNAP_CACHE = Path("osh_law_snapshots.json")
+
+
+def load_law_diffs() -> dict:
+    return _read_json(LAW_DIFF_CACHE)
+
+
 def update_law_diffs(xml_records: list[dict]) -> dict:
-    """對最新異動日期有變的法規下載前版條文並與現行條文比對；未變者沿用快取。"""
+    """對最新異動日期有變的法規下載前版條文並與現行條文比對；未變者沿用快取。
+    資料庫沒有前版的法規，改存目前條文快照，下次修正時與快照比對。"""
     from concurrent.futures import ThreadPoolExecutor
     cache = load_law_diffs()
+    snaps = _read_json(LAW_SNAP_CACHE)
     today = date.today()
     result: dict = {}
     todo: list[dict] = []
@@ -1268,21 +1331,26 @@ def update_law_diffs(xml_records: list[dict]) -> dict:
                 result[name] = ent
             continue
         ver, old = prev
-        if not old:
-            result[name] = {"rev": rev, "prev_ver": "", "checked": today.isoformat(), "changes": []}
-            continue
         new = {no: _norm_article(t) for no, t in full.items()}
-        changes = []
-        for no, text in new.items():
-            if no not in old:
-                changes.append({"no": no, "type": "add", "segs": [["+", text]]})
-            elif old[no] != text:
-                changes.append({"no": no, "type": "mod", "segs": _diff_segments(old[no], text)})
-        for no, text in old.items():
-            if no not in new:
-                changes.append({"no": no, "type": "del", "segs": [["-", text]]})
-        changes.sort(key=lambda c: _art_sort_key(c["no"]))
-        result[name] = {"rev": rev, "prev_ver": ver, "checked": today.isoformat(), "changes": changes}
+        if not old:
+            snap = snaps.get(name)
+            if snap and snap.get("arts") and snap.get("rev") != rev:
+                result[name] = {"rev": rev, "prev_ver": _roc_label(snap["rev"]), "checked": today.isoformat(),
+                                "changes": _compute_changes(snap["arts"], new)}
+            else:
+                result[name] = {"rev": rev, "prev_ver": "", "checked": today.isoformat(), "changes": []}
+            snaps[name] = {"rev": rev, "arts": new}
+            continue
+        result[name] = {"rev": rev, "prev_ver": ver, "checked": today.isoformat(),
+                        "changes": _compute_changes(old, new)}
+
+    # 資料庫無前版且尚無快照者：以目前條文建立快照，作為日後修正的比對基準
+    by_name = {r["name"]: r for r in xml_records}
+    for name, ent in result.items():
+        r = by_name.get(name)
+        if r and r.get("_full") and not ent.get("prev_ver") and not ent.get("changes") and name not in snaps:
+            snaps[name] = {"rev": r.get("最新異動日期_roc", ""), "arts": {no: _norm_article(t) for no, t in r["_full"].items()}}
+    LAW_SNAP_CACHE.write_text(json.dumps(snaps, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     LAW_DIFF_CACHE.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     failed = sum(1 for p in prevs if p is None)
     if any(p == ("", {}) for p in prevs):
@@ -1290,6 +1358,59 @@ def update_law_diffs(xml_records: list[dict]) -> dict:
     print(f"條文對照：{len(result)} 部法規（本次下載前版 {len(todo)} 部，失敗 {failed} 部），"
           f"{LAW_DIFF_CACHE.stat().st_size // 1024} KB。")
     return result
+
+
+def _build_law_history(r: dict, hist_dir: Path) -> int:
+    """下載各歷史版本並逐版比對（不含最近一次修正，該次已內嵌於頁面），寫入 history/<pcode>.json。"""
+    dates = r["history_dates"]
+    texts: dict[str, dict[str, str]] = {}
+    for d in dates[:-1]:
+        v = _fetch_prev_version(r["pcode"], d.replace("-", ""))
+        if v and v[1]:
+            texts[d] = v[1]
+    steps = []
+    for i in range(len(dates) - 2, 0, -1):  # 新 → 舊
+        a, b = dates[i - 1], dates[i]
+        if a in texts and b in texts:
+            steps.append({"from": a, "to": b, "changes": _compute_changes(texts[a], texts[b])})
+    (hist_dir / f"{r['pcode']}.json").write_text(
+        json.dumps({"name": r["name"], "dates": dates, "steps": steps}, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8")
+    return len(steps)
+
+
+def update_law_history(xml_records: list[dict], hist_dir: Path, budget: int = 80) -> None:
+    """為修正過 2 次以上的法規建立更早版本的比對檔；沿革日期有變才重建，單次下載量以 budget 為限，未完成者次日接續。"""
+    from concurrent.futures import ThreadPoolExecutor
+    hist_dir.mkdir(parents=True, exist_ok=True)
+    todo = []
+    for r in xml_records:
+        dates = r.get("history_dates") or []
+        if len(dates) < 3 or not r.get("pcode") or r.get("status") == "廢止":
+            continue
+        if _read_json(hist_dir / f"{r['pcode']}.json").get("dates") == dates:
+            continue
+        todo.append(r)
+    sel, used = [], 0
+    for r in todo:
+        n = len(r["history_dates"]) - 1
+        if sel and used + n > budget:
+            break
+        sel.append(r)
+        used += n
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        counts = list(pool.map(lambda r: _build_law_history(r, hist_dir), sel))
+    print(f"歷史版本比對：本次建立 {len(sel)} 部（{sum(counts)} 次修正比對，下載 {used} 個版本），尚餘 {len(todo) - len(sel)} 部待建。")
+
+
+def load_history_counts(hist_dir: Path) -> dict:
+    out = {}
+    if hist_dir.exists():
+        for f in hist_dir.glob("*.json"):
+            d = _read_json(f)
+            if d.get("name") and d.get("steps"):
+                out[d["name"]] = len(d["steps"])
+    return out
 
 
 def _cacheable(records: list[dict]) -> list[dict]:
@@ -1663,6 +1784,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .app-pin.on{{ border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,.07); font-weight:600; }}
   [data-theme="dark"] .app-pin.on{{ border-color:#60a5fa; color:#93c5fd; background:rgba(96,165,250,.12); }}
   .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
+  .hist-section{{ border-bottom:none; }}
+  #hist-body{{ margin-top:8px; }}
+  .hist-step-body{{ padding:2px 8px 8px; }}
+  .hist-step > summary .diff-no{{ font-size:12.5px; }}
   .diff-body del{{ background:#fee2e2; color:#991b1b; text-decoration:line-through; }}
   .diff-body ins{{ background:#dcfce7; color:#166534; text-decoration:underline; text-decoration-color:#16a34a; }}
   [data-theme="dark"] .diff-body del{{ background:rgba(185,28,28,.3); color:#fecaca; }}
@@ -3571,7 +3696,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }});
       var lawRows = [['序', '法規名稱', '位階', '分類', '主管機關', '最新修正日', '效力狀態', '適用條數', '總條數',
         '適用條文', '近期修正涉及條文', '全文連結', '權責部門', '符合狀態', '佐證文件／程序書編號', '備註']];
-      var artRows = [['法規名稱', '條號', '條文摘要（前200字）', '近期修正', '修正日期', '符合狀態', '佐證文件／程序書編號', '備註']];
+      var artRows = [['法規名稱', '條號', '條文摘要（前200字）', '近期修正', '修正日期', '修正前條文', '修正後條文', '符合狀態', '佐證文件／程序書編號', '備註']];
+      var segText = function(c, skip) {{ return c.segs.filter(function(s) {{ return s[0] !== skip; }}).map(function(s) {{ return s[1]; }}).join(''); }};
       laws.forEach(function(r, i) {{
         var nos = Object.keys(state.appArts[r.name]).sort(_artCmp);
         var imp = impactNos(r);
@@ -3581,15 +3707,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           imp.length ? imp.map(function(n) {{ return '第' + n + '條'; }}).join('、') : '',
           r.source || '', '', '', '', '']);
         var chg = {{}};
-        if (isRecent(r.date) || r.status === '未生效') lawChanges(r).forEach(function(c) {{ chg[c.no] = CHG_LABEL[c.type][0]; }});
+        if (isRecent(r.date) || r.status === '未生效') lawChanges(r).forEach(function(c) {{ chg[c.no] = c; }});
         nos.forEach(function(no) {{
+          var c = chg[no];
           artRows.push([r.name, '第' + no + '條', (r.article_previews && r.article_previews[no]) || '',
-            chg[no] || '', chg[no] ? (r.date || '') : '', '', '', '']);
+            c ? CHG_LABEL[c.type][0] : '', c ? (r.date || '') : '',
+            c ? segText(c, '+') : '', c ? segText(c, '-') : '', '', '', '']);
         }});
       }});
       var blob = _buildXlsx([
         {{name: '法規鑑別表', rows: lawRows, widths: [4, 30, 8, 10, 16, 12, 8, 8, 8, 40, 24, 40, 14, 12, 22, 24]}},
-        {{name: '條文明細', rows: artRows, widths: [30, 10, 70, 10, 12, 12, 22, 24]}}
+        {{name: '條文明細', rows: artRows, widths: [30, 10, 60, 10, 12, 60, 60, 12, 22, 24]}}
       ]);
       var d = new Date(), p = function(n) {{ return String(n).padStart(2, '0'); }};
       _downloadBlob(blob, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
@@ -3627,17 +3755,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var hit = hits.indexOf(c) >= 0, app = isAppArt(r.name, c.no);
       var open = openSet ? openSet.has(c.no) : (hits.length ? hit : i < 3);
       var lab = CHG_LABEL[c.type];
-      var body = c.segs.map(function(s) {{
-        var t = _escHtml(s[1]);
-        return s[0] === '-' ? '<del>' + t + '</del>' : s[0] === '+' ? '<ins>' + t + '</ins>' : t;
-      }}).join('');
       h += '<details class="diff-card' + (hit ? ' is-hit' : '') + '" data-no="' + c.no + '"' + (open ? ' open' : '') + '>' +
         '<summary><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span>' +
         (hit ? '<span class="impact-tag">⚡ 影響</span>' : '') +
         '<button type="button" class="app-pin' + (app ? ' on' : '') + '" data-no="' + c.no + '">' + (app ? '📌 已標記適用' : '📌 標記適用') + '</button>' +
-        '</summary><div class="diff-body">' + body + '</div></details>';
+        '</summary><div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
     }});
     return h;
+  }}
+
+  function _segsHtml(segs) {{
+    return segs.map(function(s) {{
+      var t = _escHtml(s[1]);
+      return s[0] === '-' ? '<del>' + t + '</del>' : s[0] === '+' ? '<ins>' + t + '</ins>' : t;
+    }}).join('');
+  }}
+
+  // 更早的修正：資料放在 history/<pcode>.json，點開才載入
+  function _histHtml(d) {{
+    return d.steps.map(function(s) {{
+      var cards = s.changes.length ? s.changes.map(function(c) {{
+        var lab = CHG_LABEL[c.type];
+        return '<details class="diff-card"><summary><span class="diff-no">第' + c.no + '條</span><span class="chg-chip ' + lab[1] + '">' + lab[0] + '</span></summary>' +
+          '<div class="diff-body">' + _segsHtml(c.segs) + '</div></details>';
+      }}).join('') : '<div class="diff-head">兩版條文無差異</div>';
+      return '<details class="diff-card hist-step"><summary><span class="diff-no">' + s.from + ' → ' + s.to + '</span>' +
+        _chgCountChips(s.changes) + '</summary><div class="hist-step-body">' + cards + '</div></details>';
+    }}).join('');
+  }}
+  function _bindHist(r) {{
+    var btn = document.getElementById('hist-btn');
+    if (!btn) return;
+    var body = document.getElementById('hist-body'), n = LAW_DIFFS[r.name].hist;
+    var label = '🕘 查看更早的修正（' + n + ' 次）';
+    btn.onclick = function() {{
+      if (body.dataset.open === '1') {{ body.innerHTML = ''; body.dataset.open = '0'; btn.textContent = label; return; }}
+      btn.disabled = true; btn.textContent = '載入中…';
+      fetch('history/' + encodeURIComponent(r.pcode) + '.json')
+        .then(function(res) {{ if (!res.ok) throw new Error(res.status); return res.json(); }})
+        .then(function(d) {{ body.innerHTML = _histHtml(d); body.dataset.open = '1'; btn.textContent = '收合更早的修正'; btn.disabled = false; }})
+        .catch(function() {{
+          body.innerHTML = '<div class="impact-box unset">無法載入歷史版本資料（需由網站開啟，直接開啟本機檔案時不支援）。</div>';
+          btn.textContent = label; btn.disabled = false;
+        }});
+    }};
   }}
 
   function _bindDiff(r) {{
@@ -3730,6 +3891,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var lr = r.latest_revision;
     if (lawChanges(r).length) {{
       html += '<div class="drawer-section diff-section" id="diff-wrap">' + _diffSectionHtml(r, null) + '</div>';
+      if (LAW_DIFFS[r.name].hist) html += '<div class="drawer-section hist-section">' +
+        '<button type="button" class="art-copy-btn" id="hist-btn">🕘 查看更早的修正（' + LAW_DIFFS[r.name].hist + ' 次）</button>' +
+        '<div id="hist-body"></div></div>';
     }} else if (lr && (lr.is_full || (lr.modified && lr.modified.length) || (lr.added && lr.added.length) || (lr.deleted && lr.deleted.length))) {{
       var lrDate = r.date || '';
       html += '<div class="drawer-section"><div class="latest-rev-block">';
@@ -3971,6 +4135,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     document.getElementById("drawer-body").innerHTML = html;
     _bindDiff(r);
+    _bindHist(r);
 
     // 綁定 checklist 事件（避免 onclick 字串的引號問題）
     var ckInputs = document.querySelectorAll('#drawer-body .ck-input');
@@ -4979,7 +5144,7 @@ def enrich_news_summaries(news: list[dict], api_key: str) -> None:
 
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
                source_status: list[dict] | None = None, xml_cache_info: dict | None = None,
-               law_diffs: dict | None = None):
+               law_diffs: dict | None = None, hist_counts: dict | None = None):
     from urllib.parse import quote as _urlq
     _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
 
@@ -5009,7 +5174,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
         xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
         law_diffs_json=json.dumps(
-            {n: {"prev_ver": d.get("prev_ver", ""), "changes": d["changes"]}
+            {n: {"prev_ver": d.get("prev_ver", ""), "changes": d["changes"], "hist": (hist_counts or {}).get(n, 0)}
              for n, d in (law_diffs or {}).items() if d.get("changes")},
             ensure_ascii=False, separators=(",", ":")),
     )
@@ -5136,6 +5301,7 @@ def main():
     parser.add_argument("--law-xml", type=Path, help="全國法規資料庫公開資料的 XML 檔路徑（選填）")
     parser.add_argument("--fetch-xml", action="store_true", help="自動從全國法規資料庫下載最新 XML（優先於 --law-xml）")
     parser.add_argument("-o", "--output", type=Path, default=Path("osh_dashboard.html"))
+    parser.add_argument("--history-budget", type=int, default=80, help="單次最多下載幾個歷史版本頁（避免排程逾時，未完成者次日接續）")
     parser.add_argument("--debug", action="store_true", help="印出每個新聞來源實際抓到的內容")
     parser.add_argument("--news-only", action="store_true", help="跳過法規 XML 解析，只更新新聞")
     parser.add_argument("--gemini-key", default="", help="Google Gemini API key（也可設定環境變數 GEMINI_API_KEY）")
@@ -5203,6 +5369,7 @@ def main():
                 confirmed = sum(1 for r in registry if r["date"])
                 print(f"法規：XML 共解析 {len(all_xml_records)} 筆，合併後共 {len(registry)} 筆，已確認日期 {confirmed} 筆。")
                 law_diffs = update_law_diffs(all_xml_records)
+                update_law_history(all_xml_records, args.output.parent / "history", args.history_budget)
                 all_xml_records = _cacheable(all_xml_records)
                 XML_CACHE.write_text(
                     json.dumps(all_xml_records, ensure_ascii=False, separators=(",", ":")),
@@ -5255,7 +5422,8 @@ def main():
         }
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
-               source_status=source_status, xml_cache_info=xml_cache_info, law_diffs=law_diffs)
+               source_status=source_status, xml_cache_info=xml_cache_info, law_diffs=law_diffs,
+               hist_counts=load_history_counts(args.output.parent / "history"))
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
     if args.fetch_xml and (changed_laws or new_laws_detected):
