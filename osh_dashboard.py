@@ -4873,27 +4873,9 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
 # main
 # ============================================================
 
-def send_update_email(changed_laws: list, new_laws: list, news_items: list) -> None:
-    """當法規有異動時發送 Email 通知。設定由環境變數提供，未設定則略過。"""
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-
-    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
-    notify_to_raw = os.environ.get("NOTIFY_EMAIL", smtp_user)
-    notify_to_list = [e.strip() for e in notify_to_raw.split(",") if e.strip()]
-    notify_to = ", ".join(notify_to_list)
-    dashboard_url = os.environ.get(
-        "DASHBOARD_URL", "https://upyoung-jefflein.github.io/osh-dashboard-/"
-    )
-
-    if not smtp_user or not smtp_pass or not notify_to:
-        print("  Email 通知：未設定 SMTP_USER / SMTP_PASS，略過。")
-        return
-
+def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
+                          law_diffs: dict | None, dashboard_url: str) -> tuple[str, str]:
+    """組出 Email 主旨與 HTML 內文（不寄送）。"""
     today = datetime.now().strftime("%Y-%m-%d")
     parts = []
     if new_laws:
@@ -4905,6 +4887,54 @@ def send_update_email(changed_laws: list, new_laws: list, news_items: list) -> N
         if parts
         else f"[職安法規觀測站] {today} 無法規異動"
     )
+
+    from html import escape as esc
+
+    def snippet(segs, limit=240):
+        """變動前後對照的精簡版：相同的長段落只留頭尾，刪除用紅底刪除線、新增用綠底。"""
+        out, used = [], 0
+        for op, txt in segs:
+            t = txt.replace("\n", " ")
+            if op == "=":
+                if len(t) > 36:
+                    t = t[:14] + "…" + t[-14:]
+                out.append(esc(t))
+            else:
+                if len(t) > 120:
+                    t = t[:120] + "…"
+                if op == "-":
+                    out.append(f"<del style='background:#fee2e2;color:#991b1b'>{esc(t)}</del>")
+                else:
+                    out.append(f"<ins style='background:#dcfce7;color:#166534;text-decoration:none'>{esc(t)}</ins>")
+            used += len(t)
+            if used > limit:
+                out.append("…")
+                break
+        return "".join(out)
+
+    def law_detail(name, max_arts=8):
+        ent = (law_diffs or {}).get(name) or {}
+        changes = ent.get("changes") or []
+        head = f"<div style='font-weight:700;font-size:14px;margin-bottom:4px'>{esc(name)}</div>"
+        if not changes:
+            return (f"<div style='margin:0 0 16px;padding:10px 12px;background:#f8fafc;border-radius:6px'>{head}"
+                    "<div style='color:#6b7280;font-size:12.5px'>條文差異尚未同步（官方歷史版本稍後才會更新），請至觀測站查看。</div></div>")
+        cnt = {"mod": 0, "add": 0, "del": 0}
+        for c in changes:
+            cnt[c["type"]] += 1
+        label = {"mod": ("修正", "#b45309"), "add": ("增訂", "#15803d"), "del": ("刪除", "#b91c1c")}
+        chips = "　".join(f"<span style='color:{label[k][1]}'>{label[k][0]} {v} 條</span>" for k, v in cnt.items() if v)
+        rows = ""
+        for c in changes[:max_arts]:
+            lb, color = label[c["type"]]
+            rows += (f"<div style='margin:6px 0;font-size:13px;line-height:1.75'>"
+                     f"<b>第{esc(c['no'])}條</b> <span style='color:{color};font-size:12px'>{lb}</span><br>"
+                     f"{snippet(c['segs'])}</div>")
+        if len(changes) > max_arts:
+            rows += f"<div style='color:#6b7280;font-size:12px'>…另有 {len(changes) - max_arts} 條，請至觀測站查看完整對照。</div>"
+        prev = f"（對照前版：{esc(ent.get('prev_ver') or '—')}）"
+        return (f"<div style='margin:0 0 16px;padding:10px 12px;background:#f8fafc;border-radius:6px'>{head}"
+                f"<div style='font-size:12px;margin-bottom:6px'>{chips}<span style='color:#9ca3af'> {prev}</span></div>{rows}</div>")
 
     def law_list(items, max_show=12):
         shown = items[:max_show]
@@ -4928,12 +4958,16 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
   <h3 style="color:#166534;font-size:15px;margin:0 0 8px">★ 新增法規（{len(new_laws)} 筆）</h3>
   {law_list(new_laws)}"""
 
-    if changed_laws:
+    changed_only = [n for n in changed_laws if n not in set(new_laws)]
+    if changed_only:
+        shown = changed_only[:12]
         html += f"""
-  <h3 style="color:#92400e;font-size:15px;margin:0 0 8px">↑ 法規異動（{len(changed_laws)} 筆）</h3>
-  {law_list(changed_laws)}"""
+  <h3 style="color:#92400e;font-size:15px;margin:0 0 10px">↑ 法規異動（{len(changed_only)} 筆）</h3>
+  {''.join(law_detail(n) for n in shown)}"""
+        if len(changed_only) > len(shown):
+            html += f"<p style='color:#6b7280;font-size:12px'>…另有 {len(changed_only) - len(shown)} 筆，請至觀測站查看。</p>"
 
-    if not new_laws and not changed_laws:
+    if not new_laws and not changed_only:
         html += "<p style='color:#6b7280'>今日無法規異動。</p>"
 
     top_news = [n for n in news_items if n.get("title")][:5]
@@ -4960,11 +4994,38 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
     </a>
   </div>
   <p style="color:#9ca3af;font-size:11px;margin-top:20px;text-align:center;line-height:1.5">
-    本郵件由 GitHub Actions 自動發送。<br>
-    如需停止通知，請在 GitHub Secrets 移除 NOTIFY_EMAIL。
+    本郵件由職安法規觀測站的每日排程自動發送。<br>
+    如需停止通知，請聯絡管理者調整收件人設定。
   </p>
 </div>
 </body></html>"""
+
+    return subject, html
+
+
+def send_update_email(changed_laws: list, new_laws: list, news_items: list,
+                      law_diffs: dict | None = None) -> None:
+    """當法規有異動時發送 Email 通知。設定由環境變數提供，未設定則略過。"""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
+    notify_to_raw = os.environ.get("NOTIFY_EMAIL", smtp_user)
+    notify_to_list = [e.strip() for e in notify_to_raw.split(",") if e.strip()]
+    notify_to = ", ".join(notify_to_list)
+    dashboard_url = os.environ.get(
+        "DASHBOARD_URL", "https://upyoung-jefflein.github.io/osh-dashboard-/"
+    )
+
+    if not smtp_user or not smtp_pass or not notify_to:
+        print("  Email 通知：未設定 SMTP_USER / SMTP_PASS，略過。")
+        return
+
+    subject, html = _compose_update_email(changed_laws, new_laws, news_items, law_diffs, dashboard_url)
 
     try:
         msg = MIMEMultipart("alternative")
@@ -5115,7 +5176,7 @@ def main():
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
     if args.fetch_xml and (changed_laws or new_laws_detected):
-        send_update_email(changed_laws, new_laws_detected, news)
+        send_update_email(changed_laws, new_laws_detected, news, law_diffs)
 
 
 if __name__ == "__main__":
