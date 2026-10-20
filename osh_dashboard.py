@@ -3662,12 +3662,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     sheets.forEach(function(s, i) {{ files.push({{name: 'xl/worksheets/sheet' + (i + 1) + '.xml', text: _sheetXml(s.rows, s.widths)}}); }});
     return _zipStore(files);
   }}
-  function _downloadBlob(blob, filename) {{
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename; a.style.display = 'none';
-    document.body.appendChild(a); a.click();
-    setTimeout(function() {{ document.body.removeChild(a); URL.revokeObjectURL(url); }}, 1500);
+  // 支援「另存新檔」對話框的瀏覽器（Chrome / Edge 桌機版）讓使用者選位置與檔名；其他瀏覽器退回直接下載
+  function _saveBlobAs(blob, filename) {{
+    function fallback() {{
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(function() {{ document.body.removeChild(a); URL.revokeObjectURL(url); }}, 1500);
+      return Promise.resolve(true);
+    }}
+    if (!window.showSaveFilePicker) return fallback();
+    return window.showSaveFilePicker({{
+      suggestedName: filename,
+      types: [{{description: 'Excel 活頁簿', accept: {{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']}}}}]
+    }}).then(function(handle) {{
+      return handle.createWritable().then(function(w) {{ return w.write(blob).then(function() {{ return w.close(); }}); }});
+    }}).then(function() {{ return true; }}, function(e) {{
+      if (e && e.name === 'AbortError') return false;
+      return fallback();
+    }});
   }}
   function showClipToast(msg) {{
     var t = document.getElementById('clip-toast');
@@ -3720,8 +3734,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         {{name: '條文明細', rows: artRows, widths: [30, 10, 60, 10, 12, 60, 60, 12, 22, 24]}}
       ]);
       var d = new Date(), p = function(n) {{ return String(n).padStart(2, '0'); }};
-      _downloadBlob(blob, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx');
-      showClipToast('已匯出 ' + laws.length + ' 部法規的鑑別表');
+      _saveBlobAs(blob, '職安法規鑑別表_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx')
+        .then(function(saved) {{ showClipToast(saved ? '已匯出 ' + laws.length + ' 部法規的鑑別表' : '已取消匯出'); }});
     }} catch (e) {{
       showClipToast('匯出失敗：' + (e && e.message ? e.message : e));
     }}
