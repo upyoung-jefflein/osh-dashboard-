@@ -5207,7 +5207,8 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
             return {**item, "source": f"https://law.moj.gov.tw/LawClass/LawSearchResult.aspx?ty=keyword&p=&q={q}"}
         return item
 
-    now = datetime.now()
+    from datetime import timedelta, timezone
+    now = datetime.now(timezone(timedelta(hours=8)))  # GitHub Actions 主機是 UTC，頁首要顯示台灣時間
     html = HTML_TEMPLATE.format(
         generated_at=now.strftime("%Y-%m-%d %H:%M"),
         generated_date=now.strftime("%Y-%m-%d"),
