@@ -1579,93 +1579,139 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>職安法規觀測站</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
+  /* ── UpYoung design tokens ── */
   :root {{
-    --paper:#F4EFE2; --card:#FBF8EF; --ink:#1E2B3A; --ink-soft:#4C5A6B;
-    --stamp:#9C2B22; --brass:#A8842E; --border:rgba(30,43,58,0.14);
-    --green:#1a7340; --amber:#8c5e00; --hover:rgba(30,43,58,0.06);
-    --blue:#2563eb; --font-sz:11.5px;
-    --radius:4px; --shadow:0 1px 3px rgba(30,43,58,.08),0 1px 2px rgba(30,43,58,.04);
-    --sidebar-bg:#EDE8D6;
+    --brand-blue:#004098; --brand-yellow:#FABE00;
+    --primary:#004098; --primary-hover:#0052c2; --primary-light:#eff6ff;
+    --text-heading:#111827; --text:#1e2a3a; --text-2:#6b7280; --text-3:#9ca3af;
+    --surface:#ffffff; --surface-inverse:#1a2535;
+    --bg:#f7f8fa; --bg-subtle:#f9fafb; --bg-muted:#f3f4f6;
+    --border:#e5e7eb; --border-light:rgba(0,0,0,0.05);
+    --success:#257a47; --success-bg:#eaf5ee;
+    --warning:#a07010; --warning-bg:#faf3dc;
+    --danger:#dc2626;  --danger-bg:#fef2f2;
+    --info:#004098;    --info-bg:#eff6ff;
+    --blue:#2b5fa8; --blue-mid:#3d72bf; --blue-light:#eef3fa; --blue-dark:#1e4276;
+    --yellow:#d4a017; --yellow-light:#faf3dc;
+    --radius:8px; --radius-lg:16px;
+    --shadow-level1:0 1px 2px rgba(0,0,0,0.04);
+    --shadow-level2:0 4px 20px rgba(0,0,0,0.08);
+    --shadow-level3:0 12px 32px rgba(0,0,0,0.12);
+    --white:#ffffff; --black:#000000;
+    /* 專案擴充 */
+    --osh-sidebar-w:240px; --osh-topbar-h:64px;
+    --osh-danger-line:#f5c2c2; --osh-success-line:#bfe0cb; --osh-warning-line:#ecd9a0;
+    --osh-focus:0 0 0 3px rgba(43,95,168,0.1);
+    /* 舊變數名 → 新 token（JS 內的 inline style 仍在用） */
+    --paper:var(--bg); --card:var(--surface); --ink:var(--text); --ink-soft:var(--text-2);
+    --stamp:var(--blue); --brass:var(--yellow); --green:var(--success); --amber:var(--warning);
+    --hover:var(--bg-muted); --shadow:var(--shadow-level1); --sidebar-bg:var(--surface);
   }}
   [data-theme="dark"] {{
-    --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
-    --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
-    --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
-    --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
-    --sidebar-bg:#1a1a1a;
+    --primary:#7aa7e6; --primary-hover:#93b8ec; --primary-light:#1b2a40; --brand-blue:#7aa7e6;
+    --text-heading:#f3f4f6; --text:#e5e7eb; --text-2:#9ca3af; --text-3:#6b7280;
+    --surface:#1b2230; --surface-inverse:#e5e7eb;
+    --bg:#121722; --bg-subtle:#161c28; --bg-muted:#252d3c;
+    --border:#2e3747; --border-light:rgba(255,255,255,0.06);
+    --success:#5cc68a; --success-bg:rgba(92,198,138,0.12);
+    --warning:#e0b04a; --warning-bg:rgba(224,176,74,0.12);
+    --danger:#f87171;  --danger-bg:rgba(248,113,113,0.12);
+    --info:#7aa7e6;    --info-bg:rgba(122,167,230,0.12);
+    --blue:#7aa7e6; --blue-mid:#93b8ec; --blue-light:rgba(122,167,230,0.14); --blue-dark:#b9d0f2;
+    --yellow:#e0b04a; --yellow-light:rgba(224,176,74,0.12);
+    --osh-danger-line:rgba(248,113,113,0.35); --osh-success-line:rgba(92,198,138,0.35); --osh-warning-line:rgba(224,176,74,0.35);
+    --shadow-level1:0 1px 2px rgba(0,0,0,0.3); --shadow-level2:0 4px 20px rgba(0,0,0,0.4); --shadow-level3:0 12px 32px rgba(0,0,0,0.5);
+    --osh-focus:0 0 0 3px rgba(122,167,230,0.25);
   }}
   @media(prefers-color-scheme:dark){{
     :root:not([data-theme="light"]){{
-      --paper:#181818; --card:#242424; --ink:#e4dfd5; --ink-soft:#888;
-      --stamp:#d95c52; --brass:#c9a050; --border:rgba(255,255,255,0.13);
-      --green:#34d399; --amber:#fbbf24; --hover:rgba(255,255,255,0.06);
-      --blue:#60a5fa; --shadow:0 1px 3px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.18);
-      --sidebar-bg:#1a1a1a;
+      --primary:#7aa7e6; --primary-hover:#93b8ec; --primary-light:#1b2a40; --brand-blue:#7aa7e6;
+      --text-heading:#f3f4f6; --text:#e5e7eb; --text-2:#9ca3af; --text-3:#6b7280;
+      --surface:#1b2230; --surface-inverse:#e5e7eb;
+      --bg:#121722; --bg-subtle:#161c28; --bg-muted:#252d3c;
+      --border:#2e3747; --border-light:rgba(255,255,255,0.06);
+      --success:#5cc68a; --success-bg:rgba(92,198,138,0.12);
+      --warning:#e0b04a; --warning-bg:rgba(224,176,74,0.12);
+      --danger:#f87171;  --danger-bg:rgba(248,113,113,0.12);
+      --info:#7aa7e6;    --info-bg:rgba(122,167,230,0.12);
+      --blue:#7aa7e6; --blue-mid:#93b8ec; --blue-light:rgba(122,167,230,0.14); --blue-dark:#b9d0f2;
+      --yellow:#e0b04a; --yellow-light:rgba(224,176,74,0.12);
+      --osh-danger-line:rgba(248,113,113,0.35); --osh-success-line:rgba(92,198,138,0.35); --osh-warning-line:rgba(224,176,74,0.35);
+      --shadow-level1:0 1px 2px rgba(0,0,0,0.3); --shadow-level2:0 4px 20px rgba(0,0,0,0.4); --shadow-level3:0 12px 32px rgba(0,0,0,0.5);
+      --osh-focus:0 0 0 3px rgba(122,167,230,0.25);
     }}
   }}
   *{{ box-sizing:border-box; margin:0; padding:0; }}
-  body{{ font-family:"Inter","Noto Sans TC",-apple-system,sans-serif; background:var(--paper); color:var(--ink); line-height:1.55; font-size:var(--font-sz); transition:background .25s,color .25s;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    text-rendering:optimizeLegibility; font-feature-settings:"kern" 1,"liga" 1; }}
-  /* ── 頂部固定列 ── */
-  .topbar{{ position:fixed; top:0; left:0; right:0; height:52px; background:var(--card);
-    border-bottom:1px solid var(--border); border-top:3px solid var(--stamp);
-    display:flex; align-items:center; padding:0 20px; gap:14px;
-    z-index:300; box-shadow:0 2px 8px rgba(30,43,58,.08); }}
-  .topbar-brand{{ display:flex; align-items:center; gap:12px; flex-shrink:0; }}
-  .topbar-brand h1{{ font-family:"Noto Serif TC",serif; font-weight:900; font-size:15.5px;
-    letter-spacing:-.01em; margin:0; color:var(--ink); }}
-  .topbar-divider{{ width:1px; height:16px; background:var(--border); flex-shrink:0; }}
-  .topbar-subtitle{{ font-size:10.5px; color:var(--ink-soft); letter-spacing:.02em; }}
-  .topbar-right{{ margin-left:auto; display:flex; align-items:center; gap:10px; flex-shrink:0; }}
-  .topbar-meta{{ font-size:10.5px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; letter-spacing:.01em; font-variant-numeric:tabular-nums; }}
+  body{{ font-family:"Noto Sans TC","Noto Sans",sans-serif; background:var(--bg); color:var(--text); line-height:1.6; font-size:0.875rem;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; overflow-x:hidden; }}
+  button, input, select, textarea{{ font-family:inherit; color:inherit; }}
+  :focus-visible{{ outline:none; box-shadow:var(--osh-focus); border-color:var(--blue); }}
+  .ti{{ font-size:1.25rem; line-height:1; flex-shrink:0; }}
+  /* ── 頂部列 ── */
+  .topbar{{ position:fixed; top:0; left:var(--osh-sidebar-w); right:0; height:var(--osh-topbar-h); background:var(--surface);
+    border-bottom:1px solid var(--border-light); display:flex; align-items:center; padding:0 24px; gap:12px; z-index:300; }}
+  .topbar-brand{{ display:none; align-items:center; gap:8px; flex-shrink:0; min-width:0; }}
+  .topbar-brand h1{{ font-size:1rem; font-weight:700; color:var(--text-heading); letter-spacing:-0.2px; white-space:nowrap; }}
+  .topbar-meta{{ display:flex; align-items:center; gap:8px; font-size:0.8125rem; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; font-variant-numeric:tabular-nums; }}
+  .topbar-meta .ti{{ font-size:1rem; color:var(--text-3); }}
+  .topbar-meta b{{ color:var(--text); font-weight:600; }}
+  .topbar-meta .sep{{ width:1px; height:12px; background:var(--border); }}
+  .topbar-right{{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0; }}
+  .icon-btn{{ height:36px; min-width:36px; border-radius:var(--radius); display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2); cursor:pointer; transition:all .15s ease; padding:0 8px; font-size:0.8125rem; }}
+  .icon-btn:hover{{ background:var(--bg-muted); color:var(--text); }}
   /* ── 左側選單 ── */
-  .sidebar{{ position:fixed; top:52px; left:0; bottom:0; width:176px; background:var(--sidebar-bg);
-    border-right:1px solid var(--border); z-index:200; display:flex; flex-direction:column;
-    padding:6px 0; overflow-y:auto; }}
-  .sidebar-section-label{{ font-size:8.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--ink-soft); padding:10px 12px 2px; opacity:.6; }}
-  .sidebar-btn{{ display:flex; align-items:center; gap:7px; width:100%; padding:6px 12px;
-    border:none; background:transparent; cursor:pointer; text-align:left;
-    font-family:inherit; color:var(--ink-soft); transition:all .15s;
-    border-left:3px solid transparent; border-radius:0 4px 4px 0; margin-right:6px; }}
-  .sidebar-btn:hover{{ background:rgba(30,43,58,.06); color:var(--ink); }}
-  .sidebar-btn.active{{ color:var(--stamp); font-weight:600; background:rgba(156,43,34,.08); border-left-color:var(--stamp); }}
-  .snav-icon{{ font-size:13px; flex-shrink:0; opacity:.8; }}
-  .snav-label{{ font-size:11.5px; }}
-  .sidebar-footer{{ margin-top:auto; padding:10px 12px; font-size:10px; color:var(--ink-soft);
-    border-top:1px solid var(--border); line-height:1.8; opacity:.8; }}
+  .sidebar{{ position:fixed; top:0; left:0; bottom:0; width:var(--osh-sidebar-w); background:var(--surface);
+    border-right:1px solid var(--border); z-index:310; display:flex; flex-direction:column; overflow:hidden; }}
+  .sidebar-logo{{ height:var(--osh-topbar-h); padding:0 16px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; gap:8px; flex-shrink:0; }}
+  .logo-mark{{ width:32px; height:32px; border-radius:var(--radius); background:var(--brand-blue); color:var(--white); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }}
+  .sidebar-logo-text{{ display:flex; flex-direction:column; min-width:0; }}
+  .sidebar-logo-text b{{ font-size:1rem; font-weight:700; color:var(--text-heading); letter-spacing:-0.2px; white-space:nowrap; line-height:1.25; }}
+  .sidebar-logo-text span{{ font-size:0.6875rem; color:var(--text-3); white-space:nowrap; }}
+  .sidebar-nav{{ flex:1; overflow-y:auto; padding:12px 8px; }}
+  .sidebar-section-label{{ font-size:0.6875rem; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--text-3); padding:12px 12px 4px; white-space:nowrap; }}
+  .sidebar-section-label:first-child{{ padding-top:0; }}
+  .sidebar-btn{{ display:flex; align-items:center; gap:8px; width:100%; min-height:40px; padding:8px 12px; margin-bottom:2px;
+    border:none; border-left:3px solid transparent; border-radius:var(--radius); background:transparent; cursor:pointer; text-align:left;
+    color:var(--text-2); font-size:0.875rem; font-weight:500; transition:all .15s ease; white-space:nowrap; }}
+  .sidebar-btn:hover{{ background:var(--bg-muted); color:var(--text-heading); }}
+  .sidebar-btn.active{{ background:var(--primary-light); color:var(--brand-blue); border-left-color:var(--brand-blue); font-weight:600; }}
+  .snav-icon{{ width:26px; display:inline-flex; justify-content:center; }}
+  .sidebar-footer{{ padding:12px 16px; font-size:0.75rem; color:var(--text-3); border-top:1px solid var(--border-light); line-height:1.6; display:flex; gap:8px; align-items:flex-start; }}
+  .sidebar-footer .ti{{ font-size:1rem; margin-top:1px; }}
   /* ── 主內容區 ── */
-  .main-area{{ margin-left:176px; margin-top:52px; padding:20px 24px 80px; }}
+  .main-area{{ margin-left:var(--osh-sidebar-w); padding:calc(var(--osh-topbar-h) + 28px) 32px 80px; min-width:0; }}
   nav.tabs{{ display:none; }}
   .tabpanel{{ display:none; }}
-  .tabpanel.active{{ display:block; }}
-  h2{{ font-family:"Noto Serif TC",serif; font-size:16px; margin-bottom:4px; }}
-  h3{{ font-family:"Noto Serif TC",serif; font-size:14px; font-weight:700; margin:20px 0 8px; }}
-  .section-note{{ color:var(--ink-soft); font-size:12px; line-height:1.75; margin-bottom:14px; }}
-  .search{{ width:100%; padding:8px 12px; border:1px solid var(--border); font-size:13px;
-    background:var(--card); color:var(--ink); margin-bottom:10px;
-    border-radius:var(--radius); transition:border-color .15s; outline:none; }}
-  .search:focus{{ border-color:var(--stamp); }}
-  .controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }}
-  .controls button{{ font-size:13px; padding:5px 12px; border:1px solid var(--border);
-    background:transparent; cursor:pointer; color:var(--ink);
-    border-radius:var(--radius); transition:all .15s; }}
-  .controls button:hover:not(.active){{ border-color:var(--ink-soft); }}
-  .controls button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
+  .tabpanel.active{{ display:block; animation:fadeInUp .2s ease; }}
+  @keyframes fadeInUp{{ from{{ opacity:0; transform:translateY(12px); }} to{{ opacity:1; transform:translateY(0); }} }}
+  h2{{ font-size:1.125rem; font-weight:600; color:var(--text-heading); letter-spacing:-0.2px; line-height:1.25; margin-bottom:4px; }}
+  h3{{ font-size:1rem; font-weight:600; color:var(--text); letter-spacing:-0.2px; line-height:1.25; margin:24px 0 8px; }}
+  .section-note{{ color:var(--text-2); font-size:0.8125rem; line-height:1.7; margin:4px 0 16px; max-width:72em; }}
+  /* ── 共用表單控制 ── */
+  .search, .reg-toolbar input, .scenario-search, .chg-controls select, .chg-controls input{{ width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--border);
+    border-radius:var(--radius); background:var(--surface); color:var(--text); font-size:0.875rem; outline:none; transition:border-color .15s, box-shadow .15s; }}
+  .search:focus, .reg-toolbar input:focus, .scenario-search:focus, .chg-controls select:focus, .chg-controls input:focus{{ border-color:var(--blue); box-shadow:var(--osh-focus); }}
+  .search{{ margin-bottom:12px; }}
+  /* 篩選類按鈕：36px 高的 ghost 按鈕，啟用時藍色 */
+  .controls, .reg-controls{{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }}
+  .controls button, .reg-controls button, .view-toggle button, .view-btns button, .penalty-filter-btn{{ display:inline-flex; align-items:center; gap:4px;
+    min-height:36px; padding:4px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text-2);
+    font-size:0.8125rem; font-weight:500; cursor:pointer; white-space:nowrap; transition:all .15s ease; }}
+  .controls button:hover:not(.active), .reg-controls button:hover:not(.active), .view-toggle button:hover:not(.active), .view-btns button:hover:not(.active), .penalty-filter-btn:hover:not(.active){{ background:var(--bg-muted); color:var(--text); }}
+  .controls button.active, .reg-controls button.active, .view-toggle button.active, .penalty-filter-btn.active{{ border-color:var(--blue-mid); color:var(--blue); background:var(--blue-light); font-weight:600; }}
+  .controls button .ti, .reg-controls button .ti, .view-btns button .ti, .penalty-filter-btn .ti, .view-toggle button .ti{{ font-size:1rem; }}
   #read-progress{{position:fixed;top:0;left:0;height:3px;width:0%;background:var(--stamp);z-index:400;transition:width .1s linear;pointer-events:none;}}
-  .view-toggle{{display:flex;gap:4px;margin-bottom:12px;}}
-  .view-toggle button{{padding:4px 12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--ink-soft);border-radius:3px;}}
-  .view-toggle button.active{{border-color:var(--stamp);color:var(--stamp);background:rgba(156,43,34,.06);font-weight:600;}}
-  .filter-badge{{display:inline-block;background:var(--stamp);color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle;}}
-  .skel-item{{background:var(--card);border:1px solid var(--border);border-left:3px solid rgba(168,132,46,.2);padding:14px 16px;margin-bottom:10px;border-radius:0 4px 4px 0;}}
-  .skel-line{{height:13px;border-radius:4px;margin-bottom:8px;background:linear-gradient(90deg,var(--border) 25%,rgba(168,132,46,.2) 50%,var(--border) 75%);background-size:400% 100%;animation:skel-shine 1.4s ease-in-out infinite;}}
+  .skel-item{{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--warning-bg);padding:14px 16px;margin-bottom:10px;border-radius:0 4px 4px 0;}}
+  .skel-line{{height:13px;border-radius:6px;margin-bottom:8px;background:linear-gradient(90deg,var(--border) 25%,var(--warning-bg) 50%,var(--border) 75%);background-size:400% 100%;animation:skel-shine 1.4s ease-in-out infinite;}}
   .skel-line.w40{{width:40%;}}.skel-line.w70{{width:70%;}}
   @keyframes skel-shine{{0%{{background-position:100% 0}}100%{{background-position:-100% 0}}}}
   @keyframes item-in{{from{{opacity:0;transform:translateY(5px)}}to{{opacity:1;transform:none}}}}
-  .swipe-save-hint{{position:absolute;left:0;top:0;bottom:0;width:64px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;pointer-events:none;transform:translateX(-64px);transition:transform .15s;}}
+  .swipe-save-hint{{position:absolute;left:0;top:0;bottom:0;width:64px;background:var(--green);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.25rem;pointer-events:none;transform:translateX(-64px);transition:transform .15s;}}
   .item.will-save .swipe-save-hint{{transform:translateX(0);}}
   .item{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--brass);
     padding:11px 14px; margin-bottom:8px; position:relative; overflow:hidden;
@@ -1674,168 +1720,87 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .item:hover{{ box-shadow:0 4px 12px rgba(30,43,58,.1); }}
   .item.read{{ opacity:.55; }}
   .item .row{{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }}
-  .item .date{{ font-size:11px; color:var(--ink-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }}
-  .item h3{{ margin:3px 0 5px; font-size:13.5px; font-family:"Noto Sans TC",sans-serif; font-weight:600; }}
+  .item .date{{ font-size:0.75rem; color:var(--ink-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }}
+  .item h3{{ margin:3px 0 5px; font-size:0.875rem; font-family:"Noto Sans TC","Noto Sans",sans-serif; font-weight:600; }}
   .item h3 a{{ color:var(--ink); text-decoration:none; }}
   .item h3 a:hover{{ color:var(--stamp); text-decoration:underline; }}
-  .item .src{{ font-size:11px; color:var(--ink-soft); }}
+  .item .src{{ font-size:0.75rem; color:var(--ink-soft); }}
   .item .actions{{ display:flex; gap:6px; margin-top:7px; }}
-  .item .actions button{{ font-size:11px; padding:3px 8px; border:1px solid var(--border);
+  .item .actions button{{ font-size:0.75rem; padding:3px 8px; border:1px solid var(--border);
     background:transparent; cursor:pointer; border-radius:var(--radius); transition:all .15s; }}
   .item .actions button.on{{ border-color:var(--stamp); color:var(--stamp); }}
-  .also{{ font-size:11px; color:var(--ink-soft); margin-top:4px; }}
-  .empty-state{{ text-align:center; padding:56px 20px; color:var(--ink-soft); }}
-  .empty-state .icon{{ font-size:36px; display:block; margin-bottom:14px; }}
-  .empty-state p{{ font-size:13.5px; line-height:1.8; max-width:400px; margin:0 auto; }}
+  .also{{ font-size:0.75rem; color:var(--ink-soft); margin-top:4px; }}
   #newsList.list-view .item{{display:flex;align-items:center;padding:9px 14px;gap:10px;}}
   #newsList.list-view .item .row{{flex-shrink:0;width:78px;flex-direction:column;gap:1px;flex-wrap:nowrap;}}
   #newsList.list-view .item .src{{display:none;}}
-  #newsList.list-view .item .date{{font-size:11px;}}
-  #newsList.list-view .item h3{{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;font-size:13px;min-width:0;}}
+  #newsList.list-view .item .date{{font-size:0.75rem;}}
+  #newsList.list-view .item h3{{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;font-size:0.8125rem;min-width:0;}}
   #newsList.list-view .item .also{{display:none;}}
   #newsList.list-view .item .actions button[data-act="read"]{{display:none;}}
   #newsList.list-view .item .actions{{margin-top:0;}}
-  .reg-toolbar{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }}
-  .reg-toolbar input{{ flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border);
-    font-size:13px; background:var(--card); color:var(--ink);
-    border-radius:var(--radius); transition:border-color .15s; outline:none; }}
-  .reg-toolbar input:focus{{ border-color:var(--stamp); }}
-  .cat-filters{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }}
-  .cat-btn{{ font-size:11px; padding:3px 11px; border:1px solid var(--border); background:var(--card);
-    cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
-  .cat-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
-  .reg-controls{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; align-items:center; }}
-  .reg-controls .label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
-  .reg-controls button{{ font-size:12px; padding:3px 10px; border:1px solid var(--border);
-    background:transparent; cursor:pointer; color:var(--ink);
-    border-radius:var(--radius); transition:all .15s; }}
-  .reg-controls button:hover:not(.active){{ border-color:var(--ink-soft); }}
-  .reg-controls button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
-  .reg-controls .sep{{ width:1px; height:20px; background:var(--border); margin:0 4px; align-self:center; }}
-  .registry-meta{{ font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }}
-  .table-scroll{{ overflow-x:auto; border:1px solid var(--border); margin-bottom:8px; border-radius:6px; box-shadow:var(--shadow); }}
-  table.registry-table{{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:560px; }}
-  .registry-table th{{ text-align:left; font-weight:700; font-size:10px; color:var(--ink-soft);
-    padding:8px 12px; background:var(--card); border-bottom:2px solid var(--border);
-    white-space:nowrap; text-transform:uppercase; letter-spacing:.07em; }}
-  .registry-table td{{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; transition:background .12s; font-variant-numeric:tabular-nums; }}
-  .registry-table td:first-child{{ vertical-align:middle; }}
   /* 名稱欄（第2欄）：取得剩餘空間；其他短欄：收縮到內容寬度 */
-  .registry-table th:nth-child(2),.registry-table td:nth-child(2){{ min-width:180px; }}
-  .registry-table th:nth-child(1),.registry-table td:nth-child(1),
-  .registry-table th:nth-child(3),.registry-table td:nth-child(3),
-  .registry-table th:nth-child(4),.registry-table td:nth-child(4),
-  .registry-table th:nth-child(5),.registry-table td:nth-child(5),
-  .registry-table th:nth-child(6),.registry-table td:nth-child(6){{ width:1%; white-space:nowrap; }}
-  .registry-table tr:last-child td{{ border-bottom:none; }}
-  .registry-table tr:nth-child(even) td{{ background:rgba(168,132,46,.025); }}
-  .registry-table tr:hover td{{ background:rgba(168,132,46,.07); }}
-  .rname{{ font-weight:500; }}
-  .rdate{{ white-space:nowrap; font-size:13px; }}
-  .rdate.unconfirmed{{ color:var(--ink-soft); font-style:italic; }}
-  .tier-tag{{ display:inline-block; font-size:10.5px; padding:2px 7px; white-space:nowrap;
-    border:1px solid currentColor; border-radius:3px; font-weight:600; }}
-  .tier-tag.act{{ color:var(--stamp); }}
-  .tier-tag.reg{{ color:var(--brass); }}
-  .tier-tag.dir,.tier-tag.notice{{ color:var(--ink-soft); }}
-  .cat-tag{{ display:inline-block; font-size:10.5px; padding:2px 8px; border:1px solid var(--border);
-    color:var(--ink-soft); background:rgba(0,0,0,.03); border-radius:99px; white-space:nowrap; }}
-  .badge{{ display:inline-block; font-size:10px; padding:2px 6px; border-radius:99px; margin-left:5px;
-    vertical-align:middle; white-space:nowrap; line-height:1.4; font-weight:600; }}
-  .badge.recent{{ background:#fff3cd; color:var(--amber); border:1px solid #ffc107; }}
-  .unread-dot{{ display:inline-block; width:7px; height:7px; background:#3b82f6; border-radius:50%;
-    margin-right:5px; vertical-align:middle; flex-shrink:0; }}
-  .unread-law-count{{ font-size:11px; color:#3b82f6; font-weight:700; white-space:nowrap; padding:0 2px; }}
-  .badge.new-law{{ background:#d1fae5; color:var(--green); border:1px solid #6ee7b7; }}
-  .star-btn{{ background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px;
-    color:#ccc; line-height:1; vertical-align:middle; transition:color .15s, transform .12s; }}
-  .star-btn:hover{{ transform:scale(1.2); }}
-  .star-btn.on{{ color:#e6a817; }}
-  .rname-btn{{ background:none; border:none; cursor:pointer; text-align:left; padding:0;
-    font-size:inherit; font-family:inherit; color:var(--ink); font-weight:500;
-    text-decoration:underline dotted; text-underline-offset:3px; transition:color .15s; }}
-  .rname-btn:hover{{ color:var(--blue); text-decoration-style:solid; }}
-  .src-link{{ font-size:12px; color:var(--ink-soft); text-decoration:none; }}
-  .src-link:hover{{ color:var(--stamp); }}
-  .src-badge{{ display:inline-block; font-size:9px; font-weight:700; letter-spacing:.04em;
-    padding:1px 5px; border-radius:3px; vertical-align:middle; margin-left:4px; }}
-  .src-xml{{ background:#dbeafe; color:#1e40af; }}
-  .src-static{{ background:#f3f4f6; color:#6b7280; }}
-  .src-guide{{ background:#fef3c7; color:#92400e; }}
-  .tier-tag.guide{{ background:rgba(217,119,6,.1); color:#92400e; border:1px solid rgba(217,119,6,.25); }}
   /* ── 圖例面板 ── */
   #legend-panel{{ display:none; border:1px solid var(--border); border-radius:6px;
-    background:var(--card); padding:12px 14px; margin:8px 0; font-size:11.5px;
+    background:var(--card); padding:12px 14px; margin:8px 0; font-size:0.75rem;
     color:var(--ink); box-shadow:var(--shadow); }}
   #legend-panel.open{{ display:block; }}
   .legend-row{{ display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center;
     margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
   .legend-row:last-child{{ margin-bottom:0; padding-bottom:0; border-bottom:none; }}
-  .legend-label{{ font-size:10px; font-weight:700; color:var(--ink-soft); letter-spacing:.05em;
+  .legend-label{{ font-size:0.6875rem; font-weight:700; color:var(--ink-soft); letter-spacing:.05em;
     text-transform:uppercase; min-width:56px; flex-shrink:0; }}
   .legend-item{{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
-    font-size:11px; color:var(--ink-soft); }}
-  .legend-dots{{ display:inline-flex; gap:2px; }}
-  .legend-dot{{ width:8px; height:8px; border-radius:50%; }}
+    font-size:0.75rem; color:var(--ink-soft); }}
   /* ── Side Drawer ── */
-  #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200;
+  #drawer-overlay{{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:400;
     opacity:0; pointer-events:none; transition:opacity .25s; cursor:pointer; }}
   #drawer-overlay.open{{ opacity:1; pointer-events:auto; }}
   #law-drawer{{ position:fixed; top:0; right:0; width:min(480px,95vw); height:100vh; height:100dvh;
-    background:var(--card); z-index:201; box-shadow:-6px 0 32px rgba(0,0,0,.18);
+    background:var(--card); z-index:401; box-shadow:-6px 0 32px rgba(0,0,0,.18);
     border-left:1px solid var(--border);
     transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column; overflow:hidden; }}
   #law-drawer.open{{ transform:translateX(0); }}
   #drawer-header{{ padding:16px 18px 12px; border-bottom:1px solid var(--border);
     display:flex; align-items:flex-start; gap:10px; flex-shrink:0; }}
-  #drawer-header h2{{ margin:0; font-size:15px; flex:1; line-height:1.5; }}
+  #drawer-header h2{{ margin:0; font-size:1rem; flex:1; line-height:1.5; }}
   #drawer-header h2 a{{ color:var(--ink); text-decoration:none; }}
   #drawer-header h2 a:hover{{ color:var(--blue); }}
-  #drawer-close{{ background:none; border:none; cursor:pointer; font-size:20px;
+  #drawer-close{{ background:none; border:none; cursor:pointer; font-size:1.25rem;
     color:var(--ink-soft); padding:3px 5px; line-height:1; flex-shrink:0; margin-top:1px;
     border-radius:var(--radius); transition:color .15s, background .15s; }}
   #drawer-close:hover{{ color:var(--ink); background:var(--hover); }}
   #drawer-body{{ flex:1; overflow-y:auto; padding:16px 18px 24px; }}
   .drawer-footer-bar{{ display:none; }}
-  .drawer-meta{{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; font-size:12.5px; }}
+  .drawer-meta{{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; font-size:0.8125rem; }}
   .drawer-meta span{{ background:var(--hover); border-radius:99px; padding:3px 9px;
     border:1px solid var(--border); }}
   .drawer-section{{ margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }}
   .drawer-section:last-child{{ border-bottom:none; padding-bottom:0; }}
-  .drawer-section h3{{ font-size:11px; font-weight:700; color:var(--ink-soft);
+  .drawer-section h3{{ font-size:0.75rem; font-weight:700; color:var(--ink-soft);
     text-transform:uppercase; letter-spacing:.08em; margin:0 0 10px;
     display:flex; align-items:center; gap:6px; }}
   .drawer-section h3::after{{ content:""; flex:1; height:1px; background:var(--border); }}
-  .drawer-summary{{ font-size:13px; line-height:1.9; color:var(--ink);
+  .drawer-summary{{ font-size:0.8125rem; line-height:1.9; color:var(--ink);
     border-left:3px solid var(--amber); padding:8px 12px;
-    background:rgba(168,132,46,.04); border-radius:0 4px 4px 0;
+    background:var(--warning-bg); border-radius:0 4px 4px 0;
     white-space:pre-wrap; }}
-  .art-chip{{ display:inline-block; padding:3px 9px; border-radius:4px;
-    background:var(--hover); font-size:12px; color:var(--ink); text-decoration:none;
+  .art-chip{{ display:inline-block; padding:3px 9px; border-radius:6px;
+    background:var(--hover); font-size:0.8125rem; color:var(--ink); text-decoration:none;
     border:1px solid var(--border); white-space:nowrap; transition:all .15s; }}
-  a.art-chip:hover{{ background:var(--blue); color:#fff; border-color:var(--blue); transform:translateY(-1px); box-shadow:0 2px 6px rgba(37,99,235,.3); }}
+  a.art-chip:hover{{ background:var(--blue); color:var(--white); border-color:var(--blue); transform:translateY(-1px); box-shadow:0 2px 6px var(--blue-light); }}
   .art-chip-deleted{{ text-decoration:line-through; color:var(--ink-soft); opacity:.6; }}
-  .deleted-arts-toggle{{ cursor:pointer; font-size:12px; color:var(--ink-soft); user-select:none; list-style:none; }}
+  .deleted-arts-toggle{{ cursor:pointer; font-size:0.8125rem; color:var(--ink-soft); user-select:none; list-style:none; }}
   .deleted-arts-toggle::-webkit-details-marker{{ display:none; }}
-  .deleted-arts-toggle::before{{ content:"▶ "; font-size:9px; }}
+  .deleted-arts-toggle::before{{ content:"▶ "; font-size:0.6875rem; }}
   details.deleted-arts-section[open] .deleted-arts-toggle::before{{ content:"▼ "; }}
-  .art-chip-penalty{{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
-  a.art-chip-penalty:hover{{ background:#b91c1c; color:#fff; border-color:#b91c1c; }}
-  .art-chip-added{{ background:#dcfce7; color:#166534; border-color:#86efac; font-weight:600; }}
-  a.art-chip-added:hover{{ background:#16a34a; color:#fff; border-color:#16a34a; }}
-  .chg-summary{{ margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; }}
-  .chg-chip{{ display:inline-flex; align-items:center; font-size:10.5px; padding:1px 7px;
-    border-radius:99px; font-weight:600; white-space:nowrap; border:1px solid currentColor; line-height:1.6; }}
-  .chg-chip.chg-modified{{ background:rgba(180,83,9,.07); color:#b45309; }}
-  .chg-chip.chg-added{{ background:rgba(22,101,52,.07); color:#15803d; }}
-  .chg-chip.chg-deleted{{ background:rgba(185,28,28,.07); color:#b91c1c; }}
-  [data-theme="dark"] .chg-chip.chg-modified{{ background:rgba(251,191,36,.08); color:#fbbf24; }}
-  [data-theme="dark"] .chg-chip.chg-added{{ background:rgba(52,211,153,.08); color:#34d399; }}
-  [data-theme="dark"] .chg-chip.chg-deleted{{ background:rgba(252,165,165,.08); color:#fca5a5; }}
-  .chg-modified{{ color:#b45309; }} .chg-added{{ color:#166534; }} .chg-deleted{{ color:#b91c1c; }}
+  .art-chip-penalty{{ background:var(--danger-bg); color:var(--danger); border-color:var(--osh-danger-line); font-weight:600; }}
+  a.art-chip-penalty:hover{{ background:var(--danger); color:var(--white); border-color:var(--danger); }}
+  .art-chip-added{{ background:var(--success-bg); color:var(--success); border-color:var(--osh-success-line); font-weight:600; }}
+  a.art-chip-added:hover{{ background:var(--success); color:var(--white); border-color:var(--success); }}
+  .chg-modified{{ color:var(--warning); }} .chg-added{{ color:var(--success); }} .chg-deleted{{ color:var(--danger); }}
   /* 條文新舊對照 */
-  .diff-head{{ font-size:12px; color:var(--ink-soft); margin-bottom:6px; }}
+  .diff-head{{ font-size:0.8125rem; color:var(--ink-soft); margin-bottom:6px; }}
   .diff-counts{{ display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }}
   .diff-tools{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }}
   .diff-card{{ border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--card); }}
@@ -1843,29 +1808,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .diff-card summary{{ display:block; padding:8px 10px; cursor:pointer; list-style:none; }}
   .diff-card summary::-webkit-details-marker{{ display:none; }}
   .diff-sum{{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
-  .diff-sum::before{{ content:"▸"; color:var(--ink-soft); font-size:11px; }}
+  .diff-sum::before{{ content:"▸"; color:var(--ink-soft); font-size:0.75rem; }}
   .diff-card[open] > summary .diff-sum::before{{ content:"▾"; }}
-  .diff-no{{ font-weight:700; font-size:13px; }}
-  .diff-body{{ padding:4px 12px 12px; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
-  .chg-controls{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }}
-  .chg-controls select, .chg-controls input{{ font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:4px;
-    background:var(--card); color:var(--ink); font-family:inherit; }}
-  .chg-controls input{{ flex:1; min-width:180px; }}
-  .chg-date{{ font-size:12px; color:var(--ink-soft); }}
+  .diff-no{{ font-weight:700; font-size:0.8125rem; }}
+  .diff-body{{ padding:4px 12px 12px; font-size:0.8125rem; line-height:1.85; white-space:pre-wrap; word-break:break-all; }}
+  .chg-date{{ font-size:0.8125rem; color:var(--ink-soft); }}
   .chg-modes{{ margin-bottom:12px; }}
-  .draft-badge{{ margin-left:4px; font-weight:700; color:#b91c1c; }}
+  .draft-badge{{ margin-left:4px; font-weight:700; color:var(--danger); }}
   .draft-card{{ border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:8px; background:var(--card); }}
-  .draft-title{{ font-weight:600; font-size:14px; line-height:1.6; margin-bottom:6px; }}
-  .draft-meta{{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:var(--ink-soft); align-items:center; }}
-  .draft-st{{ padding:1px 9px; border-radius:99px; font-weight:700; font-size:11.5px; border:1px solid currentColor; }}
-  .draft-st.open{{ color:#b91c1c; background:rgba(185,28,28,.08); }}
-  .draft-st.done{{ color:#15803d; background:rgba(22,101,52,.08); }}
+  .draft-title{{ font-weight:600; font-size:0.875rem; line-height:1.6; margin-bottom:6px; }}
+  .draft-meta{{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:0.8125rem; color:var(--ink-soft); align-items:center; }}
+  .draft-st{{ padding:1px 9px; border-radius:99px; font-weight:700; font-size:0.75rem; border:1px solid currentColor; }}
+  .draft-st.open{{ color:var(--danger); background:var(--danger-bg); }}
+  .draft-st.done{{ color:var(--success); background:var(--success-bg); }}
   .draft-st.end{{ color:var(--ink-soft); }}
-  .draft-links{{ display:flex; gap:12px; align-items:center; margin-top:8px; font-size:12.5px; flex-wrap:wrap; }}
-  .draft-links a{{ color:var(--blue,#2563eb); text-decoration:none; }}
+  .draft-links{{ display:flex; gap:12px; align-items:center; margin-top:8px; font-size:0.8125rem; flex-wrap:wrap; }}
+  .draft-links a{{ color:var(--blue,var(--blue)); text-decoration:none; }}
   .chg-open{{ margin-left:auto; }}
-  .pen-table{{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }}
-  .pen-table th{{ text-align:left; padding:8px 10px; background:var(--hover); border-bottom:2px solid var(--border); white-space:nowrap; font-size:12px; }}
+  .pen-table{{ width:100%; border-collapse:collapse; font-size:0.8125rem; min-width:640px; }}
+  .pen-table th{{ text-align:left; padding:8px 10px; background:var(--hover); border-bottom:2px solid var(--border); white-space:nowrap; font-size:0.8125rem; }}
   .pen-table th.pen-th{{ cursor:pointer; user-select:none; }}
   .pen-table th.pen-th.on{{ color:var(--stamp); }}
   .pen-table td{{ padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }}
@@ -1873,7 +1834,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .pen-table tbody tr:hover td{{ background:var(--hover); }}
   .pen-law{{ font-weight:600; min-width:150px; }}
   .pen-no, .pen-fine{{ white-space:nowrap; font-variant-numeric:tabular-nums; }}
-  .pen-fine{{ color:#b91c1c; font-weight:600; }}
+  .pen-fine{{ color:var(--danger); font-weight:600; }}
   .pen-text{{ color:var(--ink-soft); min-width:220px; }}
   @media (max-width:640px) {{
     .pen-table{{ min-width:0; }}
@@ -1884,61 +1845,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .hist-section{{ border-bottom:none; }}
   #hist-body{{ margin-top:8px; }}
   .hist-step-body{{ padding:2px 8px 8px; }}
-  .hist-step > summary .diff-no{{ font-size:12.5px; }}
-  .diff-body del{{ background:#fee2e2; color:#991b1b; text-decoration:line-through; }}
-  .diff-body ins{{ background:#dcfce7; color:#166534; text-decoration:underline; text-decoration-color:#16a34a; }}
-  [data-theme="dark"] .diff-body del{{ background:rgba(185,28,28,.3); color:#fecaca; }}
-  [data-theme="dark"] .diff-body ins{{ background:rgba(22,101,52,.35); color:#bbf7d0; }}
+  .hist-step > summary .diff-no{{ font-size:0.8125rem; }}
+  .diff-body del{{ background:var(--danger-bg); color:var(--danger); text-decoration:line-through; }}
+  .diff-body ins{{ background:var(--success-bg); color:var(--success); text-decoration:underline; text-decoration-color:var(--success); }}
+  [data-theme="dark"] .diff-body del{{ background:var(--danger-bg); color:var(--danger-bg); }}
+  [data-theme="dark"] .diff-body ins{{ background:var(--success-bg); color:var(--success-bg); }}
   .latest-rev-block{{ background:var(--hover); border-radius:6px; padding:12px 14px;
-    margin-bottom:8px; font-size:12.5px; border:1px solid var(--border); }}
-  .latest-rev-block h4{{ font-size:11px; font-weight:700; color:var(--ink-soft);
+    margin-bottom:8px; font-size:0.8125rem; border:1px solid var(--border); }}
+  .latest-rev-block h4{{ font-size:0.75rem; font-weight:700; color:var(--ink-soft);
     text-transform:uppercase; letter-spacing:.06em; margin:0 0 8px; }}
-  .latest-rev-row{{ display:flex; gap:8px; align-items:baseline; margin:3px 0; font-size:12px; }}
+  .latest-rev-row{{ display:flex; gap:8px; align-items:baseline; margin:3px 0; font-size:0.8125rem; }}
   .rev-label{{ min-width:3em; font-weight:600; }}
   .rev-arts{{ color:var(--ink-soft); word-break:break-all; }}
   .rev-chips{{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }}
   .cross-ref-list{{ display:flex; flex-direction:column; gap:6px; }}
-  .cross-ref-row{{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:12.5px; }}
+  .cross-ref-row{{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:0.8125rem; }}
   .cross-ref-law{{ color:var(--blue); text-decoration:none; font-weight:600; white-space:nowrap; }}
   .cross-ref-law:hover{{ text-decoration:underline; }}
-  .cross-ref-arts{{ color:var(--ink-soft); font-size:12px; }}
-  .art-chip.art-selected{{ background:var(--blue); color:#fff; border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,130,246,.3); }}
+  .cross-ref-arts{{ color:var(--ink-soft); font-size:0.8125rem; }}
+  .art-chip.art-selected{{ background:var(--blue); color:var(--white); border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-light); }}
   .art-index-toolbar{{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }}
-  .art-search{{ flex:1; min-width:80px; font-size:12px; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); outline:none; }}
+  .art-search{{ flex:1; min-width:80px; font-size:0.8125rem; padding:3px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); outline:none; }}
   .art-search:focus{{ border-color:var(--blue); }}
-  .art-copy-btn{{ font-size:11px; padding:3px 10px; border:1px solid var(--border); border-radius:4px; background:var(--card); cursor:pointer; color:var(--ink-soft); white-space:nowrap; }}
-  .art-copy-btn.active{{ background:var(--blue); color:#fff; border-color:var(--blue); }}
-  .art-chapter-hd{{ font-size:10.5px; font-weight:700; color:var(--ink-soft); margin:8px 0 3px; letter-spacing:.04em; border-bottom:1px solid var(--border); padding-bottom:2px; }}
+  .art-copy-btn{{ font-size:0.75rem; padding:3px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; color:var(--ink-soft); white-space:nowrap; }}
+  .art-copy-btn.active{{ background:var(--blue); color:var(--white); border-color:var(--blue); }}
+  .art-chapter-hd{{ font-size:0.6875rem; font-weight:700; color:var(--ink-soft); margin:8px 0 3px; letter-spacing:.04em; border-bottom:1px solid var(--border); padding-bottom:2px; }}
   .art-chapter-group:first-child .art-chapter-hd{{ margin-top:2px; }}
-  .toast-clip{{ position:fixed; bottom:24px; right:24px; background:#1e293b; color:#fff; font-size:13px; padding:8px 18px; border-radius:6px; z-index:9999; opacity:0; transition:opacity .25s; pointer-events:none; max-width:80vw; word-break:break-all; }}
+  .toast-clip{{ position:fixed; bottom:24px; right:24px; background:var(--surface-inverse); color:var(--white); font-size:0.8125rem; padding:8px 18px; border-radius:6px; z-index:9999; opacity:0; transition:opacity .25s; pointer-events:none; max-width:80vw; word-break:break-all; }}
   .drawer-fulllink{{ display:inline-block; margin-top:10px; padding:7px 16px;
-    background:var(--blue); color:#fff; border-radius:5px; text-decoration:none;
-    font-size:13px; font-weight:600; }}
+    background:var(--blue); color:var(--white); border-radius:6px; text-decoration:none;
+    font-size:0.8125rem; font-weight:600; }}
   .drawer-fulllink:hover{{ opacity:.88; }}
-  .drawer-table-note{{ font-size:12.5px; color:var(--amber); background:#fffbeb;
-    border:1px solid #fde68a; border-radius:4px; padding:7px 10px; }}
-  .table-footnote{{ font-size:12.5px; color:var(--ink-soft); line-height:1.75; margin:4px 0 22px; }}
-  .reg-subhead{{ font-family:"Noto Serif TC",serif; font-size:16px; font-weight:700; margin:26px 0 10px; }}
+  .drawer-table-note{{ font-size:0.8125rem; color:var(--amber); background:var(--warning-bg);
+    border:1px solid var(--osh-warning-line); border-radius:6px; padding:7px 10px; }}
+  .table-footnote{{ font-size:0.8125rem; color:var(--ink-soft); line-height:1.75; margin:4px 0 22px; }}
+  .reg-subhead{{ font-family:"Noto Sans TC","Noto Sans",sans-serif; font-size:1rem; font-weight:700; margin:26px 0 10px; }}
   .law-card{{ background:var(--card); border:1px solid var(--border); padding:18px; margin-bottom:8px; border-radius:6px; box-shadow:var(--shadow); }}
-  .law-card dl{{ display:grid; grid-template-columns:110px 1fr; gap:8px 12px; margin:0; font-size:14px; }}
-  .law-card dt{{ color:var(--ink-soft); font-size:13px; }}
+  .law-card dl{{ display:grid; grid-template-columns:110px 1fr; gap:8px 12px; margin:0; font-size:0.875rem; }}
+  .law-card dt{{ color:var(--ink-soft); font-size:0.8125rem; }}
   .law-card dd{{ margin:0; line-height:1.65; }}
-  .stamp-badge{{ display:inline-block; margin-top:12px; font-size:12px; color:var(--stamp);
-    border:1px solid var(--stamp); padding:3px 10px; border-radius:3px;
+  .stamp-badge{{ display:inline-block; margin-top:12px; font-size:0.8125rem; color:var(--stamp);
+    border:1px solid var(--stamp); padding:3px 10px; border-radius:6px;
     transition:background .15s; }}
-  .stamp-badge:hover{{ background:rgba(156,43,34,.08); }}
+  .stamp-badge:hover{{ background:var(--blue-light); }}
   .stamp-badge a{{ color:inherit; text-decoration:none; }}
   .source-grid{{ display:grid; gap:12px; }}
   .source-card{{ background:var(--card); border:1px solid var(--border); border-left:3px solid var(--stamp); padding:14px 16px; border-radius:0 6px 6px 0; box-shadow:var(--shadow); }}
-  .source-card .org{{ font-weight:600; font-size:14px; }}
-  .source-card .role{{ font-size:12.5px; color:var(--ink-soft); margin:2px 0; }}
-  .source-card .link{{ font-size:12px; margin-top:4px; }}
+  .source-card .org{{ font-weight:600; font-size:0.875rem; }}
+  .source-card .role{{ font-size:0.8125rem; color:var(--ink-soft); margin:2px 0; }}
+  .source-card .link{{ font-size:0.8125rem; margin-top:4px; }}
   .source-card .link a{{ color:var(--stamp); word-break:break-all; }}
-  .scenario-search{{ width:100%; padding:9px 12px; border:1px solid var(--border);
-    border-radius:var(--radius); font-size:14px; background:var(--card); color:var(--ink);
-    margin-bottom:16px; transition:border-color .15s; outline:none; }}
-  .scenario-search:focus{{ border-color:var(--stamp); }}
-  .scenario-intro{{ color:var(--ink-soft); font-size:13.5px; line-height:1.75; margin-bottom:14px; }}
+  .scenario-intro{{ color:var(--ink-soft); font-size:0.875rem; line-height:1.75; margin-bottom:14px; }}
   .scenario-grid{{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }}
   .scenario-card{{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--brass);
     padding:16px; border-radius:0 0 6px 6px; box-shadow:var(--shadow);
@@ -1946,74 +1903,49 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .scenario-card:hover{{ transform:translateY(-2px); box-shadow:0 6px 18px rgba(30,43,58,.12); }}
   .scenario-card.open{{ border-top-color:var(--stamp); }}
   .sc-head{{ display:flex; align-items:flex-start; gap:10px; }}
-  .sc-icon{{ font-size:22px; line-height:1.2; flex-shrink:0; padding-top:1px; }}
+  .sc-icon{{ font-size:1.375rem; line-height:1.2; flex-shrink:0; padding-top:1px; }}
   .sc-body{{ flex:1; min-width:0; }}
   .sc-title-row{{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:5px; }}
-  .sc-title{{ font-family:"Noto Serif TC",serif; font-size:15px; font-weight:700; }}
-  .sc-law-count{{ font-size:10.5px; color:var(--ink-soft); background:var(--hover);
+  .sc-title{{ font-family:"Noto Sans TC","Noto Sans",sans-serif; font-size:1rem; font-weight:700; }}
+  .sc-law-count{{ font-size:0.6875rem; color:var(--ink-soft); background:var(--hover);
     border:1px solid var(--border); border-radius:99px; padding:1px 8px; white-space:nowrap; }}
-  .sc-chevron{{ margin-left:auto; font-size:11px; color:var(--ink-soft);
+  .sc-chevron{{ margin-left:auto; font-size:0.75rem; color:var(--ink-soft);
     transition:transform .22s; flex-shrink:0; line-height:1.8; }}
   .scenario-card.open .sc-chevron{{ transform:rotate(180deg); }}
-  .sc-desc{{ font-size:12.5px; color:var(--ink-soft); line-height:1.65; }}
+  .sc-desc{{ font-size:0.8125rem; color:var(--ink-soft); line-height:1.65; }}
   .sc-laws-panel{{ max-height:0; overflow:hidden; transition:max-height .32s ease; }}
   .scenario-card.open .sc-laws-panel{{ max-height:500px; }}
   .sc-laws-inner{{ margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }}
   .scenario-laws{{ list-style:none; }}
   .scenario-laws li{{ margin-bottom:7px; }}
-  .law-link{{ color:var(--stamp); text-decoration:none; font-size:13px;
+  .law-link{{ color:var(--stamp); text-decoration:none; font-size:0.8125rem;
     cursor:pointer; background:none; border:none; padding:0; text-align:left; font-family:inherit; }}
   .law-link:hover{{ text-decoration:underline; }}
-  /* ── 底部導覽（手機） ── */
-  .bottom-nav{{ display:none; position:fixed; bottom:0; left:0; right:0;
-    background:var(--card); border-top:1px solid var(--border);
-    box-shadow:0 -2px 12px rgba(30,43,58,.08); z-index:150;
-    padding-bottom:env(safe-area-inset-bottom,0px); }}
-  .bottom-nav button{{ flex:1; display:flex; flex-direction:column; align-items:center;
-    gap:3px; padding:8px 4px 6px; border:none; background:transparent; cursor:pointer;
-    font-size:10px; color:var(--ink-soft); transition:color .15s, background .15s; }}
-  .bottom-nav button.active{{ color:var(--stamp); font-weight:700; }}
-  .bottom-nav button:hover{{ background:var(--hover); }}
-  .bn-icon{{ font-size:20px; line-height:1; }}
-  footer{{ margin-top:34px; padding-top:16px; border-top:1px solid var(--border);
-    font-size:12px; color:var(--ink-soft); line-height:1.8; }}
-  @media(max-width:768px){{
-    .sidebar{{ display:none; }}
-    .main-area{{ margin-left:0; margin-top:52px; padding:20px 18px 80px; }}
-    .bottom-nav{{ display:flex; }}
-    .topbar-meta{{ display:none; }}
-  }}
   @media(max-width:640px){{
-    .main-area{{ padding:16px 14px 80px; }}
-    .topbar-subtitle{{ display:none; }}
-    .topbar-brand h1{{ font-size:16px; }}
     .scenario-grid{{ grid-template-columns:1fr; }}
     .law-card dl{{ grid-template-columns:1fr; }}
-    .art-chip{{ padding:6px 12px; font-size:13px; }}
-    .art-search{{ padding:7px 10px; font-size:13px; }}
-    .art-copy-btn{{ padding:7px 14px; font-size:12px; }}
-    .chg-chip{{ font-size:10px; padding:1px 5px; }}
-    .latest-rev-block .art-chip{{ padding:5px 11px; font-size:12px; }}
+    .art-chip{{ padding:6px 12px; font-size:0.8125rem; }}
+    .art-search{{ padding:7px 10px; font-size:0.8125rem; }}
+    .art-copy-btn{{ padding:7px 14px; font-size:0.8125rem; }}
+    .latest-rev-block .art-chip{{ padding:5px 11px; font-size:0.8125rem; }}
     .diff-card summary{{ padding:10px 10px; }}
-    .diff-body{{ font-size:13.5px; padding:4px 10px 12px; }}
+    .diff-body{{ font-size:0.875rem; padding:4px 10px 12px; }}
     #law-drawer{{ width:100vw; }}
   }}
   /* ── AI 摘要顯示（卡片內） ── */
-  .ai-summary{{ margin:6px 0 2px; font-size:12.5px; line-height:1.65; color:var(--ink-soft); }}
-  .ai-tag{{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.04em;
-    background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff;
-    padding:1px 5px; border-radius:3px; margin-right:5px; vertical-align:middle; }}
-  .ai-prebuilt{{ background:rgba(124,58,237,.06); border-left:3px solid #7c3aed;
-    padding:10px 14px; border-radius:0 4px 4px 0; font-size:13px; line-height:1.7;
+  .ai-summary{{ margin:6px 0 2px; font-size:0.8125rem; line-height:1.65; color:var(--ink-soft); }}
+  .ai-tag{{ display:inline-block; font-size:0.6875rem; font-weight:600; letter-spacing:.04em;
+    background:linear-gradient(135deg,var(--info),var(--blue)); color:var(--white);
+    padding:1px 5px; border-radius:6px; margin-right:5px; vertical-align:middle; }}
+  .ai-prebuilt{{ background:var(--info-bg); border-left:3px solid var(--info);
+    padding:10px 14px; border-radius:0 4px 4px 0; font-size:0.8125rem; line-height:1.7;
     color:var(--ink); margin-bottom:4px; }}
   /* ── 深色/淺色主題切換 ── */
-  .theme-btn{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer; font-size:15px; padding:2px 7px; color:var(--ink-soft); margin-left:8px; vertical-align:middle; }}
-  .theme-btn:hover{{ color:var(--ink); }}
   /* ── 僅標題視圖 ── */
   #newsList.title-view .item{{ padding:7px 14px; }}
   #newsList.title-view .item .row{{ display:none; }}
-  #newsList.title-view .item h3{{ margin:0; font-size:13.5px; font-weight:500; display:flex; align-items:center; gap:8px; }}
-  #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:11px; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; font-family:"Noto Sans TC",sans-serif; font-weight:400; }}
+  #newsList.title-view .item h3{{ margin:0; font-size:0.875rem; font-weight:500; display:flex; align-items:center; gap:8px; }}
+  #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:0.75rem; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; font-family:"Noto Sans TC","Noto Sans",sans-serif; font-weight:400; }}
   #newsList.title-view .item .ai-summary{{ display:none; }}
   #newsList.title-view .item .also{{ display:none; }}
   #newsList.title-view .item .actions{{ display:none; }}
@@ -2022,334 +1954,555 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .settings-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .settings-modal.open{{ display:flex; }}
   .settings-box{{ background:var(--card); border-radius:8px; padding:22px 26px; width:min(420px,92vw); max-height:90vh; overflow-y:auto; }}
-  .settings-box h3{{ margin-bottom:16px; font-size:16px; }}
+  .settings-box h3{{ margin-bottom:16px; font-size:1rem; }}
   .settings-row{{ margin-bottom:18px; }}
-  .settings-row label{{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; }}
-  .settings-row .hint{{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }}
+  .settings-row label{{ display:block; font-size:0.8125rem; font-weight:600; margin-bottom:6px; }}
+  .settings-row .hint{{ font-size:0.75rem; color:var(--ink-soft); margin-top:3px; }}
   input[type=range]{{ width:100%; accent-color:var(--stamp); }}
   .toggle-row{{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }}
   .toggle-row:last-child{{ border:none; }}
-  .toggle-label{{ font-size:13px; }}
+  .toggle-label{{ font-size:0.8125rem; }}
   .toggle-switch{{ position:relative; width:38px; height:22px; cursor:pointer; }}
   .toggle-switch input{{ opacity:0; width:0; height:0; }}
   .toggle-track{{ position:absolute; inset:0; background:var(--border); border-radius:11px; transition:.2s; }}
   .toggle-switch input:checked+.toggle-track{{ background:var(--stamp); }}
-  .toggle-track::after{{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }}
+  .toggle-track::after{{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:var(--white); border-radius:50%; transition:.2s; }}
   .toggle-switch input:checked+.toggle-track::after{{ left:19px; }}
   .mute-list{{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; min-height:24px; }}
-  .mute-chip{{ display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:rgba(156,43,34,.1); border:1px solid var(--stamp); border-radius:99px; font-size:12px; color:var(--stamp); }}
-  .mute-chip button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:13px; padding:0; line-height:1; }}
+  .mute-chip{{ display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:var(--blue-light); border:1px solid var(--stamp); border-radius:99px; font-size:0.8125rem; color:var(--stamp); }}
+  .mute-chip button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:0.8125rem; padding:0; line-height:1; }}
   .mute-input-row{{ display:flex; gap:6px; margin-top:8px; }}
-  .mute-input-row input{{ flex:1; padding:5px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); font-size:13px; border-radius:3px; }}
-  .mute-input-row button{{ padding:5px 12px; background:var(--stamp); color:#fff; border:none; cursor:pointer; font-size:12px; border-radius:3px; }}
+  .mute-input-row input{{ flex:1; padding:5px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); font-size:0.8125rem; border-radius:6px; }}
+  .mute-input-row button{{ padding:5px 12px; background:var(--stamp); color:var(--white); border:none; cursor:pointer; font-size:0.8125rem; border-radius:6px; }}
   /* ── 右鍵/長按選單 ── */
   .ctx-menu{{ position:fixed; background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); z-index:600; min-width:160px; padding:4px 0; }}
-  .ctx-menu button{{ display:block; width:100%; text-align:left; padding:8px 16px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--ink); white-space:nowrap; }}
+  .ctx-menu button{{ display:block; width:100%; text-align:left; padding:8px 16px; border:none; background:transparent; cursor:pointer; font-size:0.8125rem; color:var(--ink); white-space:nowrap; }}
   .ctx-menu button:hover{{ background:var(--hover); }}
   .ctx-menu .ctx-sep{{ height:1px; background:var(--border); margin:3px 0; }}
   /* ── 稍後閱讀 ── */
-  .rl-badge{{ display:inline-block;background:#2563eb;color:#fff;border-radius:9px;font-size:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;line-height:16px;vertical-align:middle; }}
   /* ── 新聞來源分類過濾 ── */
-  .src-filters{{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }}
-  .src-filter-label{{ font-size:12px; color:var(--ink-soft); margin-right:2px; }}
-  .src-filter-btn{{ font-size:12px; padding:3px 10px; border:1px solid var(--border); background:var(--card); cursor:pointer; color:var(--ink-soft); border-radius:99px; white-space:nowrap; }}
-  .src-filter-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
-  .src-type-badge{{ display:inline-block; font-size:10px; padding:1px 5px; border-radius:2px; margin-left:4px; vertical-align:middle; }}
-  .src-type-news{{ background:#dbeafe; color:#1e40af; }}
-  .src-type-notice{{ background:#fef9c3; color:#713f12; }}
-  .src-type-event{{ background:#f0fdf4; color:#166534; }}
+  .src-type-badge{{ display:inline-block; font-size:0.6875rem; padding:1px 5px; border-radius:6px; margin-left:4px; vertical-align:middle; }}
+  .src-type-news{{ background:var(--blue-light); color:var(--blue); }}
+  .src-type-notice{{ background:var(--warning-bg); color:var(--warning); }}
+  .src-type-event{{ background:var(--success-bg); color:var(--success); }}
   /* ── 搜尋高亮 ── */
-  mark{{ background:rgba(168,132,46,.25); color:var(--ink); padding:0 1px; border-radius:2px; }}
+  mark{{ background:var(--warning-bg); color:var(--ink); padding:0 1px; border-radius:6px; }}
   /* ── 設定與主題按鈕區 ── */
-  .tool-btns{{ display:flex; gap:4px; margin-left:auto; align-items:center; }}
-  .tool-btn{{ background:none; border:1px solid var(--border); border-radius:3px; cursor:pointer; font-size:13px; padding:3px 8px; color:var(--ink-soft); }}
-  .tool-btn:hover{{ color:var(--ink); border-color:var(--ink-soft); }}
   /* ── 鍵盤快捷鍵 modal ── */
   .kbd-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .kbd-modal.open{{ display:flex; }}
   .kbd-box{{ background:var(--card); border-radius:8px; padding:22px 28px; width:min(380px,90vw); }}
-  .kbd-box h3{{ margin-bottom:14px; font-size:16px; }}
-  .kbd-row{{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }}
+  .kbd-box h3{{ margin-bottom:14px; font-size:1rem; }}
+  .kbd-row{{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; }}
   .kbd-row:last-of-type{{ border:none; padding-bottom:0; }}
-  kbd{{ background:var(--paper); border:1px solid var(--border); border-radius:3px; padding:1px 6px; font-size:11px; font-family:monospace; }}
-  .kbd-hint-btn{{ font-size:11.5px; color:var(--ink-soft); cursor:pointer; border:1px solid var(--border); background:transparent; padding:3px 8px; border-radius:3px; margin-left:auto; }}
-  .kbd-hint-btn:hover{{ color:var(--ink); }}
+  kbd{{ background:var(--paper); border:1px solid var(--border); border-radius:6px; padding:1px 6px; font-size:0.75rem; font-family:monospace; }}
   .item.focused{{ box-shadow:0 0 0 2px var(--stamp); outline:none; }}
   /* ── Boards 版板 ── */
   .board-area{{ margin:-4px 0 10px; }}
   .board-pills{{ display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center; }}
-  .board-pill{{ padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:transparent; cursor:pointer; font-size:12px; color:var(--ink-soft); }}
-  .board-pill.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
+  .board-pill{{ padding:3px 10px; border-radius:99px; border:1px solid var(--border); background:transparent; cursor:pointer; font-size:0.8125rem; color:var(--ink-soft); }}
+  .board-pill.active{{ border-color:var(--stamp); color:var(--stamp); background:var(--blue-light); font-weight:600; }}
   .board-pill-wrap{{ display:inline-flex; align-items:center; gap:1px; }}
-  .board-del{{ background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:13px; padding:2px 3px; line-height:1; }}
+  .board-del{{ background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:0.8125rem; padding:2px 3px; line-height:1; }}
   .board-del:hover{{ color:var(--stamp); }}
-  .board-add-btn{{ padding:3px 10px; border-radius:99px; border:1px dashed var(--border); background:transparent; cursor:pointer; font-size:12px; color:var(--ink-soft); }}
+  .board-add-btn{{ padding:3px 10px; border-radius:99px; border:1px dashed var(--border); background:transparent; cursor:pointer; font-size:0.8125rem; color:var(--ink-soft); }}
   .board-dropdown{{ position:absolute; right:0; bottom:calc(100% + 4px); background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:100; min-width:155px; padding:4px 0; }}
-  .board-dropdown button{{ display:block; width:100%; text-align:left; padding:7px 14px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--ink); white-space:nowrap; }}
+  .board-dropdown button{{ display:block; width:100%; text-align:left; padding:7px 14px; border:none; background:transparent; cursor:pointer; font-size:0.8125rem; color:var(--ink); white-space:nowrap; }}
   .board-dropdown button:hover{{ background:var(--hover); }}
   /* ── AI 摘要 modal ── */
   .ai-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .ai-modal.open{{ display:flex; }}
   .ai-box{{ background:var(--card); border-radius:8px; padding:22px 26px; width:min(460px,92vw); }}
-  .ai-box h3{{ font-size:15px; margin-bottom:6px; line-height:1.5; }}
+  .ai-box h3{{ font-size:1rem; margin-bottom:6px; line-height:1.5; }}
   /* ── 通知 toast ── */
-  .notif-toast{{ position:fixed; top:10px; right:14px; background:var(--stamp); color:#fff; padding:10px 16px; border-radius:6px; font-size:13px; z-index:600; display:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.22); }}
+  .notif-toast{{ position:fixed; top:10px; right:14px; background:var(--stamp); color:var(--white); padding:10px 16px; border-radius:6px; font-size:0.8125rem; z-index:600; display:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.22); }}
   .notif-toast.show{{ display:block; animation:fadeInDown .3s; }}
   @keyframes fadeInDown{{ from{{transform:translateY(-10px);opacity:0}} to{{transform:translateY(0);opacity:1}} }}
   /* ── 法規效力狀態 badge ── */
-  .status-now{{ background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
-  .status-off{{ background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
-  .status-pending{{ background:#fef9c3; color:#713f12; border:1px solid #fde047; border-radius:3px; font-size:10.5px; padding:1px 5px; vertical-align:middle; margin-left:4px; }}
   /* ── 主管機關 ── */
-  .authority-row{{ font-size:12px; color:var(--ink-soft); margin-bottom:10px; display:flex; align-items:center; gap:6px; }}
-  .authority-row span{{ background:var(--hover); border-radius:3px; padding:2px 7px; color:var(--ink); }}
+  .authority-row{{ font-size:0.8125rem; color:var(--ink-soft); margin-bottom:10px; display:flex; align-items:center; gap:6px; }}
+  .authority-row span{{ background:var(--hover); border-radius:6px; padding:2px 7px; color:var(--ink); }}
   /* ── 適用範圍 ── */
   .scope-section{{ margin-bottom:16px; }}
-  .scope-section h3{{ font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }}
-  .scope-text{{ font-size:12.5px; line-height:1.8; color:var(--ink); background:rgba(168,132,46,.06); border-left:3px solid var(--brass); padding:8px 12px; border-radius:0 4px 4px 0; white-space:pre-line; }}
+  .scope-section h3{{ font-size:0.8125rem; font-weight:600; margin-bottom:6px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }}
+  .scope-text{{ font-size:0.8125rem; line-height:1.8; color:var(--ink); background:var(--warning-bg); border-left:3px solid var(--brass); padding:8px 12px; border-radius:0 4px 4px 0; white-space:pre-line; }}
   /* ── 罰則條文 ── */
-  .penalty-section h3{{ font-size:13px; font-weight:600; margin-bottom:6px; color:#b91c1c; text-transform:uppercase; letter-spacing:.05em; }}
-  .penalty-art{{ background:#fff5f5; border:1px solid #fca5a5; border-radius:4px; padding:8px 12px; margin-bottom:7px; font-size:12.5px; line-height:1.75; }}
-  [data-theme="dark"] .penalty-art{{ background:rgba(185,28,28,.12); border-color:rgba(252,165,165,.25); }}
-  .penalty-art .art-no{{ font-weight:700; color:#b91c1c; margin-right:6px; }}
+  .penalty-section h3{{ font-size:0.8125rem; font-weight:600; margin-bottom:6px; color:var(--danger); text-transform:uppercase; letter-spacing:.05em; }}
+  .penalty-art{{ background:var(--danger-bg); border:1px solid var(--osh-danger-line); border-radius:6px; padding:8px 12px; margin-bottom:7px; font-size:0.8125rem; line-height:1.75; }}
+  [data-theme="dark"] .penalty-art{{ background:var(--danger-bg); border-color:var(--danger-bg); }}
+  .penalty-art .art-no{{ font-weight:700; color:var(--danger); margin-right:6px; }}
   /* ── 罰則結構化 ── */
   .penalty-struct{{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; align-items:center; }}
-  .penalty-fine-label{{ font-size:11px; font-weight:700; color:#b91c1c; white-space:nowrap; }}
-  .penalty-fine-bar{{ flex:1; min-width:80px; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }}
-  .penalty-fine-fill{{ height:100%; background:linear-gradient(90deg,#f97316,#b91c1c); border-radius:4px; transition:width .4s; }}
-  .penalty-struct-tag{{ display:inline-flex; align-items:center; gap:3px; font-size:10.5px; padding:2px 7px; border-radius:99px; border:1px solid currentColor; font-weight:600; white-space:nowrap; }}
-  .pst-criminal{{ color:#7c3aed; background:rgba(124,58,237,.07); }}
-  .pst-repeat{{ color:#b45309; background:rgba(180,83,9,.07); }}
-  .pst-liable{{ color:#0369a1; background:rgba(3,105,161,.07); }}
+  .penalty-fine-label{{ font-size:0.75rem; font-weight:700; color:var(--danger); white-space:nowrap; }}
+  .penalty-fine-bar{{ flex:1; min-width:80px; height:7px; background:var(--border); border-radius:6px; overflow:hidden; }}
+  .penalty-fine-fill{{ height:100%; background:linear-gradient(90deg,var(--warning),var(--danger)); border-radius:6px; transition:width .4s; }}
+  .penalty-struct-tag{{ display:inline-flex; align-items:center; gap:3px; font-size:0.6875rem; padding:2px 7px; border-radius:99px; border:1px solid currentColor; font-weight:600; white-space:nowrap; }}
+  .pst-criminal{{ color:var(--info); background:var(--info-bg); }}
+  .pst-repeat{{ color:var(--warning); background:var(--warning-bg); }}
+  .pst-liable{{ color:var(--blue); background:var(--blue-light); }}
   /* ── 適用對象 ── */
   .applicability-block{{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }}
-  .app-tag{{ display:inline-flex; align-items:center; font-size:11px; padding:2px 8px; border-radius:3px; font-weight:600; }}
-  .app-industry{{ background:rgba(37,99,235,.08); color:#1d4ed8; border:1px solid rgba(37,99,235,.2); }}
-  .app-size{{ background:rgba(5,150,105,.08); color:#065f46; border:1px solid rgba(5,150,105,.2); }}
-  .app-risk{{ background:rgba(180,83,9,.08); color:#92400e; border:1px solid rgba(180,83,9,.2); }}
-  .app-note{{ font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin-top:4px; }}
+  .app-tag{{ display:inline-flex; align-items:center; font-size:0.75rem; padding:2px 8px; border-radius:6px; font-weight:600; }}
+  .app-industry{{ background:var(--blue-light); color:var(--blue); border:1px solid var(--blue-light); }}
+  .app-size{{ background:var(--success-bg); color:var(--success); border:1px solid var(--success-bg); }}
+  .app-risk{{ background:var(--warning-bg); color:var(--warning); border:1px solid var(--warning-bg); }}
+  .app-note{{ font-size:0.75rem; color:var(--ink-soft); line-height:1.7; margin-top:4px; }}
   /* ── 稽查重點 ── */
-  .inspect-rank{{ display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; color:#b91c1c; margin-bottom:6px; }}
-  .inspect-rank-dot{{ width:8px; height:8px; border-radius:50%; background:#b91c1c; }}
+  .inspect-rank{{ display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; color:var(--danger); margin-bottom:6px; }}
+  .inspect-rank-dot{{ width:8px; height:8px; border-radius:50%; background:var(--danger); }}
   .inspect-violations{{ margin:6px 0; list-style:none; padding:0; }}
-  .inspect-violations li{{ font-size:11.5px; color:var(--ink); padding:3px 0 3px 14px; position:relative; border-bottom:1px solid var(--border); }}
-  .inspect-violations li::before{{ content:"!"; position:absolute; left:0; color:#b91c1c; font-weight:700; font-size:10px; top:5px; }}
+  .inspect-violations li{{ font-size:0.75rem; color:var(--ink); padding:3px 0 3px 14px; position:relative; border-bottom:1px solid var(--border); }}
+  .inspect-violations li::before{{ content:"!"; position:absolute; left:0; color:var(--danger); font-weight:700; font-size:0.6875rem; top:5px; }}
   /* ── 標準對應 ── */
-  .std-chip{{ display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 9px; border-radius:3px; border:1px solid rgba(37,99,235,.25); background:rgba(37,99,235,.05); color:#1e40af; margin:2px; font-weight:600; }}
+  .std-chip{{ display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; padding:3px 9px; border-radius:6px; border:1px solid var(--blue-light); background:var(--blue-light); color:var(--blue); margin:2px; font-weight:600; }}
   .std-chip-title{{ font-weight:400; color:var(--ink-soft); }}
   /* ── 稽查重點badge（表格）── */
-  .inspect-badge{{ display:inline-flex; align-items:center; gap:2px; font-size:9.5px; font-weight:700; color:#b91c1c; background:#fee2e2; border:1px solid #fca5a5; border-radius:3px; padding:1px 5px; white-space:nowrap; }}
   /* ── 收藏法規的更新提示 ── */
-  .sub-notice{{ background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:7px 12px; font-size:12.5px; color:#78350f; margin-bottom:12px; }}
-  [data-theme="dark"] .sub-notice{{ background:rgba(120,53,15,.2); color:#fcd34d; }}
+  .sub-notice{{ background:var(--warning-bg); border:1px solid var(--osh-warning-line); border-radius:6px; padding:7px 12px; font-size:0.8125rem; color:var(--warning); margin-bottom:12px; }}
+  [data-theme="dark"] .sub-notice{{ background:rgba(120,53,15,.2); color:var(--warning); }}
   /* ── 並排對比 modal ── */
   .compare-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:600; display:none; align-items:flex-start; justify-content:center; padding:20px 10px; overflow-y:auto; }}
   .compare-modal.open{{ display:flex; }}
   .compare-box{{ background:var(--card); border-radius:8px; padding:22px 24px; width:min(960px,97vw); }}
   .compare-header{{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }}
-  .compare-header h3{{ font-size:16px; }}
-  .compare-header button{{ background:none; border:none; cursor:pointer; font-size:20px; color:var(--ink-soft); }}
+  .compare-header h3{{ font-size:1rem; }}
+  .compare-header button{{ background:none; border:none; cursor:pointer; font-size:1.25rem; color:var(--ink-soft); }}
   .compare-selects{{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }}
-  .compare-selects select{{ flex:1; min-width:220px; padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; }}
+  .compare-selects select{{ flex:1; min-width:220px; padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:6px; font-size:0.8125rem; }}
   .compare-filter-wrap{{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:4px; }}
-  .compare-filter-input{{ padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; width:100%; }}
+  .compare-filter-input{{ padding:6px 8px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:6px; font-size:0.8125rem; width:100%; }}
   .compare-filter-input::placeholder{{ color:var(--ink-soft); }}
   /* ── 分頁控制 ── */
-  .reg-pager{{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; margin:8px 0; font-size:13px; }}
-  .reg-pager button{{ padding:4px 10px; border:1px solid var(--border); background:transparent; cursor:pointer; border-radius:3px; color:var(--ink); font-size:12px; }}
-  .reg-pager button.active{{ border-color:var(--stamp); color:var(--stamp); background:rgba(156,43,34,.06); font-weight:600; }}
-  .reg-pager button:disabled{{ opacity:.35; cursor:default; }}
-  .reg-pager .pager-info{{ font-size:12px; color:var(--ink-soft); margin:0 4px; }}
   .compare-cols{{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }}
   @media(max-width:640px){{ .compare-cols{{ grid-template-columns:1fr; }} }}
   .compare-col{{ border:1px solid var(--border); border-radius:6px; padding:14px; max-height:60vh; overflow-y:auto; }}
-  .compare-col h4{{ font-size:13.5px; font-weight:700; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
-  .compare-art{{ font-size:12.5px; line-height:1.75; padding:6px 0; border-bottom:1px solid var(--border); }}
+  .compare-col h4{{ font-size:0.875rem; font-weight:700; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
+  .compare-art{{ font-size:0.8125rem; line-height:1.75; padding:6px 0; border-bottom:1px solid var(--border); }}
   .compare-art:last-child{{ border:none; }}
   .compare-art .art-no{{ font-weight:700; color:var(--stamp); margin-right:6px; }}
   /* ── 適用性判斷 modal ── */
   .guide-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:600; display:none; align-items:center; justify-content:center; }}
   .guide-modal.open{{ display:flex; }}
   .guide-box{{ background:var(--card); border-radius:8px; padding:24px 28px; width:min(500px,95vw); }}
-  .guide-box h3{{ font-size:16px; margin-bottom:18px; }}
+  .guide-box h3{{ font-size:1rem; margin-bottom:18px; }}
   .guide-q{{ margin-bottom:14px; }}
-  .guide-q label{{ display:block; font-size:13px; font-weight:600; margin-bottom:5px; }}
-  .guide-q select{{ width:100%; padding:7px 9px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:4px; font-size:13px; }}
+  .guide-q label{{ display:block; font-size:0.8125rem; font-weight:600; margin-bottom:5px; }}
+  .guide-q select{{ width:100%; padding:7px 9px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:6px; font-size:0.8125rem; }}
   .guide-checks{{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }}
-  .guide-checks label{{ display:flex; align-items:center; gap:5px; font-size:13px; font-weight:400; cursor:pointer; }}
-  .guide-result-item{{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:13px; }}
+  .guide-checks label{{ display:flex; align-items:center; gap:5px; font-size:0.8125rem; font-weight:400; cursor:pointer; }}
+  .guide-result-item{{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; }}
   .guide-result-item:last-child{{ border:none; }}
-  .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:12px; text-decoration:underline; }}
+  .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:0.8125rem; text-decoration:underline; }}
   .guide-result-item{{ flex-wrap:wrap; }}
   .guide-result-item .guide-jump-btn{{ text-align:left; }}
   /* ── 合規稽核 Checklist ── */
   .checklist-section{{ margin-top:16px; }}
-  .checklist-section h3{{ font-size:13px; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
-  .checklist-section h3 span{{ font-size:11px; font-weight:400; color:var(--ink-soft); }}
-  .ck-item{{ display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12.5px; cursor:pointer; }}
+  .checklist-section h3{{ font-size:0.8125rem; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
+  .checklist-section h3 span{{ font-size:0.75rem; font-weight:400; color:var(--ink-soft); }}
+  .ck-item{{ display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; cursor:pointer; }}
   .ck-item:last-child{{ border:none; }}
   .ck-item input{{ margin-top:2px; flex-shrink:0; accent-color:var(--green); cursor:pointer; }}
   .ck-item label{{ cursor:pointer; line-height:1.6; }}
   .ck-item.done label{{ text-decoration:line-through; color:var(--ink-soft); }}
-  .ck-progress{{ height:4px; background:var(--border); border-radius:2px; margin:6px 0 10px; overflow:hidden; }}
-  .ck-progress-bar{{ height:100%; background:var(--green); border-radius:2px; transition:width .3s; }}
+  .ck-progress{{ height:4px; background:var(--border); border-radius:6px; margin:6px 0 10px; overflow:hidden; }}
+  .ck-progress-bar{{ height:100%; background:var(--green); border-radius:6px; transition:width .3s; }}
   /* ── 法規抽屜工具列 ── */
   .drawer-toolbar{{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }}
-  .drawer-tool-btn{{ padding:4px 11px; border:1px solid var(--border); background:transparent; border-radius:4px; cursor:pointer; font-size:12.5px; color:var(--ink-soft); }}
+  .drawer-tool-btn{{ padding:4px 11px; border:1px solid var(--border); background:transparent; border-radius:6px; cursor:pointer; font-size:0.8125rem; color:var(--ink-soft); }}
   .drawer-tool-btn:hover{{ color:var(--ink); border-color:var(--ink-soft); }}
-  .drawer-tool-btn.active{{ background:var(--stamp); color:#fff; border-color:var(--stamp); }}
+  .drawer-tool-btn.active{{ background:var(--stamp); color:var(--white); border-color:var(--stamp); }}
   /* ① 法規關係圖譜 */
   #lawGraph {{ display:none; width:100%; height:580px; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }}
   #lawGraph.active {{ display:block; }}
   /* ② 修訂時間軸 */
   #lawTimeline {{ display:none; margin-bottom:20px; }}
   .tl-year-group {{ margin-bottom:20px; }}
-  .tl-year-label {{ font-size:15px; font-weight:700; color:var(--stamp); padding:5px 10px 5px 12px; border-left:3px solid var(--stamp); margin-bottom:10px; display:block; }}
+  .tl-year-label {{ font-size:1rem; font-weight:700; color:var(--stamp); padding:5px 10px 5px 12px; border-left:3px solid var(--stamp); margin-bottom:10px; display:block; }}
   .tl-items {{ display:flex; flex-wrap:wrap; gap:8px; }}
-  .tl-item {{ background:var(--card); border:1px solid var(--border); border-radius:5px; padding:8px 12px; cursor:pointer; transition:border-color .15s,box-shadow .15s; min-width:150px; max-width:210px; }}
+  .tl-item {{ background:var(--card); border:1px solid var(--border); border-radius:6px; padding:8px 12px; cursor:pointer; transition:border-color .15s,box-shadow .15s; min-width:150px; max-width:210px; }}
   .tl-item:hover {{ border-color:var(--stamp); box-shadow:0 2px 8px rgba(30,43,58,.1); }}
-  .tl-item-date {{ font-size:10px; color:var(--ink-soft); margin-bottom:3px; }}
-  .tl-item-name {{ font-size:11.5px; font-weight:600; color:var(--ink); line-height:1.4; margin-bottom:4px; }}
+  .tl-item-date {{ font-size:0.6875rem; color:var(--ink-soft); margin-bottom:3px; }}
+  .tl-item-name {{ font-size:0.75rem; font-weight:600; color:var(--ink); line-height:1.4; margin-bottom:4px; }}
   .tl-item-meta {{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; }}
   /* ③ 罰則篩選 */
-  .penalty-filter-btn {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:3px 9px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; }}
-  .penalty-filter-btn.active {{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; }}
-  [data-theme="dark"] .penalty-filter-btn.active {{ background:rgba(185,28,28,.25); color:#fca5a5; border-color:#b91c1c; }}
   /* 視圖切換（內嵌於第2排 reg-controls） */
-  .view-btns {{ display:inline-flex; gap:4px; margin-left:auto; flex-wrap:wrap; }}
-  .view-btns button {{ background:transparent; border:1px solid var(--border); border-radius:4px; padding:3px 10px; font-size:11.5px; cursor:pointer; color:var(--ink-soft); font-family:inherit; transition:all .15s; white-space:nowrap; }}
-  .view-btns button.active {{ background:var(--stamp); color:#fff; border-color:var(--stamp); font-weight:600; }}
   /* 合規風險評分 */
-  .risk-dots {{ display:inline-flex; gap:2px; align-items:center; vertical-align:middle; }}
-  .risk-dot {{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }}
-  .risk-lvl-5 .risk-dot.on {{ background:#b91c1c; }}
-  .risk-lvl-4 .risk-dot.on {{ background:#ea580c; }}
-  .risk-lvl-3 .risk-dot.on {{ background:#ca8a04; }}
-  .risk-lvl-2 .risk-dot.on {{ background:#16a34a; }}
-  .risk-lvl-1 .risk-dot.on {{ background:#6d28d9; }}
-  .risk-dot.off {{ background:var(--border); }}
   /* 風險矩陣 */
   #riskMatrix {{ display:none; width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }}
-  .risk-matrix-tooltip {{ position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:4px; font-size:11.5px; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }}
+  .risk-matrix-tooltip {{ position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:6px; font-size:0.75rem; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }}
   /* 資料狀態指示 */
   .data-status-dot {{ width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }}
-  .ds-ok {{ background:#16a34a; }}
-  .ds-warn {{ background:#ca8a04; }}
-  .ds-fail {{ background:#b91c1c; }}
+  .ds-ok {{ background:var(--success); }}
+  .ds-warn {{ background:var(--warning); }}
+  .ds-fail {{ background:var(--danger); }}
   .ds-modal {{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
   .ds-modal.open {{ display:flex; }}
   .ds-box {{ background:var(--card); border-radius:8px; padding:20px 22px; width:min(480px,94vw); max-height:88vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,.18); }}
-  .ds-box h3 {{ font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; justify-content:space-between; }}
-  .ds-row {{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; }}
+  .ds-box h3 {{ font-size:1rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; justify-content:space-between; }}
+  .ds-row {{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; }}
   .ds-row:last-child {{ border:none; }}
   .ds-name {{ flex:1; font-weight:500; }}
-  .ds-count {{ font-size:11px; color:var(--ink-soft); margin-left:auto; }}
-  .ds-ts {{ font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }}
-  .ds-section-hd {{ font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; padding:10px 0 4px; }}
-  .ds-xml-row {{ display:flex; gap:8px; align-items:center; font-size:12.5px; padding:6px 0; }}
-  .ds-xml-age {{ font-size:11px; padding:2px 7px; border-radius:99px; font-weight:600; }}
-  .ds-xml-fresh {{ background:#dcfce7; color:#166534; }}
-  .ds-xml-old {{ background:#fef9c3; color:#713f12; }}
-  .ds-xml-stale {{ background:#fee2e2; color:#991b1b; }}
+  .ds-count {{ font-size:0.75rem; color:var(--ink-soft); margin-left:auto; }}
+  .ds-ts {{ font-size:0.6875rem; color:var(--ink-soft); white-space:nowrap; }}
+  .ds-section-hd {{ font-size:0.6875rem; font-weight:700; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; padding:10px 0 4px; }}
+  .ds-xml-row {{ display:flex; gap:8px; align-items:center; font-size:0.8125rem; padding:6px 0; }}
+  .ds-xml-age {{ font-size:0.75rem; padding:2px 7px; border-radius:99px; font-weight:600; }}
+  .ds-xml-fresh {{ background:var(--success-bg); color:var(--success); }}
+  .ds-xml-old {{ background:var(--warning-bg); color:var(--warning); }}
+  .ds-xml-stale {{ background:var(--danger-bg); color:var(--danger); }}
   /* 條文內嵌預覽卡 */
-  .art-preview-card {{ background:rgba(168,132,46,.06); border:1px solid var(--brass); border-radius:5px; padding:10px 13px; margin:8px 0; font-size:12.5px; line-height:1.75; color:var(--ink); position:relative; }}
-  .art-preview-card .apv-no {{ font-weight:700; color:var(--stamp); margin-bottom:4px; font-size:13px; display:block; }}
+  .art-preview-card {{ background:var(--warning-bg); border:1px solid var(--brass); border-radius:6px; padding:10px 13px; margin:8px 0; font-size:0.8125rem; line-height:1.75; color:var(--ink); position:relative; }}
+  .art-preview-card .apv-no {{ font-weight:700; color:var(--stamp); margin-bottom:4px; font-size:0.8125rem; display:block; }}
   .art-preview-card .apv-text {{ white-space:pre-line; word-break:break-all; }}
-  .art-preview-card .apv-link {{ display:inline-block; margin-top:8px; font-size:11.5px; color:var(--blue); text-decoration:none; }}
+  .art-preview-card .apv-link {{ display:inline-block; margin-top:8px; font-size:0.75rem; color:var(--blue); text-decoration:none; }}
   .art-preview-card .apv-link:hover {{ text-decoration:underline; }}
-  .art-preview-card .apv-close {{ position:absolute; top:6px; right:8px; background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:16px; line-height:1; padding:2px 4px; }}
+  .art-preview-card .apv-close {{ position:absolute; top:6px; right:8px; background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:1rem; line-height:1; padding:2px 4px; }}
   /* 函釋查詢連結 */
-  .interp-link {{ display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--blue); background:rgba(37,99,235,.06); border:1px solid rgba(37,99,235,.2); border-radius:4px; padding:4px 10px; text-decoration:none; margin-top:6px; }}
-  .interp-link:hover {{ background:rgba(37,99,235,.12); }}
+  .interp-link {{ display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; color:var(--blue); background:var(--blue-light); border:1px solid var(--blue-light); border-radius:6px; padding:4px 10px; text-decoration:none; margin-top:6px; }}
+  .interp-link:hover {{ background:var(--blue-light); }}
   @media(max-width:640px) {{
     .tl-item {{ min-width:130px; max-width:calc(50% - 4px); }}
     #lawGraph {{ height:380px; }}
     #riskMatrix {{ height:340px; }}
-    .view-btns {{ margin-left:0; gap:4px; }}
-    .view-btns button {{ padding:4px 8px; font-size:10.5px; }}
-    /* 法規表格：手機隱藏非核心欄位，只保留收藏、名稱、日期 */
-    .registry-table {{ min-width:auto; }}
-    .registry-table th:nth-child(3),
-    .registry-table td:nth-child(3),
-    .registry-table th:nth-child(4),
-    .registry-table td:nth-child(4),
-    .registry-table th:nth-child(6),
-    .registry-table td:nth-child(6) {{ display:none; }}
-    /* 觸控目標：收藏/分頁按鈕放大 */
-    .star-btn {{ font-size:18px; padding:6px 5px; }}
-    #drawer-close {{ padding:10px 12px; font-size:22px; }}
-    .reg-pager button {{ min-width:36px; min-height:36px; font-size:13px; }}
-    /* 搜尋欄全寬 */
-    .search {{ width:100%; box-sizing:border-box; }}
-    #reg-search {{ width:100%; box-sizing:border-box; }}
-    /* reg-controls 按鈕稍大 */
-    .reg-controls button {{ font-size:12.5px; padding:5px 12px; }}
+    #drawer-close {{ padding:10px 12px; font-size:1.375rem; }}
     /* 右鍵選單放大 */
-    .ctx-menu button {{ padding:12px 18px; font-size:14px; }}
+    .ctx-menu button {{ padding:12px 18px; font-size:0.875rem; }}
     /* toast 在手機放在 topbar 下方，避免被遮擋 */
-    .notif-toast {{ top:58px; right:10px; left:10px; text-align:center; font-size:13.5px; }}
+    .notif-toast {{ top:58px; right:10px; left:10px; text-align:center; font-size:0.875rem; }}
     /* 新聞標題視圖：hover actions 改為固定顯示 */
     #newsList.title-view .item .actions {{ display:flex; margin-top:4px; }}
-    /* 風險評分點點在手機略放大 */
-    .risk-dot {{ width:9px; height:9px; }}
     /* 比較 modal selects */
     .compare-selects select {{ min-width:0; width:100%; }}
-    /* 分頁 info */
-    .reg-pager .pager-info {{ font-size:11px; }}
     /* 抽屜 meta pill 換行 */
     .drawer-meta {{ gap:4px; }}
-    .drawer-meta span {{ font-size:11.5px; padding:3px 7px; }}
+    .drawer-meta span {{ font-size:0.75rem; padding:3px 7px; }}
     /* 圖例面板：手機每行獨立顯示 */
     .legend-row {{ flex-direction:column; align-items:flex-start; gap:6px; }}
     .legend-label {{ margin-bottom:2px; }}
     /* 抽屜：手機全寬 + 自適應字體 + 底部關閉列 */
-    #law-drawer {{ width:100vw; font-size:13.5px; }}
+    #law-drawer {{ width:100vw; font-size:0.875rem; }}
     #drawer-header {{ padding:12px 14px 10px; }}
-    #drawer-header h2 {{ font-size:14px; }}
+    #drawer-header h2 {{ font-size:0.875rem; }}
     #drawer-body {{ padding:12px 14px 16px; }}
     .drawer-footer-bar {{ display:flex; padding:10px 16px; padding-bottom:max(10px,env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--border); flex-shrink:0; }}
-    .drawer-footer-bar button {{ flex:1; padding:14px; background:var(--stamp); color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; font-weight:600; letter-spacing:.04em; }}
+    .drawer-footer-bar button {{ flex:1; padding:14px; background:var(--stamp); color:var(--white); border:none; border-radius:6px; font-size:1rem; cursor:pointer; font-weight:600; letter-spacing:.04em; }}
     /* 底部安全區域 */
     .notif-toast {{ padding-bottom:max(10px, env(safe-area-inset-bottom,0px)); }}
     /* iPhone Safari：輸入框字級小於 16px 會在點入時自動放大頁面，造成版面偏移、右側被切掉 */
-    input, select, textarea {{ font-size:16px !important; }}
+    input, select, textarea {{ font-size:1rem !important; }}
   }}
   /* 手機：有 safe area notch（iPhone 等）補償 */
   @media(max-width:640px) and (orientation:portrait) {{
-    .drawer-section h3 {{ font-size:12px; }}
+    .drawer-section h3 {{ font-size:0.8125rem; }}
+  }}
+  /* ════════ UpYoung 元件（改版） ════════ */
+  /* ── 徽章 ── */
+  .badge{{ display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; line-height:1.5; white-space:nowrap; vertical-align:middle; }}
+  .badge-blue{{ background:var(--info-bg); color:var(--info); }}
+  .badge-green{{ background:var(--success-bg); color:var(--success); }}
+  .badge-yellow{{ background:var(--warning-bg); color:var(--warning); }}
+  .badge-red{{ background:var(--danger-bg); color:var(--danger); }}
+  .badge-gray{{ background:var(--bg-muted); color:var(--text-2); }}
+  .badge.recent{{ background:var(--warning-bg); color:var(--warning); }}
+  .badge.new-law{{ background:var(--success-bg); color:var(--success); }}
+  .status-now, .status-off, .status-pending{{ display:inline-flex; align-items:center; padding:2px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; }}
+  .status-now{{ background:var(--success-bg); color:var(--success); }}
+  .status-off{{ background:var(--bg-muted); color:var(--text-2); }}
+  .status-pending{{ background:var(--danger-bg); color:var(--danger); }}
+  .filter-badge, .rl-badge, .unread-law-count{{ display:inline-flex; align-items:center; justify-content:center; min-width:20px; padding:0 6px; margin-left:4px;
+    border-radius:9999px; background:var(--bg-muted); color:var(--text-2); font-size:0.6875rem; font-weight:700; line-height:18px; }}
+  .filter-badge:empty, .rl-badge:empty, .unread-law-count:empty{{ display:none; }}
+  .unread-law-count{{ background:var(--blue-light); color:var(--blue); }}
+  .active > .filter-badge, .active > .unread-law-count{{ background:var(--blue); color:var(--white); }}
+  .tier-tag{{ display:inline-flex; align-items:center; gap:6px; font-size:0.8125rem; color:var(--text-2); white-space:nowrap; }}
+  .tier-tag::before{{ content:""; width:6px; height:6px; border-radius:50%; background:var(--text-3); }}
+  .tier-tag.act::before{{ background:var(--brand-blue); }}
+  .tier-tag.reg::before{{ background:var(--blue-mid); }}
+  .tier-tag.guide::before{{ background:var(--yellow); }}
+  .cat-tag{{ display:inline-flex; padding:2px 8px; border-radius:6px; background:var(--bg-muted); color:var(--text-2); font-size:0.75rem; white-space:nowrap; }}
+  .src-badge{{ display:inline-flex; padding:0 6px; border-radius:6px; font-size:0.6875rem; font-weight:600; vertical-align:middle; margin-left:4px; }}
+  .src-xml{{ background:var(--blue-light); color:var(--blue); }}
+  .src-static{{ background:var(--bg-muted); color:var(--text-2); }}
+  .src-guide{{ background:var(--warning-bg); color:var(--warning); }}
+  .inspect-badge{{ display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:500; color:var(--danger); white-space:nowrap; }}
+  /* ── 文字型按鈕、區隔線 ── */
+  .text-btn{{ border:none !important; background:transparent !important; color:var(--blue) !important; padding:4px 8px !important; }}
+  .text-btn:hover{{ background:var(--blue-light) !important; }}
+  .sep{{ width:1px; height:20px; background:var(--border); flex-shrink:0; }}
+  .icon-btn.active{{ border-color:var(--blue-mid); color:var(--blue); background:var(--blue-light); }}
+  .icon-btn .ti{{ font-size:1.125rem; }}
+  .tool-btns{{ display:flex; gap:8px; margin-left:auto; align-items:center; }}
+  .tool-btn, .kbd-hint-btn, .theme-btn{{ display:inline-flex; align-items:center; gap:4px; height:36px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); color:var(--text-2); font-size:0.8125rem; cursor:pointer; transition:all .15s ease; white-space:nowrap; }}
+  .tool-btn:hover, .kbd-hint-btn:hover, .theme-btn:hover{{ background:var(--bg-muted); color:var(--text); }}
+  /* ── 搜尋框（左側圖示） ── */
+  .input-wrap{{ position:relative; flex:1; min-width:0; }}
+  .input-wrap .input-icon{{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); font-size:1.125rem; pointer-events:none; }}
+  .input-wrap input{{ padding-left:40px !important; }}
+  /* ── 分段控制 ── */
+  .seg{{ display:inline-flex; align-items:center; padding:2px; gap:2px; background:var(--bg-muted); border:1px solid var(--border); border-radius:var(--radius); flex-shrink:0; }}
+  .seg button{{ min-height:38px !important; border:none !important; background:transparent !important; color:var(--text-2) !important; border-radius:6px !important; padding:4px 12px !important; font-weight:500 !important; }}
+  .seg button:hover:not(.active){{ color:var(--text) !important; background:var(--border) !important; }}
+  .seg button.active{{ background:var(--surface) !important; color:var(--blue) !important; font-weight:600 !important; box-shadow:var(--shadow-level1); }}
+  .seg-sm button{{ min-height:30px !important; padding:2px 10px !important; }}
+  .seg-label{{ font-size:0.75rem; color:var(--text-3); padding:0 6px 0 8px; white-space:nowrap; }}
+  .view-btns{{ margin-left:0; flex-wrap:nowrap; }}
+  /* ── 法規總覽工具列 ── */
+  .reg-toolbar{{ display:flex; gap:12px; align-items:center; margin-bottom:12px; }}
+  .reg-toolbar input{{ width:100%; }}
+  .cat-filters{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }}
+  .cat-btn, .src-filter-btn, .board-pill{{ display:inline-flex; align-items:center; gap:4px; min-height:32px; padding:4px 12px; border:1px solid var(--border); border-radius:9999px;
+    background:var(--surface); color:var(--text-2); font-size:0.8125rem; cursor:pointer; white-space:nowrap; transition:all .15s ease; }}
+  .cat-btn:hover:not(.active), .src-filter-btn:hover:not(.active), .board-pill:hover:not(.active){{ background:var(--bg-muted); color:var(--text); }}
+  .cat-btn.active, .src-filter-btn.active, .board-pill.active{{ background:var(--blue); border-color:var(--blue); color:var(--white); font-weight:600; }}
+  .reg-bar{{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px; }}
+  .reg-bar .reg-controls{{ margin-bottom:0; }}
+  .reg-bar-right{{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }}
+  .reg-tools{{ display:flex; gap:8px; }}
+  .reg-controls .label{{ font-size:0.75rem; color:var(--text-3); }}
+  .registry-meta{{ font-size:0.8125rem; color:var(--text-2); margin:4px 0 8px; font-variant-numeric:tabular-nums; }}
+  .src-filters{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }}
+  .src-filter-label{{ font-size:0.75rem; color:var(--text-3); }}
+  .view-toggle{{ display:flex; gap:8px; align-items:center; margin-bottom:12px; }}
+  /* ── 表格 ── */
+  .table-scroll{{ overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:12px; }}
+  table.registry-table{{ width:100%; border-collapse:collapse; min-width:540px; font-size:0.875rem; }}
+  .registry-table th{{ padding:12px 16px; font-size:0.8125rem; font-weight:500; color:var(--text-2); background:var(--bg); border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }}
+  .registry-table td{{ padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; font-variant-numeric:tabular-nums; }}
+  .registry-table tbody tr{{ transition:background .15s ease; }}
+  .registry-table tbody tr:last-child td{{ border-bottom:none; }}
+  .registry-table tbody tr:hover{{ background:var(--bg-muted); }}
+  .registry-table tr.law-updated{{ background:var(--warning-bg); }}
+  .registry-table th:first-child, .registry-table td.star-cell{{ width:48px; padding-right:0; }}
+  .registry-table .rname{{ min-width:240px; }}
+  .registry-table .rcat, .registry-table td:nth-child(n+3){{ width:1%; white-space:nowrap; }}
+  .rcat{{ color:var(--text-2); font-size:0.8125rem; }}
+  .rname-line{{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }}
+  .rname-btn{{ background:none; border:none; padding:0; cursor:pointer; text-align:left; font-size:0.875rem; font-weight:500; color:var(--text-heading); line-height:1.5; transition:color .15s ease; }}
+  .rname-btn:hover{{ color:var(--blue); text-decoration:underline; text-underline-offset:3px; }}
+  .law-unread .rname-btn{{ font-weight:600; }}
+  .rmeta{{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; margin-top:4px; font-size:0.75rem; color:var(--text-2); }}
+  .meta-item{{ display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }}
+  .meta-item .ti{{ font-size:0.875rem; }}
+  .meta-danger{{ color:var(--danger); }}
+  .meta-match{{ color:var(--blue); }}
+  .chg-summary{{ display:inline-flex; flex-wrap:wrap; gap:4px 8px; }}
+  .chg-chip{{ display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:500; white-space:nowrap; color:var(--text-2); }}
+  .chg-chip::before{{ content:""; width:6px; height:6px; border-radius:2px; background:currentColor; }}
+  .chg-chip.chg-modified{{ color:var(--warning); }}
+  .chg-chip.chg-added{{ color:var(--success); }}
+  .chg-chip.chg-deleted{{ color:var(--danger); }}
+  .diff-counts .chg-chip, .diff-sum .chg-chip{{ padding:2px 8px; border-radius:6px; background:var(--bg-muted); }}
+  .diff-counts .chg-chip.chg-modified, .diff-sum .chg-chip.chg-modified{{ background:var(--warning-bg); }}
+  .diff-counts .chg-chip.chg-added, .diff-sum .chg-chip.chg-added{{ background:var(--success-bg); }}
+  .diff-counts .chg-chip.chg-deleted, .diff-sum .chg-chip.chg-deleted{{ background:var(--danger-bg); }}
+  .rdate{{ white-space:nowrap; font-size:0.875rem; }}
+  .rdate.unconfirmed{{ color:var(--text-3); }}
+  .unread-dot{{ width:8px; height:8px; border-radius:50%; background:var(--blue); flex-shrink:0; }}
+  .star-btn{{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:var(--radius); background:transparent;
+    color:var(--text-3); font-size:1.125rem; line-height:1; cursor:pointer; transition:all .15s ease; vertical-align:middle; }}
+  .star-btn:hover{{ background:var(--bg-muted); color:var(--yellow); }}
+  .star-btn.on{{ color:var(--yellow); }}
+  .src-link{{ display:inline-flex; align-items:center; gap:4px; font-size:0.8125rem; color:var(--blue); text-decoration:none; white-space:nowrap; }}
+  .src-link:hover{{ text-decoration:underline; }}
+  .src-link .ti{{ font-size:0.875rem; }}
+  .src-note{{ margin-left:8px; font-size:0.6875rem; color:var(--text-3); }}
+  /* 合規風險點（5 段，由淺到深） */
+  .risk-dots{{ display:inline-flex; gap:2px; align-items:center; }}
+  .risk-dot{{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }}
+  .risk-dot.off{{ background:var(--border); }}
+  .risk-lvl-5 .risk-dot.on{{ background:var(--danger); }}
+  .risk-lvl-4 .risk-dot.on{{ background:var(--warning); }}
+  .risk-lvl-3 .risk-dot.on{{ background:var(--yellow); }}
+  .risk-lvl-2 .risk-dot.on, .risk-lvl-1 .risk-dot.on{{ background:var(--text-3); }}
+  /* ── 分頁 ── */
+  .reg-pager{{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; justify-content:flex-end; margin:8px 0 16px; }}
+  .reg-pager button{{ min-width:36px; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text);
+    font-size:0.8125rem; cursor:pointer; transition:all .15s ease; }}
+  .reg-pager button:hover:not(:disabled):not(.active){{ border-color:var(--blue); color:var(--blue); }}
+  .reg-pager button.active{{ background:var(--blue); border-color:var(--blue); color:var(--white); }}
+  .reg-pager button:disabled{{ opacity:.4; cursor:not-allowed; }}
+  /* ── 新聞卡片 ── */
+  .item{{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; position:relative; overflow:hidden;
+    transition:background .15s ease, border-color .15s ease; }}
+  .item:hover{{ border-color:var(--blue-mid); }}
+  .item.read{{ opacity:.6; }}
+  .item.focused{{ border-color:var(--blue); box-shadow:var(--osh-focus); }}
+  .item .row{{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }}
+  .item .date{{ font-size:0.75rem; color:var(--text-2); white-space:nowrap; font-variant-numeric:tabular-nums; }}
+  .item h3{{ margin:4px 0; font-size:0.875rem; font-weight:600; line-height:1.5; }}
+  .item h3 a{{ color:var(--text-heading); text-decoration:none; }}
+  .item h3 a:hover{{ color:var(--blue); text-decoration:underline; }}
+  .item .src{{ font-size:0.75rem; color:var(--text-2); }}
+  .item .actions{{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }}
+  .item .actions button{{ min-height:32px; padding:2px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text-2);
+    font-size:0.75rem; cursor:pointer; transition:all .15s ease; }}
+  .item .actions button:hover{{ background:var(--bg-muted); color:var(--text); }}
+  .item .actions button.on{{ border-color:var(--blue-mid); color:var(--blue); background:var(--blue-light); }}
+  #newsList.list-view .item{{ display:flex; align-items:center; padding:8px 16px; gap:12px; }}
+  #newsList.list-view .item .row{{ flex-shrink:0; width:84px; flex-direction:column; gap:0; flex-wrap:nowrap; }}
+  #newsList.list-view .item .src, #newsList.list-view .item .also, #newsList.list-view .item .actions button[data-act="read"]{{ display:none; }}
+  #newsList.list-view .item h3{{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; min-width:0; }}
+  #newsList.list-view .item .actions{{ margin-top:0; flex-wrap:nowrap; }}
+  #newsList.title-view .item{{ padding:8px 16px; }}
+  #newsList.title-view .item .row, #newsList.title-view .item .ai-summary, #newsList.title-view .item .also, #newsList.title-view .item .actions{{ display:none; }}
+  #newsList.title-view .item h3{{ margin:0; font-weight:500; display:flex; align-items:center; gap:8px; }}
+  #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:0.75rem; color:var(--text-2); white-space:nowrap; flex-shrink:0; font-weight:400; }}
+  #newsList.title-view .item:hover .actions{{ display:flex; margin-top:4px; }}
+  .empty-state{{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; color:var(--text-2); text-align:center; }}
+  .empty-state .icon{{ font-size:2.25rem; }}
+  .empty-state p{{ font-size:0.875rem; line-height:1.7; max-width:400px; }}
+  /* ── 卡片類（情境、時間軸、草案、異動） ── */
+  .scenario-card, .draft-card, .law-card, .source-card, .diff-card, .tl-item, .compare-col, #legend-panel{{ border-radius:var(--radius) !important; border-color:var(--border) !important; box-shadow:none !important; }}
+  .scenario-card{{ border-top:1px solid var(--border) !important; border-radius:var(--radius-lg) !important; padding:20px; }}
+  .scenario-card:hover{{ transform:none; border-color:var(--blue-mid) !important; }}
+  .scenario-card.open{{ border-color:var(--blue) !important; }}
+  .source-card{{ border-left:1px solid var(--border) !important; }}
+  .tl-year-label{{ color:var(--text-heading); border-left-color:var(--blue); }}
+  .tl-item:hover{{ border-color:var(--blue-mid) !important; }}
+  /* ── 對話框 ── */
+  .settings-modal, .kbd-modal, .ai-modal, .compare-modal, .guide-modal, .ds-modal{{ background:rgba(0,0,0,0.45); padding:24px; }}
+  .settings-box, .kbd-box, .ai-box, .compare-box, .guide-box, .ds-box{{ background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-level3); padding:20px 24px; animation:fadeInUp .2s ease; }}
+  .settings-box h3, .kbd-box h3, .ai-box h3, .compare-header h3, .guide-box h3, .ds-box h3{{ font-size:1rem; font-weight:600; color:var(--text-heading); margin-top:0; }}
+  .settings-box > button, .kbd-box > button, .guide-box button, .ai-box button, .mute-input-row button{{ min-height:36px; border-radius:var(--radius) !important; font-size:0.8125rem !important; }}
+  .guide-q select, .compare-selects select, .compare-filter-input, .mute-input-row input{{ min-height:40px; border-radius:var(--radius) !important; background:var(--surface) !important; }}
+  .mute-chip{{ background:var(--blue-light); border-color:var(--blue-light); color:var(--blue); }}
+  .mute-chip button{{ color:var(--blue); }}
+  .notif-toast{{ background:var(--surface); color:var(--text); border:1px solid var(--border); border-left:3px solid var(--blue); box-shadow:var(--shadow-level3); border-radius:var(--radius); }}
+  .toast-clip{{ background:var(--surface-inverse); border-radius:var(--radius); }}
+  /* ── 法規抽屜 ── */
+  #law-drawer{{ box-shadow:var(--shadow-level3); border-left:1px solid var(--border); }}
+  #drawer-header{{ padding:16px 20px; align-items:center; }}
+  #drawer-header h2{{ font-size:1rem; }}
+  #drawer-header h2 a{{ color:var(--text-heading); }}
+  #drawer-close{{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); font-size:1rem; }}
+  #drawer-body{{ padding:16px 20px 24px; }}
+  .drawer-section h3{{ font-size:0.6875rem; letter-spacing:.07em; color:var(--text-3); }}
+  .drawer-fulllink{{ background:var(--blue); border-radius:var(--radius); min-height:40px; display:inline-flex; align-items:center; }}
+  .drawer-fulllink:hover{{ background:var(--blue-mid); opacity:1; }}
+  .drawer-tool-btn{{ min-height:32px; border-radius:var(--radius); }}
+  .drawer-tool-btn.active{{ background:var(--blue); border-color:var(--blue); }}
+  /* ── 底部分頁列（手機） ── */
+  .bottom-nav{{ display:none; position:fixed; bottom:0; left:0; right:0; height:calc(60px + env(safe-area-inset-bottom,0px)); background:var(--surface);
+    border-top:1px solid var(--border); z-index:200; padding:0 4px env(safe-area-inset-bottom,0px); }}
+  .bottom-nav button{{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border:none; background:transparent;
+    color:var(--text-3); font-size:0.6875rem; font-weight:500; cursor:pointer; border-radius:var(--radius); transition:all .15s ease; }}
+  .bottom-nav button .ti{{ font-size:1.375rem; }}
+  .bottom-nav button:hover{{ color:var(--text-2); background:var(--bg-muted); }}
+  .bottom-nav button.active{{ color:var(--brand-blue); }}
+  footer{{ margin-top:32px; padding-top:16px; border-top:1px solid var(--border); font-size:0.75rem; color:var(--text-3); line-height:1.7; }}
+  /* 讀取進度條 */
+  #read-progress{{ background:var(--blue); height:2px; }}
+  .seg button{{ display:inline-flex; align-items:center; gap:4px; font-size:0.8125rem; cursor:pointer; white-space:nowrap; transition:all .15s ease; }}
+  .chg-modes{{ margin:8px 0 12px; }}
+  .draft-badge{{ color:var(--danger); }}
+  .chg-controls{{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }}
+  .chg-controls select{{ width:auto; min-width:140px; cursor:pointer; }}
+  .chg-controls input{{ flex:1; width:auto; min-width:200px; }}
+  .scenario-search{{ margin-bottom:16px; }}
+
+  /* ════════ RWD ════════ */
+  @media (max-width:1279px){{
+    :root{{ --osh-sidebar-w:220px; }}
+    .main-area{{ padding-left:28px; padding-right:28px; }}
+    .icon-btn-label{{ display:none; }}
+  }}
+  @media (max-width:1023px){{
+    :root{{ --osh-sidebar-w:60px; }}
+    .main-area{{ padding-left:24px; padding-right:24px; }}
+    .sidebar-logo{{ justify-content:center; padding:0; }}
+    .sidebar-logo-text, .sidebar-section-label, .snav-label, .sidebar-footer{{ display:none; }}
+    .sidebar-nav{{ padding:12px 8px; }}
+    .sidebar-btn{{ justify-content:center; padding:4px 0; border-left:none; }}
+    .snav-icon{{ width:36px; height:36px; align-items:center; border-radius:var(--radius); background:var(--bg-muted); }}
+    .sidebar-btn.active .snav-icon{{ background:var(--primary-light); }}
+    .sidebar-btn.active{{ background:transparent; }}
+    .reg-bar{{ align-items:flex-start; }}
+  }}
+  @media (max-width:767px){{
+    .sidebar{{ display:none; }}
+    .topbar{{ left:0; padding:0 16px; height:56px; }}
+    .topbar-brand{{ display:flex; }}
+    .topbar-brand .logo-mark{{ width:28px; height:28px; }}
+    .topbar-meta{{ display:none; }}
+    .main-area{{ margin-left:0; padding:calc(56px + 16px) 16px calc(60px + 24px); }}
+    .bottom-nav{{ display:flex; }}
+    /* 工具列：每組單行橫向捲動，不換行成好幾排 */
+    .reg-toolbar{{ flex-direction:column; align-items:stretch; gap:8px; }}
+    .view-btns{{ overflow-x:auto; scrollbar-width:none; }}
+    .view-btns button{{ flex:1; justify-content:center; }}
+    .view-btns button span{{ display:none; }}
+    .cat-filters, .scroll-row, .src-filters, .controls{{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-left:-16px; margin-right:-16px; padding:0 16px; }}
+    .cat-filters::-webkit-scrollbar, .scroll-row::-webkit-scrollbar, .src-filters::-webkit-scrollbar, .controls::-webkit-scrollbar, .view-btns::-webkit-scrollbar{{ display:none; }}
+    .reg-bar{{ flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:8px; }}
+    .reg-bar > *{{ min-width:0; }}
+    .reg-bar .reg-controls{{ width:auto; }}
+    .reg-bar-right{{ justify-content:space-between; flex-wrap:nowrap; }}
+    .seg-label{{ display:none; }}
+    .view-toggle{{ flex-wrap:wrap; }}
+    .settings-modal, .kbd-modal, .ai-modal, .guide-modal, .ds-modal{{ padding:0; align-items:flex-end; }}
+    .settings-box, .kbd-box, .ai-box, .guide-box, .ds-box{{ width:100% !important; max-width:100% !important; border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; }}
+  }}
+  @media (max-width:639px){{
+    /* 表格改為卡片堆疊 */
+    .table-scroll{{ overflow-x:visible; background:transparent; border:none; border-radius:0; }}
+    .registry-table, .registry-table tbody{{ display:block; min-width:0 !important; }}
+    .registry-table thead{{ display:none; }}
+    /* 卡片：第一行名稱＋收藏，下方把分類/位階/日期/來源併成一行 */
+    .registry-table tbody tr{{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-lg); margin-bottom:8px; padding:12px 8px 12px 16px; position:relative; }}
+    .registry-table tbody tr:hover{{ background:var(--surface); }}
+    .registry-table tbody tr.law-updated{{ background:var(--warning-bg); }}
+    .registry-table td{{ display:block; width:auto !important; padding:0 !important; border:none !important; white-space:nowrap; font-size:0.75rem; color:var(--text-2); }}
+    .registry-table td.rname{{ flex:1 1 100%; min-width:0; padding-right:40px !important; margin-bottom:4px; white-space:normal; font-size:0.875rem; color:var(--text); }}
+    .registry-table td.star-cell{{ position:absolute; top:8px; right:8px; }}
+    .registry-table td.rdate{{ font-size:0.75rem; color:var(--text); font-weight:500; }}
+    .registry-table .tier-tag, .registry-table .src-link, .rcat{{ font-size:0.75rem; }}
+    .reg-pager{{ justify-content:center; }}
+    .reg-pager button[data-pgact="goto"]:not(.active){{ display:none; }}
+    .reg-tools .icon-btn{{ width:40px; }}
   }}
 </style>
 </head>
 <body>
 <header class="topbar">
   <div class="topbar-brand">
+    <span class="logo-mark" aria-hidden="true"><i class="ti ti-shield-check"></i></span>
     <h1>職安法規觀測站</h1>
-    <div class="topbar-divider"></div>
-    <div class="topbar-subtitle">職業安全衛生法規查詢</div>
+  </div>
+  <div class="topbar-meta" title="資料產生時間（台灣時間）">
+    <i class="ti ti-clock" aria-hidden="true"></i><span>更新 <b>{generated_at}</b></span>
+    <span class="sep" aria-hidden="true"></span><span><b>{registry_count}</b> 筆法規</span>
+    <span class="sep" aria-hidden="true"></span><span><b>{news_count}</b> 則動態</span>
   </div>
   <div class="topbar-right">
-    <div class="topbar-meta">📅 {generated_at} ｜ {news_count} 則動態 ｜ {registry_count} 筆法規</div>
-    <button class="tool-btn" id="ds-btn" onclick="openDataStatus()" title="資料來源狀態" style="display:flex;align-items:center;gap:4px;font-size:12px">
-      <span class="data-status-dot ds-ok" id="ds-indicator"></span><span class="topbar-subtitle" style="display:inline">狀態</span>
+    <button class="icon-btn" id="ds-btn" onclick="openDataStatus()" title="資料來源狀態">
+      <span class="data-status-dot ds-ok" id="ds-indicator"></span><span class="icon-btn-label">資料狀態</span>
     </button>
-    <button class="theme-btn" id="theme-toggle" title="切換深色/淺色主題" onclick="toggleTheme()">🌙</button>
+    <button class="icon-btn" id="theme-toggle" title="切換深色/淺色主題" aria-label="切換深色/淺色主題" onclick="toggleTheme()"><i class="ti ti-moon" aria-hidden="true"></i></button>
   </div>
 </header>
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-section-label">法規</div>
-  <button class="sidebar-btn active" data-tab="registry"><span class="snav-icon">📋</span><span class="snav-label">現行法規總覽</span></button>
-  <button class="sidebar-btn" data-tab="changes"><span class="snav-icon">🔄</span><span class="snav-label">異動與預告</span></button>
-  <button class="sidebar-btn" data-tab="lookup"><span class="snav-icon">🔍</span><span class="snav-label">快速情境查詢</span></button>
-  <div class="sidebar-section-label">動態</div>
-  <button class="sidebar-btn" data-tab="news"><span class="snav-icon">📰</span><span class="snav-label">最新動態</span></button>
-  <div class="sidebar-footer">收藏與讀取狀態<br>僅存於本機瀏覽器</div>
+  <div class="sidebar-logo">
+    <span class="logo-mark" aria-hidden="true"><i class="ti ti-shield-check"></i></span>
+    <span class="sidebar-logo-text"><b>職安法規觀測站</b><span>職業安全衛生法規查詢</span></span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section-label">法規</div>
+    <button class="sidebar-btn active" data-tab="registry" title="現行法規總覽"><span class="snav-icon"><i class="ti ti-list-details" aria-hidden="true"></i></span><span class="snav-label">現行法規總覽</span></button>
+    <button class="sidebar-btn" data-tab="changes" title="異動與預告"><span class="snav-icon"><i class="ti ti-git-compare" aria-hidden="true"></i></span><span class="snav-label">異動與預告</span></button>
+    <button class="sidebar-btn" data-tab="lookup" title="快速情境查詢"><span class="snav-icon"><i class="ti ti-compass" aria-hidden="true"></i></span><span class="snav-label">快速情境查詢</span></button>
+    <div class="sidebar-section-label">動態</div>
+    <button class="sidebar-btn" data-tab="news" title="最新動態"><span class="snav-icon"><i class="ti ti-news" aria-hidden="true"></i></span><span class="snav-label">最新動態</span></button>
+  </div>
+  <div class="sidebar-footer"><i class="ti ti-device-desktop" aria-hidden="true"></i><span>收藏與讀取狀態<br>僅存於本機瀏覽器</span></div>
 </nav>
 <main class="main-area">
 <nav class="bottom-nav" id="bottomNav">
-  <button data-tab="registry" class="active"><span class="bn-icon">📋</span><span>法規</span></button>
-  <button data-tab="changes"><span class="bn-icon">🔄</span><span>異動</span></button>
-  <button data-tab="lookup"><span class="bn-icon">🔍</span><span>情境</span></button>
-  <button data-tab="news"><span class="bn-icon">📰</span><span>動態</span></button>
+  <button data-tab="registry" class="active"><i class="ti ti-list-details" aria-hidden="true"></i><span>法規</span></button>
+  <button data-tab="changes"><i class="ti ti-git-compare" aria-hidden="true"></i><span>異動</span></button>
+  <button data-tab="lookup"><i class="ti ti-compass" aria-hidden="true"></i><span>情境</span></button>
+  <button data-tab="news"><i class="ti ti-news" aria-hidden="true"></i><span>動態</span></button>
 </nav>
 
   <section class="tabpanel" id="tab-news">
@@ -2369,7 +2522,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button class="src-filter-btn" data-srctype="event">📅 活動訊息</button>
     </div>
     <div class="board-area" id="board-area" style="display:none">
-      <span style="font-size:11.5px;color:var(--ink-soft)">版板：</span>
+      <span style="font-size:0.75rem;color:var(--ink-soft)">版板：</span>
       <div class="board-pills" id="board-pills"></div>
     </div>
     <div class="view-toggle">
@@ -2386,38 +2539,45 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <section class="tabpanel active" id="tab-registry">
     <h2>現行法規總覽</h2>
-    <p class="section-note">職業安全衛生母法及附屬法規命令。<span style="color:var(--amber);font-weight:600">近期修正</span>標示為近12個月內有修正紀錄；<span style="color:var(--green);font-weight:600">新訂</span>為新制定法規；「待確認」表示尚未取得官方驗證日期。</p>
+    <p class="section-note">職業安全衛生母法及附屬法規命令。點法規名稱可查看條文異動與罰則；「待確認」表示尚未取得官方驗證日期，標籤說明見右側「圖例」。</p>
     <div class="reg-toolbar">
-      <input id="lawSearch" placeholder="搜尋法規名稱或條文內容…" autocomplete="off">
+      <div class="input-wrap">
+        <i class="ti ti-search input-icon" aria-hidden="true"></i>
+        <input id="lawSearch" placeholder="搜尋法規名稱或條文內容…" autocomplete="off" aria-label="搜尋法規">
+      </div>
+      <div class="view-btns seg" role="group" aria-label="檢視方式">
+        <button class="active" data-regview="table" title="表格"><i class="ti ti-table" aria-hidden="true"></i><span>表格</span></button>
+        <button data-regview="timeline" title="時間軸"><i class="ti ti-timeline" aria-hidden="true"></i><span>時間軸</span></button>
+        <button data-regview="graph" title="關係圖譜"><i class="ti ti-affiliate" aria-hidden="true"></i><span>圖譜</span></button>
+        <button data-regview="matrix" title="風險矩陣"><i class="ti ti-chart-dots-3" aria-hidden="true"></i><span>矩陣</span></button>
+        <button data-regview="penalty" title="罰則表"><i class="ti ti-coin" aria-hidden="true"></i><span>罰則表</span></button>
+      </div>
     </div>
     <div class="cat-filters" id="catFilters"></div>
-    <div class="reg-controls">
-      <span class="label">篩選：</span>
-      <button data-lawfilter="all" class="active">全部</button>
-      <button data-lawfilter="starred">★ 已收藏</button>
-      <button data-lawfilter="recent3m">近3月修正</button>
-      <button data-lawfilter="recent">近1年修正</button>
-      <button data-lawfilter="unread">● 未讀</button>
-      <span id="unread-law-count" class="unread-law-count"></span>
-      <button id="markAllReadBtn" onclick="markAllLawsRead()" style="font-size:12px;display:none">✓ 全部已讀</button>
-    </div>
-    <div class="reg-controls">
-      <span class="label">排序：</span>
-      <button data-sort="cat">依分類</button>
-      <button data-sort="date" class="active">依修正日期</button>
-      <button data-sort="name">依名稱</button>
-      <div class="sep"></div>
-      <button onclick="openCompare()" style="font-size:12px">⚖ 對比</button>
-      <button onclick="document.getElementById('guide-modal').classList.add('open')" style="font-size:12px">🎯 判斷</button>
-      <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()">⚠ 罰則</button>
-      <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()">🔍 稽查</button>
-      <button id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" style="font-size:12px">💡 圖例</button>
-      <div class="view-btns">
-        <button class="active" data-regview="table">📋 表格</button>
-        <button data-regview="timeline">📅 時間軸</button>
-        <button data-regview="graph">🕸 圖譜</button>
-        <button data-regview="matrix">📊 矩陣</button>
-        <button data-regview="penalty">💰 罰則表</button>
+    <div class="reg-bar">
+      <div class="reg-controls scroll-row" role="group" aria-label="篩選">
+        <button data-lawfilter="all" class="active">全部</button>
+        <button data-lawfilter="unread">未讀<span id="unread-law-count" class="unread-law-count"></span></button>
+        <button data-lawfilter="recent3m">近 3 月修正</button>
+        <button data-lawfilter="recent">近 1 年修正</button>
+        <button data-lawfilter="starred"><i class="ti ti-star" aria-hidden="true"></i>已收藏</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()"><i class="ti ti-alert-triangle" aria-hidden="true"></i>有罰則</button>
+        <button class="penalty-filter-btn" id="inspectFocusBtn" onclick="toggleInspectFilter()"><i class="ti ti-zoom-check" aria-hidden="true"></i>稽查重點</button>
+        <button id="markAllReadBtn" class="text-btn" onclick="markAllLawsRead()" style="display:none"><i class="ti ti-checks" aria-hidden="true"></i>全部標為已讀</button>
+      </div>
+      <div class="reg-bar-right">
+        <div class="seg seg-sm" role="group" aria-label="排序">
+          <span class="seg-label">排序</span>
+          <button data-sort="date" class="active">修正日期</button>
+          <button data-sort="cat">分類</button>
+          <button data-sort="name">名稱</button>
+        </div>
+        <div class="reg-tools">
+          <button class="icon-btn" onclick="openCompare()" title="法規並排對比"><i class="ti ti-columns" aria-hidden="true"></i><span class="icon-btn-label">對比</span></button>
+          <button class="icon-btn" onclick="document.getElementById('guide-modal').classList.add('open')" title="法規適用性判斷"><i class="ti ti-list-check" aria-hidden="true"></i><span class="icon-btn-label">適用判斷</span></button>
+          <button class="icon-btn" id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" title="圖例說明"><i class="ti ti-info-circle" aria-hidden="true"></i><span class="icon-btn-label">圖例</span></button>
+        </div>
       </div>
     </div>
     <div id="legend-panel">
@@ -2430,65 +2590,39 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <span class="legend-item"><span class="tier-tag guide">技術指引</span>OSHA技術參考文件</span>
       </div>
       <div class="legend-row">
-        <span class="legend-label">資料來源</span>
-        <span class="legend-item"><span class="src-badge src-xml">XML</span>全國法規資料庫自動更新（每日）</span>
-        <span class="legend-item"><span class="src-badge src-static">靜態</span>手動維護</span>
-        <span class="legend-item"><span class="src-badge src-guide">指引</span>OSHA技術指引（手動）</span>
+        <span class="legend-label">修正狀態</span>
+        <span class="legend-item"><span class="badge badge-green">新訂</span>新制定法規</span>
+        <span class="legend-item"><span class="badge badge-yellow">近 3 月修正</span>近 3 個月內有修正</span>
+        <span class="legend-item"><span class="badge badge-gray">近 1 年修正</span>近 12 個月內有修正</span>
+        <span class="legend-item"><span class="badge badge-red">未生效</span>已修正但尚未施行</span>
+        <span class="legend-item"><span class="badge badge-blue">收藏後已更新</span>收藏後有新修正</span>
       </div>
       <div class="legend-row">
-        <span class="legend-label">修正狀態</span>
-        <span class="legend-item"><span class="badge recent">近期修正</span>近3個月內有修正</span>
-        <span class="legend-item"><span class="badge" style="background:#ef4444;color:#fff;padding:1px 7px;border-radius:3px;font-size:11px">未生效</span>已修正但尚未施行</span>
-        <span class="legend-item"><span class="badge recent" style="background:#f59e0b">已更新</span>收藏後有新修正</span>
+        <span class="legend-label">條文異動</span>
+        <span class="legend-item"><span class="chg-chip chg-modified">修正</span><span class="chg-chip chg-added">增訂</span><span class="chg-chip chg-deleted">刪除</span>最近一次修正的條數</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">稽查</span>
-        <span class="legend-item"><span class="badge" style="background:rgba(234,88,12,.12);color:#c2410c;border:1px solid rgba(234,88,12,.3);padding:1px 7px;border-radius:3px;font-size:11px">🔍 精查重點 #1</span>勞動檢查常見缺失，數字為嚴重度排名</span>
+        <span class="legend-item"><span class="meta-item meta-danger"><i class="ti ti-zoom-check" aria-hidden="true"></i>稽查重點 #1</span>勞動檢查常見缺失，數字為嚴重度排名</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">合規風險</span>
-        <span class="legend-item">
-          <span class="legend-dots">
-            <span class="legend-dot" style="background:#b91c1c"></span>
-            <span class="legend-dot" style="background:#b91c1c"></span>
-            <span class="legend-dot" style="background:#b91c1c"></span>
-            <span class="legend-dot" style="background:#b91c1c"></span>
-            <span class="legend-dot" style="background:#b91c1c"></span>
-          </span>5分：違反即可能停工/重罰
-        </span>
-        <span class="legend-item">
-          <span class="legend-dots">
-            <span class="legend-dot" style="background:#ea580c"></span>
-            <span class="legend-dot" style="background:#ea580c"></span>
-            <span class="legend-dot" style="background:#ea580c"></span>
-            <span class="legend-dot" style="background:#ea580c"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-          </span>4分：重大缺失
-        </span>
-        <span class="legend-item">
-          <span class="legend-dots">
-            <span class="legend-dot" style="background:#ca8a04"></span>
-            <span class="legend-dot" style="background:#ca8a04"></span>
-            <span class="legend-dot" style="background:#ca8a04"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-          </span>3分：一般缺失
-        </span>
-        <span class="legend-item">
-          <span class="legend-dots">
-            <span class="legend-dot" style="background:#16a34a"></span>
-            <span class="legend-dot" style="background:#16a34a"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-            <span class="legend-dot" style="background:var(--border)"></span>
-          </span>2分：輕微
-        </span>
+        <span class="legend-item"><span class="risk-dots risk-lvl-5"><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span></span>5 分：違反即可能停工/重罰</span>
+        <span class="legend-item"><span class="risk-dots risk-lvl-4"><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot off"></span></span>4 分：重大缺失</span>
+        <span class="legend-item"><span class="risk-dots risk-lvl-3"><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot off"></span><span class="risk-dot off"></span></span>3 分：一般缺失</span>
+        <span class="legend-item"><span class="risk-dots risk-lvl-2"><span class="risk-dot on"></span><span class="risk-dot on"></span><span class="risk-dot off"></span><span class="risk-dot off"></span><span class="risk-dot off"></span></span>1–2 分：輕微</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-label">資料來源</span>
+        <span class="legend-item"><span class="src-link">全文<i class="ti ti-external-link" aria-hidden="true"></i></span>全國法規資料庫，每日自動更新</span>
+        <span class="legend-item"><span class="src-note" style="margin:0">手動</span>手動維護</span>
+        <span class="legend-item"><span class="src-note" style="margin:0">指引</span>OSHA 技術指引（手動）</span>
       </div>
       <div class="legend-row">
         <span class="legend-label">條文標籤</span>
-        <span class="legend-item"><span class="art-chip art-chip-penalty" style="font-size:11px;padding:2px 7px">第X條</span>含罰則條文</span>
-        <span class="legend-item"><span class="art-chip art-chip-added" style="font-size:11px;padding:2px 7px">第X條</span>本次新增條文</span>
-        <span class="legend-item"><span class="art-chip" style="font-size:11px;padding:2px 7px">第X條</span>修正條文</span>
+        <span class="legend-item"><span class="art-chip art-chip-penalty">第X條</span>含罰則條文</span>
+        <span class="legend-item"><span class="art-chip art-chip-added">第X條</span>本次新增條文</span>
+        <span class="legend-item"><span class="art-chip">第X條</span>修正條文</span>
       </div>
     </div>
     <div class="registry-meta" id="registryMeta"></div>
@@ -2516,7 +2650,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <section class="tabpanel" id="tab-changes">
     <h2>異動與預告</h2>
-    <div class="reg-controls chg-modes">
+    <div class="seg chg-modes" role="group" aria-label="異動類型">
       <button data-chgmode="changes" class="active">已公布的條文異動</button>
       <button data-chgmode="drafts">預告中的草案<span id="draftBadge" class="draft-badge"></span></button>
     </div>
@@ -2588,14 +2722,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
       <div class="hint">含有靜音關鍵字的新聞將不顯示</div>
     </div>
-    <button onclick="document.getElementById('settings-modal').classList.remove('open')" style="padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">關閉</button>
+    <button onclick="document.getElementById('settings-modal').classList.remove('open')" style="padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;font-size:0.8125rem">關閉</button>
   </div>
 </div>
 <div id="clip-toast" class="toast-clip"></div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
 <div id="ds-modal" class="ds-modal" onclick="if(event.target===this)closeDataStatus()">
   <div class="ds-box">
-    <h3>資料來源狀態 <button onclick="closeDataStatus()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft);padding:0 4px">✕</button></h3>
+    <h3>資料來源狀態 <button onclick="closeDataStatus()" style="background:none;border:none;cursor:pointer;font-size:1.25rem;color:var(--ink-soft);padding:0 4px">✕</button></h3>
     <div id="ds-content"></div>
   </div>
 </div>
@@ -2647,8 +2781,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
-      <button onclick="runGuide()" style="background:var(--stamp);color:#fff;border:none;padding:7px 20px;border-radius:4px;cursor:pointer;font-size:13px">判斷適用法規</button>
-      <button onclick="document.getElementById('guide-modal').classList.remove('open')" style="border:1px solid var(--border);background:transparent;padding:7px 14px;border-radius:4px;cursor:pointer;font-size:13px">關閉</button>
+      <button onclick="runGuide()" style="background:var(--stamp);color:var(--white);border:none;padding:7px 20px;border-radius:6px;cursor:pointer;font-size:0.8125rem">判斷適用法規</button>
+      <button onclick="document.getElementById('guide-modal').classList.remove('open')" style="border:1px solid var(--border);background:transparent;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:0.8125rem">關閉</button>
     </div>
     <div id="guide-result" style="margin-top:16px"></div>
   </div>
@@ -2666,18 +2800,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="kbd-row"><span><kbd>m</kbd></span><span>標記已讀</span></div>
     <div class="kbd-row"><span><kbd>?</kbd></span><span>顯示此說明</span></div>
     <div class="kbd-row"><span><kbd>Esc</kbd></span><span>關閉</span></div>
-    <button onclick="document.getElementById('kbd-modal').classList.remove('open')" style="margin-top:16px;padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;">關閉</button>
+    <button onclick="document.getElementById('kbd-modal').classList.remove('open')" style="margin-top:16px;padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;">關閉</button>
   </div>
 </div>
 <div id="ai-modal" class="ai-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="ai-box">
     <h3 id="ai-title"></h3>
-    <p id="ai-source" style="font-size:12px;color:var(--ink-soft);margin-bottom:14px"></p>
+    <p id="ai-source" style="font-size:0.8125rem;color:var(--ink-soft);margin-bottom:14px"></p>
     <div id="ai-content"></div>
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <a id="ai-claude-link" href="#" target="_blank" rel="noopener" style="padding:7px 14px;background:var(--stamp);color:#fff;text-decoration:none;border-radius:4px;font-size:13px">以 Claude 摘要 ↗</a>
-      <button id="ai-copy-btn" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">複製連結</button>
-      <button onclick="document.getElementById('ai-modal').classList.remove('open')" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:4px;font-size:13px">關閉</button>
+      <a id="ai-claude-link" href="#" target="_blank" rel="noopener" style="padding:7px 14px;background:var(--stamp);color:var(--white);text-decoration:none;border-radius:6px;font-size:0.8125rem">以 Claude 摘要 ↗</a>
+      <button id="ai-copy-btn" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;font-size:0.8125rem">複製連結</button>
+      <button onclick="document.getElementById('ai-modal').classList.remove('open')" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;font-size:0.8125rem">關閉</button>
     </div>
   </div>
 </div>
@@ -2699,7 +2833,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <script>
   window.onerror = function(msg, src, line, col, err) {{
     var d = document.createElement("div");
-    d.style.cssText = "background:#c00;color:#fff;padding:12px 16px;position:fixed;top:0;left:0;right:0;z-index:9999;font-size:14px";
+    d.style.cssText = "background:var(--danger);color:var(--white);padding:12px 16px;position:fixed;top:0;left:0;right:0;z-index:9999;font-size:0.875rem";
     d.textContent = "JS 錯誤（第 " + line + " 行）：" + msg;
     document.body && document.body.prepend(d);
     return false;
@@ -2834,9 +2968,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var n = {{mod:0, add:0, del:0}};
     changes.forEach(function(c) {{ n[c.type]++; }});
     var chips = [];
-    if (n.mod) chips.push('<span class="chg-chip chg-modified">✏ 修正 ' + n.mod + ' 條</span>');
-    if (n.add) chips.push('<span class="chg-chip chg-added">＋增 ' + n.add + ' 條</span>');
-    if (n.del) chips.push('<span class="chg-chip chg-deleted">✕刪 ' + n.del + ' 條</span>');
+    if (n.mod) chips.push('<span class="chg-chip chg-modified">修正 ' + n.mod + ' 條</span>');
+    if (n.add) chips.push('<span class="chg-chip chg-added">增訂 ' + n.add + ' 條</span>');
+    if (n.del) chips.push('<span class="chg-chip chg-deleted">刪除 ' + n.del + ' 條</span>');
     return chips.join('');
   }}
 
@@ -2848,11 +2982,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lr.is_full) return '<span class="chg-chip chg-modified">全文修正</span>';
     var chips = [];
     if (lr.modified && lr.modified.length)
-      chips.push('<span class="chg-chip chg-modified">✏ 修正 ' + lr.modified.length + ' 條</span>');
+      chips.push('<span class="chg-chip chg-modified">修正 ' + lr.modified.length + ' 條</span>');
     if (lr.added && lr.added.length)
-      chips.push('<span class="chg-chip chg-added">＋增 ' + lr.added.length + ' 條</span>');
+      chips.push('<span class="chg-chip chg-added">增訂 ' + lr.added.length + ' 條</span>');
     if (lr.deleted && lr.deleted.length)
-      chips.push('<span class="chg-chip chg-deleted">✕刪 ' + lr.deleted.length + ' 條</span>');
+      chips.push('<span class="chg-chip chg-deleted">刪除 ' + lr.deleted.length + ' 條</span>');
     return chips.join('');
   }}
 
@@ -2992,7 +3126,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var id = idOf(item);
     if (state.boards.length === 0) {{
       var hint = document.createElement('div');
-      hint.style.cssText = 'padding:8px 14px;font-size:12px;color:var(--ink-soft)';
+      hint.style.cssText = 'padding:8px 14px;font-size:0.8125rem;color:var(--ink-soft)';
       hint.textContent = '尚無版板';
       dd.appendChild(hint);
     }}
@@ -3045,13 +3179,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (item.summary) {{
       contentHtml =
         '<div class="ai-prebuilt">' + item.summary + '</div>' +
-        '<p style="font-size:11.5px;color:var(--ink-soft);margin-top:4px">✦ 由 Gemini AI 預先產生</p>';
+        '<p style="font-size:0.75rem;color:var(--ink-soft);margin-top:4px">✦ 由 Gemini AI 預先產生</p>';
     }} else {{
       contentHtml =
-        '<p style="font-size:13px;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>';
+        '<p style="font-size:0.8125rem;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>';
     }}
     contentHtml +=
-      '<p style="margin-top:10px;font-size:12px;color:var(--ink-soft)">文章連結：' +
+      '<p style="margin-top:10px;font-size:0.8125rem;color:var(--ink-soft)">文章連結：' +
       '<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
     document.getElementById('ai-content').innerHTML = contentHtml;
     document.getElementById('ai-modal').classList.add('open');
@@ -3096,24 +3230,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function initTheme() {{
     var saved = localStorage.getItem("osh_theme");
     if (saved) document.documentElement.setAttribute("data-theme", saved);
+    _setThemeIcon();
+  }}
+  // 沒手動選過主題時跟隨系統設定
+  function _effectiveTheme() {{
+    return document.documentElement.getAttribute("data-theme") ||
+      (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }}
+  function _setThemeIcon() {{
     var btn = document.getElementById("theme-toggle");
-    if (btn) btn.textContent = (document.documentElement.getAttribute("data-theme") === "dark") ? "☀️" : "🌙";
+    if (btn) btn.innerHTML = '<i class="ti ti-' + (_effectiveTheme() === "dark" ? "sun" : "moon") + '" aria-hidden="true"></i>';
   }}
   function toggleTheme() {{
-    var cur = document.documentElement.getAttribute("data-theme");
-    var next = cur === "dark" ? "light" : "dark";
+    var next = _effectiveTheme() === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("osh_theme", next);
-    var btn = document.getElementById("theme-toggle");
-    if (btn) btn.textContent = next === "dark" ? "☀️" : "🌙";
+    _setThemeIcon();
   }}
 
   // ─── 字體大小 ─────────────────────────────────────────────────
   function initFontSize() {{
     var saved = localStorage.getItem("osh_font_sz") || "14";
+    // 字級都用 rem，調整根字級即可整站縮放（14px 為預設，對應瀏覽器 100%）
     function applySize(sz) {{
-      document.documentElement.style.setProperty("--font-sz", sz + "px");
-      document.body.style.zoom = (parseFloat(sz) / 14).toFixed(3);
+      document.documentElement.style.fontSize = (parseFloat(sz) / 14 * 100).toFixed(1) + "%";
     }}
     applySize(saved);
     var range = document.getElementById("font-size-range");
@@ -3199,7 +3339,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       navigator.clipboard.writeText(item.link).then(function() {{
         var t = document.createElement("div");
         t.textContent = "連結已複製 ✓";
-        t.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:6px 14px;border-radius:4px;font-size:13px;z-index:9999";
+        t.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--white);padding:6px 14px;border-radius:6px;font-size:0.8125rem;z-index:9999";
         document.body.appendChild(t);
         setTimeout(function() {{ t.remove(); }}, 2000);
       }}).catch(function() {{ prompt("複製連結：", item.link); }});
@@ -3366,26 +3506,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var cols = document.getElementById('compare-cols');
     if (!cols) return;
     function colHtml(sel) {{
-      if (!sel.value) return '<div class="compare-col"><p style="color:var(--ink-soft);font-size:13px;padding:12px">請選擇法規</p></div>';
+      if (!sel.value) return '<div class="compare-col"><p style="color:var(--ink-soft);font-size:0.8125rem;padding:12px">請選擇法規</p></div>';
       var r = REGISTRY[+sel.value];
       if (!r) return '';
       var pcode = r.pcode || '';
       var artBase = pcode ? 'https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=' + pcode + '&flno=' : '';
       var statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : 'status-now';
       var h = '<div class="compare-col"><h4>' + r.name + ' <span class="' + statusCls + '">' + (r.status||'現行') + '</span></h4>';
-      if (r.scope) h += '<div class="scope-text" style="font-size:11.5px;margin-bottom:8px">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+      if (r.scope) h += '<div class="scope-text" style="font-size:0.75rem;margin-bottom:8px">' + r.scope.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
       if (r.articles && r.articles.length) {{
         var delA = (r.deleted_articles && r.deleted_articles.length) ? r.deleted_articles : [];
         var penA = new Set((r.penalty_articles || []).map(function(pa) {{ return pa.no; }}));
         var prevA = r.article_previews || {{}};
-        h += '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px">' +
+        h += '<div style="font-size:0.75rem;color:var(--ink-soft);margin-bottom:4px">' +
           r.articles.length + ' 條有效' + (delA.length ? '・' + delA.length + ' 條已刪除' : '') +
-          (penA.size ? '・<span style="color:#b91c1c">' + penA.size + ' 罰則</span>' : '') + '</div>';
+          (penA.size ? '・<span style="color:var(--danger)">' + penA.size + ' 罰則</span>' : '') + '</div>';
         r.articles.forEach(function(no) {{
           var isPen = penA.has(no);
           var prev = prevA[no] ? prevA[no].replace(/"/g,'&quot;') : '';
           var ta = prev ? ' title="' + prev + '"' : '';
-          var style = isPen ? 'color:#b91c1c;font-weight:600' : 'color:var(--stamp)';
+          var style = isPen ? 'color:var(--danger);font-weight:600' : 'color:var(--stamp)';
           h += artBase
             ? '<div class="compare-art"><a href="' + artBase + encodeURIComponent(no) + '" target="_blank" class="art-no" style="' + style + '"' + ta + '>第' + no + '條</a></div>'
             : '<div class="compare-art"><span class="art-no" style="' + style + '"' + ta + '>第' + no + '條</span></div>';
@@ -3433,10 +3573,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }});
     }}
     if (!relevant.length) {{
-      result.innerHTML = '<p style="color:var(--ink-soft);font-size:13px">找不到符合條件的法規，請放寬篩選條件。</p>';
+      result.innerHTML = '<p style="color:var(--ink-soft);font-size:0.8125rem">找不到符合條件的法規，請放寬篩選條件。</p>';
       return;
     }}
-    result.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：</p>' +
+    result.innerHTML = '<p style="font-size:0.8125rem;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：</p>' +
       relevant.map(function(r) {{
         return '<div class="guide-result-item" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' +
           '<span class="cat-tag">' + (r.cat||'') + '</span>' +
@@ -3570,36 +3710,36 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const recent3m = isRecent3m(r.date) && !isNewLaw(r);
       const recent = isRecent(r.date) && !isNewLaw(r) && !recent3m;
       const isnew = isNewLaw(r);
-      const badge = isnew ? '<span class="badge new-law">新訂</span>'
-                  : recent3m ? '<span class="badge recent" style="background:#dc2626">近3月修正</span>'
-                  : recent   ? '<span class="badge recent">近期修正</span>' : "";
+      const badge = isnew ? '<span class="badge badge-green">新訂</span>'
+                  : recent3m ? '<span class="badge badge-yellow">近 3 月修正</span>'
+                  : recent   ? '<span class="badge badge-gray">近 1 年修正</span>' : "";
       const chgSum = (recent || recent3m) ? _chgSummary(r) : '';
       const dateText = r.date || "待確認";
       const dateCls = r.date ? "rdate" : "rdate unconfirmed";
-      const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:11px">' + r.note + '</small>' : "";
+      const noteTxt = (r.note && !isnew) ? '<br><small style="color:var(--ink-soft);font-size:0.75rem">' + r.note + '</small>' : "";
       const starred = state.starredLaws[r.name];
       const hasUpdate = !!starred && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
       const isUnread = (isnew || recent || recent3m) && !state.readLaws[r.name];
-      const statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : '';
-      const statusBadge = statusCls ? '<span class="' + statusCls + '">' + (r.status || '現行') + '</span>' : '';
+      const statusCls = r.status === '廢止' ? 'badge-gray' : r.status === '未生效' ? 'badge-red' : '';
+      const statusBadge = statusCls ? '<span class="badge ' + statusCls + '">' + r.status + '</span>' : '';
       // ③ 全文搜尋：標示透過條文內容命中的法規
       var artMatchBadge = '';
       if (q && !r.name.includes(q) && ftHits[r.name]) {{
         var fn = ftHits[r.name];
-        artMatchBadge = '<span class="badge" style="background:#6d28d9;font-size:10px">條文符合：第' +
+        artMatchBadge = '<span class="meta-item meta-match"><i class="ti ti-text-scan-2" aria-hidden="true"></i>條文符合：第' +
           fn.slice(0,3).join('、') + (fn.length > 3 ? '…（共 ' + fn.length + ' 條）' : '') + '條</span>';
       }} else if (q && !r.name.includes(q) && r.search_text && r.search_text.includes(q) && r.article_previews) {{
         var matchedNos = (r.articles || []).filter(function(no) {{
           return (r.article_previews[no] || '').includes(q);
         }});
         if (matchedNos.length)
-          artMatchBadge = '<span class="badge" style="background:#6d28d9;font-size:10px">條文符合：第' +
+          artMatchBadge = '<span class="meta-item meta-match"><i class="ti ti-text-scan-2" aria-hidden="true"></i>條文符合：第' +
             matchedNos.slice(0,3).join('、') + (matchedNos.length > 3 ? '…' : '') + '條</span>';
       }}
       var penBadge = (penaltyFilter && r.penalty_articles && r.penalty_articles.length > 0)
-        ? '<span class="art-chip-penalty" style="font-size:10px;padding:1px 5px;vertical-align:middle">罰則×' + r.penalty_articles.length + '</span>' : '';
+        ? '<span class="meta-item meta-danger"><i class="ti ti-alert-triangle" aria-hidden="true"></i>罰則 ' + r.penalty_articles.length + ' 條</span>' : '';
       var inspBadge = INSPECTION_FOCUS.hasOwnProperty(r.name)
-        ? '<span class="inspect-badge">🔍 稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
+        ? '<span class="meta-item meta-danger" title="勞動檢查常見缺失排名"><i class="ti ti-zoom-check" aria-hidden="true"></i>稽查重點 #' + INSPECTION_FOCUS[r.name].rank + '</span>' : '';
       // 風險評分點點（1~5 顆）
       (function() {{
         var rs = 0;
@@ -3618,21 +3758,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         if (lvl > 0) {{
           var dots = '';
           for (var di=1; di<=5; di++) dots += '<span class="risk-dot ' + (di<=lvl ? 'on' : 'off') + '"></span>';
-          inspBadge += '<span class="risk-dots risk-lvl-' + lvl + '" title="合規風險評分 ' + rs + '/100（點擊風險矩陣查看）" style="margin-left:4px">' + dots + '</span>';
+          inspBadge += '<span class="meta-item risk-dots risk-lvl-' + lvl + '" title="合規風險評分 ' + rs + '/100（點擊風險矩陣查看）">' + dots + '</span>';
         }}
       }})();
-      return '<tr' + (isUnread ? ' class="law-unread"' : '') + (hasUpdate ? ' style="background:rgba(245,158,11,.07)"' : '') + '>' +
-        '<td><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td class="rname">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + artMatchBadge + penBadge + inspBadge + (hasUpdate ? '<span class="badge recent" style="background:#f59e0b">已更新</span>' : '') +
-          (chgSum ? '<div class="chg-summary">' + chgSum + '</div>' : '') + '</td>' +
-        '<td><span class="cat-tag">' + (r.cat || '') + '</span></td>' +
-        '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
-        '<td class="' + dateCls + '">' + dateText + '</td>' +
-        '<td>' + (function(r){{
-          var lbl = r.src_type==='guide' ? '指引 ↗' : '全文 ↗';
-          var ttl = r.src_type==='xml' ? '全國法規資料庫（自動更新）' : r.src_type==='guide' ? 'OSHA 技術指引（手動維護）' : '手動維護';
-          var bdg = r.src_type==='xml' ? '<span class="src-badge src-xml">XML</span>' : r.src_type==='guide' ? '<span class="src-badge src-guide">指引</span>' : '<span class="src-badge src-static">靜態</span>';
-          return '<a href="'+r.source+'" target="_blank" rel="noopener" class="src-link" title="'+ttl+'">'+lbl+'</a>'+bdg;
+      var metaLine = (chgSum ? '<span class="chg-summary">' + chgSum + '</span>' : '') + artMatchBadge + penBadge + inspBadge;
+      return '<tr class="' + (isUnread ? 'law-unread' : '') + (hasUpdate ? ' law-updated' : '') + '">' +
+        '<td data-label="" class="star-cell"><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏" aria-label="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
+        '<td data-label="法規名稱" class="rname"><div class="rname-line">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge badge-blue">收藏後已更新</span>' : '') + '</div>' +
+          (metaLine ? '<div class="rmeta">' + metaLine + '</div>' : '') + '</td>' +
+        '<td data-label="分類" class="rcat">' + (r.cat || '—') + '</td>' +
+        '<td data-label="位階"><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
+        '<td data-label="修正日期" class="' + dateCls + '">' + dateText + '</td>' +
+        '<td data-label="來源">' + (function(r){{
+          var lbl = r.src_type==='guide' ? '指引' : '全文';
+          var ttl = r.src_type==='xml' ? '全國法規資料庫（每日自動更新）' : r.src_type==='guide' ? 'OSHA 技術指引（手動維護）' : '手動維護';
+          return '<a href="'+r.source+'" target="_blank" rel="noopener" class="src-link" title="'+ttl+'">'+lbl+'<i class="ti ti-external-link" aria-hidden="true"></i></a>' +
+            (r.src_type==='xml' ? '' : '<span class="src-note">' + (r.src_type==='guide' ? '指引' : '手動') + '</span>');
         }})(r) + '</td>' +
         '</tr>';
     }}).join("");
@@ -3763,8 +3904,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       '<span>' + (TIER_LABEL[r.tier] || r.tier) + '</span>' +
       '<span class="' + statusCls + '">' + statusLabel + '</span>' +
       (r.cat ? '<span>' + r.cat + '</span>' : '') +
-      (r.date ? '<span>最新修正 ' + r.date + '</span>' : '<span style="color:#aaa">日期待確認</span>') +
-      (r.has_table ? '<span style="background:#fffbeb;color:#b45309">含附表</span>' : '') +
+      (r.date ? '<span>最新修正 ' + r.date + '</span>' : '<span style="color:var(--text-3)">日期待確認</span>') +
+      (r.has_table ? '<span style="background:var(--warning-bg);color:var(--warning)">含附表</span>' : '') +
       '</div>';
 
     // 主管機關
@@ -3860,7 +4001,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '<div class="drawer-section penalty-section"><h3>罰則條文（' + r.penalty_articles.length + ' 條）</h3>';
       r.penalty_articles.forEach(function(pa) {{
         var t = (pa.text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:#b91c1c">$1</strong>');
+        t = t.replace(/(罰(?:鍰|款)[^。；\\n]*(?:萬|千)元[^。；\\n]*)/g, '<strong style="color:var(--danger)">$1</strong>');
         html += '<div class="penalty-art"><span class="art-no">第' + pa.no + '條</span>';
         // 結構化資訊列
         var hasMeta = pa.fine_max || pa.criminal || (pa.liable && pa.liable.length);
@@ -3909,8 +4050,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         html += '<div style="margin:4px 0 8px;display:flex;flex-wrap:wrap;gap:4px">';
         ifData.focus_articles.forEach(function(no) {{
           html += artBase2
-            ? '<a href="' + artBase2 + encodeURIComponent(no) + '" target="_blank" class="art-chip art-chip-penalty" style="font-size:10.5px">第' + no + '條</a>'
-            : '<span class="art-chip art-chip-penalty" style="font-size:10.5px">第' + no + '條</span>';
+            ? '<a href="' + artBase2 + encodeURIComponent(no) + '" target="_blank" class="art-chip art-chip-penalty" style="font-size:0.6875rem">第' + no + '條</a>'
+            : '<span class="art-chip art-chip-penalty" style="font-size:0.6875rem">第' + no + '條</span>';
         }});
         html += '</div>';
       }}
@@ -4166,7 +4307,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       return (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name];
     }}).length;
     var el = document.getElementById('unread-law-count');
-    if (el) el.textContent = count > 0 ? count + ' 筆未讀' : '';
+    if (el) el.textContent = count > 0 ? count : '';
     var btn = document.getElementById('markAllReadBtn');
     if (btn) btn.style.display = count > 0 ? '' : 'none';
   }}
@@ -4230,12 +4371,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   function renderDirectives() {{
     document.getElementById("directiveBody").innerHTML = DIRECTIVES.map(r => {{
-      const badge = isRecent(r.date) ? '<span class="badge recent">近期</span>' : "";
+      const badge = isRecent(r.date) ? '<span class="badge badge-gray">近 1 年修正</span>' : "";
       return '<tr>' +
-        '<td class="rname">' + r.name + badge + '</td>' +
-        '<td><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
-        '<td class="rdate">' + (r.date || "待確認") + (r.note ? " (" + r.note + ")" : "") + '</td>' +
-        '<td><a href="' + r.source + '" target="_blank" rel="noopener">查看 ↗</a></td>' +
+        '<td data-label="名稱" class="rname"><div class="rname-line"><span>' + r.name + '</span>' + badge + '</div></td>' +
+        '<td data-label="位階"><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
+        '<td data-label="修正日期" class="rdate">' + (r.date || "待確認") + (r.note ? " (" + r.note + ")" : "") + '</td>' +
+        '<td data-label="來源"><a class="src-link" href="' + r.source + '" target="_blank" rel="noopener">查看<i class="ti ti-external-link" aria-hidden="true"></i></a></td>' +
         '</tr>';
     }}).join("");
   }}
@@ -4552,9 +4693,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (!el) return;
     if (!window.d3) {{
       el.innerHTML = '<div style="padding:60px 40px;text-align:center;color:var(--ink-soft);line-height:2">'
-        + '<div style="font-size:36px;margin-bottom:12px">🕸</div>'
+        + '<div style="font-size:2.25rem;margin-bottom:12px">🕸</div>'
         + '<div style="font-weight:600;color:var(--ink);margin-bottom:6px">D3.js 圖形庫尚未載入</div>'
-        + '<div style="font-size:12px">瀏覽器可能封鎖外部 CDN。<br>請嘗試關閉 Tracking Prevention 或改用 Chrome / Firefox。</div>'
+        + '<div style="font-size:0.8125rem">瀏覽器可能封鎖外部 CDN。<br>請嘗試關閉 Tracking Prevention 或改用 Chrome / Firefox。</div>'
         + '</div>';
       return;
     }}
@@ -4633,16 +4774,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     CATEGORIES.forEach(function(cat, i) {{
       var row = legG.append("g").attr("transform","translate(0," + (i*16) + ")");
       row.append("circle").attr("r",5).attr("cx",5).attr("cy",0)
-        .attr("fill", catPal[cat]||'#888').attr("opacity",0.85);
+        .attr("fill", catPal[cat]||'var(--text-3)').attr("opacity",0.85);
       row.append("text").text(cat).attr("x",13).attr("dy","0.35em")
         .attr("font-size",10).attr("fill","var(--ink-soft)").attr("font-family","inherit");
     }});
     // 圖例 - 稽查重點
     var legBot = svg.append("g").attr("transform","translate(10," + (CATEGORIES.length*16+18) + ")");
     legBot.append("circle").attr("r",6).attr("cx",5).attr("cy",0)
-      .attr("fill","none").attr("stroke","#b91c1c").attr("stroke-width",2).attr("stroke-dasharray","4,2");
+      .attr("fill","none").attr("stroke","var(--danger)").attr("stroke-width",2).attr("stroke-dasharray","4,2");
     legBot.append("text").text("稽查重點法規").attr("x",14).attr("dy","0.35em")
-      .attr("font-size",10).attr("fill","#b91c1c").attr("font-family","inherit");
+      .attr("font-size",10).attr("fill","var(--danger)").attr("font-family","inherit");
 
     function fitView() {{
       var b = gNodes.node().getBBox();
@@ -4689,12 +4830,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       node.filter(function(d) {{ return d.inspect; }})
         .append("circle")
         .attr("r", function(d) {{ return nodeR(d)+5; }})
-        .attr("fill","none").attr("stroke","#b91c1c").attr("stroke-width",2)
+        .attr("fill","none").attr("stroke","var(--danger)").attr("stroke-width",2)
         .attr("stroke-dasharray","4,2").attr("opacity",0.85);
 
       node.append("circle")
         .attr("r", nodeR)
-        .attr("fill", function(d) {{ return d.iso ? '#bbb' : (catPal[d.cat]||'#888'); }})
+        .attr("fill", function(d) {{ return d.iso ? 'var(--text-3)' : (catPal[d.cat]||'var(--text-3)'); }})
         .attr("opacity", function(d) {{ return d.iso ? 0.35 : 0.88; }})
         .attr("stroke","var(--card)").attr("stroke-width",1.5);
 
@@ -4747,7 +4888,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var label = s.ok ? '正常' : '失敗';
       html += '<div class="ds-row">' +
         '<span class="data-status-dot ' + dotCls + '"></span>' +
-        '<span class="ds-name">' + s.name + '<span style="font-size:10.5px;color:var(--ink-soft);margin-left:4px">(' + s.org + ')</span></span>' +
+        '<span class="ds-name">' + s.name + '<span style="font-size:0.6875rem;color:var(--ink-soft);margin-left:4px">(' + s.org + ')</span></span>' +
         '<span class="ds-count">' + (s.ok ? s.count + ' 筆' : '取得失敗') + '</span>' +
         '</div>';
     }});
@@ -4765,7 +4906,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }} else {{
       html += '<div class="ds-xml-row"><span class="data-status-dot ds-warn"></span><span>尚無法規快取，請執行 --fetch-xml</span></div>';
     }}
-    html += '<div style="margin-top:14px;font-size:11.5px;color:var(--ink-soft)">資料於每次重新生成時更新。可於 GitHub Actions 手動觸發以取得最新資料。</div>';
+    html += '<div style="margin-top:14px;font-size:0.75rem;color:var(--ink-soft)">資料於每次重新生成時更新。可於 GitHub Actions 手動觸發以取得最新資料。</div>';
     el.innerHTML = html;
     document.getElementById('ds-modal').classList.add('open');
   }}
@@ -4863,9 +5004,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var crimPts = pts.filter(function(d){{ return d.criminal; }});
     if (crimPts.length) {{
       g.append("rect").attr("x",0).attr("y",0).attr("width",iW).attr("height",4)
-        .style("fill","rgba(185,28,28,.08)");
+        .style("fill","var(--danger-bg)");
       g.append("text").attr("x",iW-4).attr("y",14).attr("text-anchor","end")
-        .style("font-size","9.5px").style("fill","rgba(185,28,28,.5)").text("含刑事責任");
+        .style("font-size","9.5px").style("fill","var(--danger-bg)").text("含刑事責任");
     }}
 
     // Jitter 避免重疊（同分類同位置）
@@ -4891,7 +5032,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       .attr("r", function(d){{ return rScale(d.artCount || 1); }})
       .style("fill", function(d){{ return catPal[d.cat] || catPal['其他']; }})
       .style("fill-opacity", function(d){{ return d.rank <= 10 ? .82 : .45; }})
-      .style("stroke", function(d){{ return d.criminal ? "#b91c1c" : catPal[d.cat] || catPal['其他']; }})
+      .style("stroke", function(d){{ return d.criminal ? "var(--danger)" : catPal[d.cat] || catPal['其他']; }})
       .style("stroke-width", function(d){{ return d.criminal ? 2.5 : 1; }})
       .style("stroke-dasharray", function(d){{ return d.criminal ? "4,2" : "none"; }})
       .style("cursor","pointer")
@@ -4980,7 +5121,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '條文數：' + d.artCount,
         '合規風險分數：' + d.score + ' / 100'
       ].filter(Boolean).join('<br>');
-      tip.innerHTML = lines + '<br><small style="color:#aaa">點擊查看詳情</small>';
+      tip.innerHTML = lines + '<br><small style="color:var(--text-3)">點擊查看詳情</small>';
       tip.style.display = 'block';
       tip.style.left = Math.min(touch.clientX + 10, window.innerWidth - 230) + 'px';
       tip.style.top = Math.max(10, touch.clientY - 80) + 'px';
@@ -5008,11 +5149,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         var tierCls = r.tier || 'dir';
         var ridx = REGISTRY.indexOf(r);
         var pen = r.penalty_articles && r.penalty_articles.length
-          ? '<span class="art-chip-penalty" style="font-size:9px;padding:1px 4px">罰則×' + r.penalty_articles.length + '</span>' : '';
+          ? '<span class="art-chip-penalty" style="font-size:0.6875rem;padding:1px 4px">罰則×' + r.penalty_articles.length + '</span>' : '';
         return '<div class="tl-item" data-ridx="' + ridx + '" onclick="var _r=REGISTRY[+this.dataset.ridx];if(_r)openDrawer(_r);">'
           + '<div class="tl-item-date">' + (r.date || '待確認') + '</div>'
           + '<div class="tl-item-name">' + r.name + '</div>'
-          + '<div class="tl-item-meta"><span class="tier-tag ' + tierCls + '" style="font-size:9.5px">' + TIER_LABEL[tierCls] + '</span>' + pen + '</div>'
+          + '<div class="tl-item-meta"><span class="tier-tag ' + tierCls + '" style="font-size:0.6875rem">' + TIER_LABEL[tierCls] + '</span>' + pen + '</div>'
           + '</div>';
       }}).join('');
       return '<div class="tl-year-group">'
