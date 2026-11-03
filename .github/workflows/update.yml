@@ -44,7 +44,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           commit_and_push() {
-            git add docs/index.html
+            git add docs/index.html osh_news_archive.json news_summaries.json
             if git diff --staged --quiet; then
               echo "無異動，略過 commit。"
               return 0

@@ -30,7 +30,7 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 import xml.etree.ElementTree as ET
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -59,18 +59,40 @@ OSH_KEYWORDS = [
     "排氣裝置", "防護具", "安全訓練", "勞動檢查機構", "職場心理健康",
 ]
 EXCLUDE_STATUS_KEYWORDS = ["廢止", "停止適用"]
+
+# 法規收錄範圍：依 XML「法規類別」判斷，避免名稱關鍵字誤收他部會法規（如食品安全衛生管理法）
+# 核心目：整目收錄（不需名稱命中關鍵字）；周邊目：名稱須命中 OSH_KEYWORDS；其他類別一律不收
+OSH_CORE_LAW_CATEGORIES = ("勞動部＞職業安全衛生目", "勞動部＞勞動檢查目")
+OSH_EDGE_LAW_CATEGORIES = ("勞動部＞勞動保險目", "經濟部＞地礦目")
+
+# 依法規名稱歸類（由上而下取第一個命中者；對應 CATEGORIES）
+CATEGORY_RULES = [
+    ("職業災害", ("職業災害", "職災", "職業病", "職業傷病", "職能復健", "失能", "重建", "重返職場")),
+    ("化學品安全", ("化學", "有機溶劑", "鉛中毒", "特定化學物質", "容許暴露", "製程安全")),
+    ("營造工程", ("營造", "工程")),
+    ("機械設備", ("機械", "設備", "鍋爐", "壓力容器", "起重", "升降機", "吊籠", "機器人", "產品", "構造規格", "驗證")),
+    ("特殊作業", ("礦場", "碼頭", "船舶", "林場", "高架", "高溫", "異常氣壓", "缺氧", "局限空間", "高壓氣體", "重體力", "精密作業")),
+    ("職業衛生", ("健康", "母性", "妊娠", "霸凌", "粉塵", "噪音", "石綿", "視機能", "體格")),
+    ("作業環境", ("作業環境", "設施規則", "設施標準", "標示")),
+    ("管理制度", ("管理", "檢查", "訓練", "顧問", "獎勵", "補助", "評核", "施行細則", "職業安全衛生法")),
+]
 USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
-    # type="rss"：解析 RSS 2.0 / Atom feed；source_type：news/notice/event 決定前端預設顯示
+    # type="rss"：解析 RSS 2.0 / Atom feed；type="osha_list"：職安署網站列表頁（無 RSS 的節點）
+    # source_type：news/notice/event/case 決定前端預設顯示
     {"name": "勞動部新聞稿",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/RssList",                          "type": "rss", "source_type": "news"},
     {"name": "職安署新聞稿",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",                     "type": "rss", "source_type": "news"},
     {"name": "職安署公布欄",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",                     "type": "rss", "source_type": "notice"},
     {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",                     "type": "rss", "source_type": "event"},
     {"name": "勞動部公布欄",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/2665/RssList",                          "type": "rss", "source_type": "notice"},
-    {"name": "職安署教育訓練",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48427/RssList",                     "type": "rss", "source_type": "event"},
+    # 原「教育訓練」節點已改為職災案例宣導且無 RSS；教育訓練改導向 trains.osha.gov.tw 報名系統，不再收錄
+    {"name": "職災案例宣導",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48427/lpsimplelist?pageSize=40", "type": "osha_list", "source_type": "case"},
 ]
+# 每次抓取只拿到各來源最新一頁，累積存檔才看得到較早的動態
+NEWS_ARCHIVE = Path("osh_news_archive.json")
+NEWS_ARCHIVE_DAYS = 365
 
 LAW_XML_URLS = [
     ("https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CM", "law_data_cmd.xml"),   # 命令（規則/辦法/標準）
@@ -817,11 +839,13 @@ def fetch_html_source(source: dict, debug: bool = False) -> list[dict]:
     name, org, url = source["name"], source["org"], source["url"]
     print(f"處理 HTML 來源：{name}（{url}）")
 
+    # 政府網站憑證缺 Subject Key Identifier，新版 Python 會驗證失敗；與 RSS 來源一致改用 verify=False
     rp = urllib.robotparser.RobotFileParser()
     parsed = urlparse(url)
-    rp.set_url(f"{parsed.scheme}://{parsed.netloc}/robots.txt")
     try:
-        rp.read()
+        robots = requests.get(f"{parsed.scheme}://{parsed.netloc}/robots.txt",
+                              headers={"User-Agent": USER_AGENT}, timeout=15, verify=False)
+        rp.parse(robots.text.splitlines() if robots.ok else [])
     except Exception as e:
         print(f"  無法讀取 robots.txt（{e}），保守起見視為不允許", file=sys.stderr)
         return []
@@ -830,7 +854,7 @@ def fetch_html_source(source: dict, debug: bool = False) -> list[dict]:
         return []
 
     try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15, verify=False)
         resp.raise_for_status()
     except Exception as e:
         print(f"  請求失敗：{e}", file=sys.stderr)
@@ -866,16 +890,61 @@ def fetch_html_source(source: dict, debug: bool = False) -> list[dict]:
     return items
 
 
+def fetch_osha_list_source(source: dict, debug: bool = False) -> list[dict]:
+    """職安署網站列表頁（lpsimplelist）：每筆為 div.item_list2，含標題連結與「發布日期：YYYY-MM-DD」。"""
+    name, org, url = source["name"], source["org"], source["url"]
+    print(f"處理列表來源：{name}（{url}）")
+    try:
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15, verify=False)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"  請求失敗：{e}", file=sys.stderr)
+        return []
+    soup = BeautifulSoup(resp.text, "html.parser")
+    items = []
+    for block in soup.select("div.item_list2"):
+        a = block.select_one(".item_title a[href]")
+        m = re.search(r"發布日期：\s*(\S+)", block.get_text(" ", strip=True))
+        date_str = extract_date(m.group(1)) if m else None
+        if not a or not date_str:
+            continue
+        items.append({"title": a.get_text(strip=True), "link": urljoin(url, a["href"]), "date": date_str,
+                      "source": name, "org": org, "source_type": source.get("source_type", "news")})
+    if debug:
+        print(f"  [debug] 抓到 {len(items)} 筆")
+    return items
+
+
 def fetch_source(source: dict, debug: bool = False) -> list[dict]:
     if source.get("type") == "rss":
         return fetch_rss_source(source, debug)
+    if source.get("type") == "osha_list":
+        return fetch_osha_list_source(source, debug)
     return fetch_html_source(source, debug)
+
+
+def merge_news_archive(fresh: list[dict], today: date | None = None) -> list[dict]:
+    """把本次抓到的動態併入存檔（以連結為鍵，新資料優先），只保留近 NEWS_ARCHIVE_DAYS 天。"""
+    today = today or date.today()
+    archive = _read_json(NEWS_ARCHIVE) if NEWS_ARCHIVE.exists() else {}
+    items = archive.get("items", []) if isinstance(archive, dict) else []
+    by_link = {it["link"]: it for it in items if it.get("link")}
+    for it in fresh:
+        if it.get("link"):
+            by_link[it["link"]] = {k: v for k, v in it.items() if k != "summary"}
+    cutoff = (today - timedelta(days=NEWS_ARCHIVE_DAYS)).isoformat()
+    kept = [it for it in by_link.values() if (it.get("date") or "") >= cutoff]
+    NEWS_ARCHIVE.write_text(json.dumps({"updated": today.isoformat(), "items": kept}, ensure_ascii=False,
+                                       separators=(",", ":")), encoding="utf-8")
+    print(f"動態存檔：{len(kept)} 則（本次抓到 {len(fresh)} 則）。")
+    return kept
 
 
 def dedupe_and_filter_news(all_items: list[dict]) -> list[dict]:
     seen = {}
     for item in all_items:
-        if not any(k in item["title"] for k in OSH_KEYWORDS):
+        # 職災案例整個來源都是職安內容，標題常沒有關鍵字（如「從事屋頂作業發生墜落災害」）
+        if item.get("source_type") != "case" and not any(k in item["title"] for k in OSH_KEYWORDS):
             continue
         key = (normalize_title(item["title"]), item["date"])
         if key not in seen:
@@ -883,7 +952,9 @@ def dedupe_and_filter_news(all_items: list[dict]) -> list[dict]:
         elif item["source"] not in seen[key]["also_in"] and item["source"] != seen[key]["source"]:
             seen[key]["also_in"].append(item["source"])
     results = list(seen.values())
-    results.sort(key=lambda x: x["date"], reverse=True)
+    # 活動訊息的日期常是未來的活動日，排序時視同今天，避免一直佔住最上面
+    today = date.today().isoformat()
+    results.sort(key=lambda x: min(x["date"], today), reverse=True)
     return results
 
 
@@ -1012,11 +1083,11 @@ def parse_law_xml(xml_path: Path) -> list[dict]:
         law_url = _text(law.find("法規網址"))
         if not name or any(k in law_type for k in EXCLUDE_STATUS_KEYWORDS):
             continue
-        if not any(k in name for k in OSH_KEYWORDS):
+        if not in_osh_scope(name, law_type):
             continue
 
-        # 主管機關（此版本 XML 無此欄位，留空由靜態清單補充）
-        authority = ""
+        # 主管機關：XML 無此欄位，由法規類別推得
+        authority = authority_from_category(law_type)
 
         # 效力狀態：廢止註記 + 生效日期
         abolish_note = _text(law.find("廢止註記"))
@@ -1497,6 +1568,32 @@ def _cacheable(records: list[dict]) -> list[dict]:
     return [{k: v for k, v in r.items() if k != "_full"} for r in records]
 
 
+def in_osh_scope(name: str, law_type: str) -> bool:
+    """是否收錄：核心目整目收；周邊目要名稱命中關鍵字；舊快取沒有法規類別時退回只看名稱。"""
+    if not law_type:
+        return any(k in name for k in OSH_KEYWORDS)
+    if any(c in law_type for c in OSH_CORE_LAW_CATEGORIES):
+        return True
+    if any(c in law_type for c in OSH_EDGE_LAW_CATEGORIES):
+        return any(k in name for k in OSH_KEYWORDS)
+    return False
+
+
+def authority_from_category(law_type: str) -> str:
+    """「行政＞勞動部＞職業安全衛生目」→ 勞動部職業安全衛生署；其餘取部會名稱。"""
+    if "職業安全衛生目" in law_type:
+        return _OSHA
+    parts = law_type.split("＞")
+    return parts[1] if len(parts) > 1 else ""
+
+
+def guess_category(name: str) -> str:
+    for cat, words in CATEGORY_RULES:
+        if any(w in name for w in words):
+            return cat
+    return "其他"
+
+
 def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dict]:
     merged = [dict(item) for item in static_list]
     # 預設 src_type：guide 類保留 guide，其他靜態條目標記 static
@@ -1507,6 +1604,11 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
 
     for rec in xml_records:
         iso_date = roc_to_iso(rec["最新異動日期_roc"])
+        law_type = rec.get("法規類別", "")
+        authority = rec.get("authority") or authority_from_category(law_type)
+        # 靜態清單是人工挑選的，一律保留；XML 自動帶入的才套用範圍規則（快取資料也適用）
+        if rec["name"] not in by_name and not in_osh_scope(rec["name"], law_type):
+            continue
         if rec["name"] in by_name:
             entry = by_name[rec["name"]]
             entry["src_type"] = "xml"  # XML 資料庫已確認
@@ -1523,8 +1625,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
             if rec.get("has_table"):
                 entry["has_table"] = rec["has_table"]
             # 新增欄位
-            if rec.get("authority"):
-                entry["authority"] = rec["authority"]
+            if authority and not entry.get("authority"):
+                entry["authority"] = authority
             if rec.get("status"):
                 entry["status"] = rec["status"]
             if rec.get("scope"):
@@ -1546,8 +1648,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
         else:
             merged.append({
                 "name": rec["name"],
-                "tier": "reg",
-                "cat": "其他",
+                "tier": "act" if rec.get("法規性質") == "法律" else "reg",
+                "cat": guess_category(rec["name"]),
                 "date": iso_date,
                 "source": rec["法規網址"] or REG_SOURCE,
                 "note": "XML 新增，未在原始清單中",
@@ -1561,7 +1663,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "cross_refs": rec.get("cross_refs", {}),
                 "latest_revision": rec.get("latest_revision", {}),
                 "has_table": rec.get("has_table", False),
-                "authority": rec.get("authority", ""),
+                "authority": authority,
                 "status": rec.get("status", "現行"),
                 "scope": rec.get("scope", ""),
                 "penalty_articles": rec.get("penalty_articles", []),
@@ -1985,6 +2087,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .src-type-news{{ background:var(--blue-light); color:var(--blue); }}
   .src-type-notice{{ background:var(--warning-bg); color:var(--warning); }}
   .src-type-event{{ background:var(--success-bg); color:var(--success); }}
+  .src-type-case{{ background:var(--danger-bg); color:var(--danger); }}
   /* ── 搜尋高亮 ── */
   mark{{ background:var(--warning-bg); color:var(--ink); padding:0 1px; border-radius:6px; }}
   /* ── 設定與主題按鈕區 ── */
@@ -2519,6 +2622,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <span class="src-filter-label">來源類型：</span>
       <button class="src-filter-btn active" data-srctype="news">📰 新聞稿</button>
       <button class="src-filter-btn active" data-srctype="notice">📋 公告</button>
+      <button class="src-filter-btn active" data-srctype="case">⚠️ 職災案例</button>
       <button class="src-filter-btn" data-srctype="event">📅 活動訊息</button>
     </div>
     <div class="board-area" id="board-area" style="display:none">
@@ -2882,7 +2986,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
-  var srcTypeFilter = new Set(["news", "notice"]); // 預設隱藏活動訊息
+  var srcTypeFilter = new Set(["news", "notice", "case"]); // 預設隱藏活動訊息
   var registryPage = 1;
   var REGISTRY_PAGE_SIZE = 30;
   var _regRows = [];
@@ -3042,7 +3146,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         : '';
       const rlLabel = state.readLater[id] ? "📌 已加入" : "📌 稍後閱讀";
       const rlCls = state.readLater[id] ? " on" : "";
-      const srcTypeLabelMap = {{news:"新聞稿", notice:"公告", event:"活動"}};
+      const srcTypeLabelMap = {{news:"新聞稿", notice:"公告", event:"活動", case:"職災案例"}};
       const srcTypeCls = "src-type-" + (item.source_type || "news");
       const srcTypeBadge = '<span class="src-type-badge ' + srcTypeCls + '">' + (srcTypeLabelMap[item.source_type] || "新聞稿") + '</span>';
       el.innerHTML =
@@ -5590,7 +5694,8 @@ def main():
             "count": len(items),
             "ts": _fetch_ts,
         })
-    news = dedupe_and_filter_news(all_news)
+    # 併入存檔後再去重：舊動態不會因為掉出 RSS 而消失，來源暫時失敗時也不會整批不見
+    news = dedupe_and_filter_news(merge_news_archive(all_news))
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
 
     load_cached_summaries(news)  # 永遠讀快取，不呼叫 API
