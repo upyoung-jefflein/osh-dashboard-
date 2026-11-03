@@ -35,16 +35,12 @@ jobs:
       # GitHub runner 連不到法務部網站，法規 XML 改由本機排程（scripts/daily_update.ps1）下載並推送；
       # 這裡只更新新聞，法規沿用 repo 內的 osh_xml_records.json。
       - name: 更新新聞並重建 Dashboard
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python osh_dashboard.py -o docs/index.html
 
       - name: 提交並推送更新
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           commit_and_push() {
-            git add docs/index.html osh_news_archive.json news_summaries.json
+            git add docs/index.html osh_news_archive.json
             if git diff --staged --quiet; then
               echo "無異動，略過 commit。"
               return 0

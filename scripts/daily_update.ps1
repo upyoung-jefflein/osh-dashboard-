@@ -11,7 +11,7 @@ Start-Transcript -Path $log -Append | Out-Null
 $env:PYTHONIOENCODING = 'utf-8'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 # Task Scheduler may start with a stale environment; read mail settings straight from the user profile.
-foreach ($name in 'SMTP_USER', 'SMTP_PASS', 'NOTIFY_EMAIL', 'GEMINI_API_KEY') {
+foreach ($name in 'SMTP_USER', 'SMTP_PASS', 'NOTIFY_EMAIL') {
     $val = [Environment]::GetEnvironmentVariable($name, 'User')
     if ($val) { Set-Item -Path "env:$name" -Value $val }
 }
@@ -27,7 +27,7 @@ for ($attempt = 1; $attempt -le 2 -and -not $ok; $attempt++) {
     py osh_dashboard.py --fetch-xml -o docs/index.html
     if ($LASTEXITCODE -ne 0) { Write-Output "generator failed (exit $LASTEXITCODE)"; continue }
 
-    git add docs/index.html docs/history docs/fulltext.json osh_drafts.json osh_xml_records.json osh_law_diffs.json osh_law_snapshots.json osh_news_archive.json news_summaries.json
+    git add docs/index.html docs/history docs/fulltext.json osh_drafts.json osh_xml_records.json osh_law_diffs.json osh_law_snapshots.json osh_news_archive.json
     git diff --staged --quiet
     if ($LASTEXITCODE -eq 0) { Write-Output 'no changes'; $ok = $true; break }
 

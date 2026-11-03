@@ -93,6 +93,8 @@ SOURCES = [
 # 每次抓取只拿到各來源最新一頁，累積存檔才看得到較早的動態
 NEWS_ARCHIVE = Path("osh_news_archive.json")
 NEWS_ARCHIVE_DAYS = 365
+# 快取中沒有的法規，最新異動日期在這幾天內才當作「新增法規」寄通知；更舊的是收錄規則改變補進來的
+NEW_LAW_NOTIFY_DAYS = 30
 
 LAW_XML_URLS = [
     ("https://sendlaw.moj.gov.tw/PublicData/GetFile.ashx?DType=XML&AuData=CM", "law_data_cmd.xml"),   # 命令（規則/辦法/標準）
@@ -931,7 +933,7 @@ def merge_news_archive(fresh: list[dict], today: date | None = None) -> list[dic
     by_link = {it["link"]: it for it in items if it.get("link")}
     for it in fresh:
         if it.get("link"):
-            by_link[it["link"]] = {k: v for k, v in it.items() if k != "summary"}
+            by_link[it["link"]] = it
     cutoff = (today - timedelta(days=NEWS_ARCHIVE_DAYS)).isoformat()
     kept = [it for it in by_link.values() if (it.get("date") or "") >= cutoff]
     NEWS_ARCHIVE.write_text(json.dumps({"updated": today.isoformat(), "items": kept}, ensure_ascii=False,
@@ -2034,21 +2036,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .diff-body{{ font-size:0.875rem; padding:4px 10px 12px; }}
     #law-drawer{{ width:100vw; }}
   }}
-  /* ── AI 摘要顯示（卡片內） ── */
-  .ai-summary{{ margin:6px 0 2px; font-size:0.8125rem; line-height:1.65; color:var(--ink-soft); }}
-  .ai-tag{{ display:inline-block; font-size:0.6875rem; font-weight:600; letter-spacing:.04em;
-    background:linear-gradient(135deg,var(--info),var(--blue)); color:var(--white);
-    padding:1px 5px; border-radius:6px; margin-right:5px; vertical-align:middle; }}
-  .ai-prebuilt{{ background:var(--info-bg); border-left:3px solid var(--info);
-    padding:10px 14px; border-radius:0 4px 4px 0; font-size:0.8125rem; line-height:1.7;
-    color:var(--ink); margin-bottom:4px; }}
-  /* ── 深色/淺色主題切換 ── */
   /* ── 僅標題視圖 ── */
   #newsList.title-view .item{{ padding:7px 14px; }}
   #newsList.title-view .item .row{{ display:none; }}
   #newsList.title-view .item h3{{ margin:0; font-size:0.875rem; font-weight:500; display:flex; align-items:center; gap:8px; }}
   #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:0.75rem; color:var(--ink-soft); white-space:nowrap; flex-shrink:0; font-family:"Noto Sans TC","Noto Sans",sans-serif; font-weight:400; }}
-  #newsList.title-view .item .ai-summary{{ display:none; }}
   #newsList.title-view .item .also{{ display:none; }}
   #newsList.title-view .item .actions{{ display:none; }}
   #newsList.title-view .item:hover .actions{{ display:flex; margin-top:4px; }}
@@ -2112,11 +2104,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .board-dropdown{{ position:absolute; right:0; bottom:calc(100% + 4px); background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:100; min-width:155px; padding:4px 0; }}
   .board-dropdown button{{ display:block; width:100%; text-align:left; padding:7px 14px; border:none; background:transparent; cursor:pointer; font-size:0.8125rem; color:var(--ink); white-space:nowrap; }}
   .board-dropdown button:hover{{ background:var(--hover); }}
-  /* ── AI 摘要 modal ── */
-  .ai-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; display:none; align-items:center; justify-content:center; }}
-  .ai-modal.open{{ display:flex; }}
-  .ai-box{{ background:var(--card); border-radius:8px; padding:22px 26px; width:min(460px,92vw); }}
-  .ai-box h3{{ font-size:1rem; margin-bottom:6px; line-height:1.5; }}
   /* ── 通知 toast ── */
   .notif-toast{{ position:fixed; top:10px; right:14px; background:var(--stamp); color:var(--white); padding:10px 16px; border-radius:6px; font-size:0.8125rem; z-index:600; display:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.22); }}
   .notif-toast.show{{ display:block; animation:fadeInDown .3s; }}
@@ -2232,7 +2219,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   /* 合規風險評分 */
   /* 風險矩陣 */
   #riskMatrix {{ display:none; width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; overflow:hidden; position:relative; margin-bottom:20px; }}
-  .risk-matrix-tooltip {{ position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:6px; font-size:0.75rem; pointer-events:none; z-index:500; display:none; max-width:220px; line-height:1.55; }}
+  .risk-matrix-tooltip {{ position:fixed; background:var(--ink); color:var(--card); padding:6px 10px; border-radius:6px; font-size:0.75rem; pointer-events:none; z-index:500; display:none; width:max-content; max-width:240px; line-height:1.55; box-shadow:var(--shadow-level2); }}
   /* 資料狀態指示 */
   .data-status-dot {{ width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }}
   .ds-ok {{ background:var(--success); }}
@@ -2448,7 +2435,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #newsList.list-view .item h3{{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; min-width:0; }}
   #newsList.list-view .item .actions{{ margin-top:0; flex-wrap:nowrap; }}
   #newsList.title-view .item{{ padding:8px 16px; }}
-  #newsList.title-view .item .row, #newsList.title-view .item .ai-summary, #newsList.title-view .item .also, #newsList.title-view .item .actions{{ display:none; }}
+  #newsList.title-view .item .row, #newsList.title-view .item .also, #newsList.title-view .item .actions{{ display:none; }}
   #newsList.title-view .item h3{{ margin:0; font-weight:500; display:flex; align-items:center; gap:8px; }}
   #newsList.title-view .item h3::before{{ content:attr(data-date); font-size:0.75rem; color:var(--text-2); white-space:nowrap; flex-shrink:0; font-weight:400; }}
   #newsList.title-view .item:hover .actions{{ display:flex; margin-top:4px; }}
@@ -2464,10 +2451,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .tl-year-label{{ color:var(--text-heading); border-left-color:var(--blue); }}
   .tl-item:hover{{ border-color:var(--blue-mid) !important; }}
   /* ── 對話框 ── */
-  .settings-modal, .kbd-modal, .ai-modal, .compare-modal, .guide-modal, .ds-modal{{ background:rgba(0,0,0,0.45); padding:24px; }}
-  .settings-box, .kbd-box, .ai-box, .compare-box, .guide-box, .ds-box{{ background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-level3); padding:20px 24px; animation:fadeInUp .2s ease; }}
-  .settings-box h3, .kbd-box h3, .ai-box h3, .compare-header h3, .guide-box h3, .ds-box h3{{ font-size:1rem; font-weight:600; color:var(--text-heading); margin-top:0; }}
-  .settings-box > button, .kbd-box > button, .guide-box button, .ai-box button, .mute-input-row button{{ min-height:36px; border-radius:var(--radius) !important; font-size:0.8125rem !important; }}
+  .settings-modal, .kbd-modal, .compare-modal, .guide-modal, .ds-modal{{ background:rgba(0,0,0,0.45); padding:24px; }}
+  .settings-box, .kbd-box, .compare-box, .guide-box, .ds-box{{ background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-level3); padding:20px 24px; animation:fadeInUp .2s ease; }}
+  .settings-box h3, .kbd-box h3, .compare-header h3, .guide-box h3, .ds-box h3{{ font-size:1rem; font-weight:600; color:var(--text-heading); margin-top:0; }}
+  .settings-box > button, .kbd-box > button, .guide-box button, .mute-input-row button{{ min-height:36px; border-radius:var(--radius) !important; font-size:0.8125rem !important; }}
   .guide-q select, .compare-selects select, .compare-filter-input, .mute-input-row input{{ min-height:40px; border-radius:var(--radius) !important; background:var(--surface) !important; }}
   .mute-chip{{ background:var(--blue-light); border-color:var(--blue-light); color:var(--blue); }}
   .mute-chip button{{ color:var(--blue); }}
@@ -2543,8 +2530,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .reg-bar-right{{ justify-content:space-between; flex-wrap:nowrap; }}
     .seg-label{{ display:none; }}
     .view-toggle{{ flex-wrap:wrap; }}
-    .settings-modal, .kbd-modal, .ai-modal, .guide-modal, .ds-modal{{ padding:0; align-items:flex-end; }}
-    .settings-box, .kbd-box, .ai-box, .guide-box, .ds-box{{ width:100% !important; max-width:100% !important; border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; }}
+    .settings-modal, .kbd-modal, .guide-modal, .ds-modal{{ padding:0; align-items:flex-end; }}
+    .settings-box, .kbd-box, .guide-box, .ds-box{{ width:100% !important; max-width:100% !important; border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; }}
   }}
   @media (max-width:639px){{
     /* 表格改為卡片堆疊 */
@@ -2907,18 +2894,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="document.getElementById('kbd-modal').classList.remove('open')" style="margin-top:16px;padding:6px 16px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;">關閉</button>
   </div>
 </div>
-<div id="ai-modal" class="ai-modal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="ai-box">
-    <h3 id="ai-title"></h3>
-    <p id="ai-source" style="font-size:0.8125rem;color:var(--ink-soft);margin-bottom:14px"></p>
-    <div id="ai-content"></div>
-    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <a id="ai-claude-link" href="#" target="_blank" rel="noopener" style="padding:7px 14px;background:var(--stamp);color:var(--white);text-decoration:none;border-radius:6px;font-size:0.8125rem">以 Claude 摘要 ↗</a>
-      <button id="ai-copy-btn" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;font-size:0.8125rem">複製連結</button>
-      <button onclick="document.getElementById('ai-modal').classList.remove('open')" style="padding:7px 14px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:6px;font-size:0.8125rem">關閉</button>
-    </div>
-  </div>
-</div>
 <div id="notif-toast" class="notif-toast"></div>
 <div id="read-progress"></div>
 
@@ -3122,7 +3097,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
       if (!srcTypeFilter.has(item.source_type || "news")) return false;
-      if (q && !item.title.includes(q) && !(item.summary && item.summary.includes(q))) return false;
+      if (q && !item.title.includes(q)) return false;
       return true;
     }});
     const list = document.getElementById("newsList");
@@ -3141,9 +3116,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       el.dataset.id = id;
       const also = (item.also_in && item.also_in.length)
         ? '<div class="also">同時見於：' + item.also_in.join("、") + '</div>' : "";
-      const aiSummary = item.summary
-        ? '<div class="ai-summary"><span class="ai-tag">✦ AI</span>' + item.summary + '</div>'
-        : '';
       const rlLabel = state.readLater[id] ? "📌 已加入" : "📌 稍後閱讀";
       const rlCls = state.readLater[id] ? " on" : "";
       const srcTypeLabelMap = {{news:"新聞稿", notice:"公告", event:"活動", case:"職災案例"}};
@@ -3153,14 +3125,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + srcTypeBadge + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3 data-date="' + item.date + '"><a href="' + item.link + '" target="_blank" rel="noopener">' + hl(item.title) + '</a></h3>' +
-        aiSummary +
         also +
         '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
           '<button data-act="star" class="' + (state.starred[id] ? "on" : "") + '">' + (state.starred[id] ? "★ 已收藏" : "☆ 收藏") + '</button>' +
           '<button data-act="rl" class="' + rlCls + '">' + rlLabel + '</button>' +
           '<button data-act="board">版板 ▾</button>' +
-          '<button data-act="ai">✦ AI摘要</button>' +
           '<button data-act="share">分享</button>' +
         '</div>';
       el.querySelector('[data-act="read"]').onclick = () => {{ state.read[id] = !state.read[id]; save(); renderNews(); }};
@@ -3170,7 +3140,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         save(); renderNews();
       }};
       el.querySelector('[data-act="board"]').onclick = function(e) {{ showBoardDropdown(e.currentTarget, item); }};
-      el.querySelector('[data-act="ai"]').onclick = function() {{ openAISummary(item); }};
       el.querySelector('[data-act="share"]').onclick = function() {{ shareItem(item); }};
       setupLongPress(el, item);
       addSwipe(el, item);
@@ -3263,36 +3232,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         if (!dd.contains(e.target) && e.target !== btn) {{ dd.remove(); document.removeEventListener('click', close); }}
       }});
     }}, 0);
-  }}
-
-  // ⑧ AI 摘要
-  function openAISummary(item) {{
-    document.getElementById('ai-title').textContent = item.title;
-    document.getElementById('ai-source').textContent = item.org + ' · ' + item.date;
-    var claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent('請摘要以下文章的重點（繁體中文）：' + item.link);
-    document.getElementById('ai-claude-link').href = claudeUrl;
-    document.getElementById('ai-copy-btn').onclick = function() {{
-      navigator.clipboard.writeText(item.link).then(function() {{
-        document.getElementById('ai-copy-btn').textContent = '已複製 ✓';
-        setTimeout(function() {{ document.getElementById('ai-copy-btn').textContent = '複製連結'; }}, 2000);
-      }}).catch(function() {{
-        document.getElementById('ai-copy-btn').textContent = item.link;
-      }});
-    }};
-    var contentHtml = '';
-    if (item.summary) {{
-      contentHtml =
-        '<div class="ai-prebuilt">' + item.summary + '</div>' +
-        '<p style="font-size:0.75rem;color:var(--ink-soft);margin-top:4px">✦ 由 Gemini AI 預先產生</p>';
-    }} else {{
-      contentHtml =
-        '<p style="font-size:0.8125rem;color:var(--ink-soft);line-height:1.75">點擊「以 Claude 摘要」可將文章連結傳給 Claude AI，自動取得繁體中文重點摘要。</p>';
-    }}
-    contentHtml +=
-      '<p style="margin-top:10px;font-size:0.8125rem;color:var(--ink-soft)">文章連結：' +
-      '<a href="' + item.link + '" target="_blank" rel="noopener" style="color:var(--stamp);word-break:break-all">' + item.link + '</a></p>';
-    document.getElementById('ai-content').innerHTML = contentHtml;
-    document.getElementById('ai-modal').classList.add('open');
   }}
 
   // ⑨ 通知推送（頁面載入時檢查新文章）
@@ -4449,10 +4388,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var tag = document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     var kbdModal = document.getElementById('kbd-modal');
-    var aiModal = document.getElementById('ai-modal');
     if (e.key === 'Escape') {{
       kbdModal.classList.remove('open');
-      aiModal.classList.remove('open');
       document.getElementById('compare-modal').classList.remove('open');
       document.getElementById('guide-modal').classList.remove('open');
       closeDrawer();
@@ -5129,6 +5066,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     // 泡泡
     var tip = document.getElementById("rmTooltip");
+    // 依提示框實際大小擺放：右側放不下改放游標左側，上下限制在視窗內（避免靠右的泡泡把提示擠成一條）
+    function placeTip(x, y) {{
+      var gap = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = x + gap + w <= window.innerWidth - 8 ? x + gap : x - gap - w;
+      var top = Math.min(Math.max(8, y - 10), window.innerHeight - h - 8);
+      tip.style.left = Math.max(8, left) + 'px';
+      tip.style.top = Math.max(8, top) + 'px';
+    }}
     var circles = g.selectAll(".rm-bubble").data(pts).enter().append("circle")
       .attr("class","rm-bubble")
       .attr("cx", function(d){{ return xScale(d.rank + .5) + d._jx; }})
@@ -5152,8 +5097,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         ].filter(Boolean).join('<br>');
         tip.innerHTML = lines;
         tip.style.display = 'block';
-        tip.style.left = (event.clientX + 14) + 'px';
-        tip.style.top = (event.clientY - 10) + 'px';
+        placeTip(event.clientX, event.clientY);
       }})
       .on("mouseleave", function() {{ tip.style.display = 'none'; }})
       .on("click", function(event, d) {{
@@ -5227,8 +5171,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       ].filter(Boolean).join('<br>');
       tip.innerHTML = lines + '<br><small style="color:var(--text-3)">點擊查看詳情</small>';
       tip.style.display = 'block';
-      tip.style.left = Math.min(touch.clientX + 10, window.innerWidth - 230) + 'px';
-      tip.style.top = Math.max(10, touch.clientY - 80) + 'px';
+      placeTip(touch.clientX, touch.clientY - 70);
       setTimeout(function(){{ tip.style.display='none'; }}, 3500);
     }}, {{passive:false}});
   }}
@@ -5299,143 +5242,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
-
-
-SUMMARY_CACHE = Path("news_summaries.json")
-
-
-def fetch_article_text(url: str, session: requests.Session) -> str:
-    """抓取新聞原文頁面並提取正文文字（最多 3000 字）"""
-    try:
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        resp = session.get(url, timeout=15, verify=False,
-                           headers={"User-Agent": "Mozilla/5.0 (compatible)"})
-        resp.encoding = resp.apparent_encoding or "utf-8"
-        soup = BeautifulSoup(resp.text, "html.parser")
-        for tag in soup(["script", "style", "nav", "header", "footer", "aside", "form",
-                         "noscript", "iframe"]):
-            tag.decompose()
-        # 優先找主文區塊
-        main = (soup.find("article")
-                or soup.find("div", class_=re.compile(r"content|article|main|body|news", re.I))
-                or soup.find("main")
-                or soup)
-        text = main.get_text(separator="\n", strip=True)
-        # 過濾短行（連結文字、選單等）
-        lines = [l.strip() for l in text.splitlines() if len(l.strip()) > 15]
-        return "\n".join(lines[:80])[:3000]
-    except Exception as e:
-        print(f"  無法抓取文章（{url[:60]}）：{e}", file=sys.stderr)
-        return ""
-
-
-def summarize_with_gemini(title: str, text: str, api_key: str) -> str:
-    """呼叫 Gemini 產生 2-3 句繁體中文摘要，失敗時最多重試 3 次"""
-    import time
-    endpoint = (
-        "https://generativelanguage.googleapis.com/v1beta/models"
-        f"/gemini-flash-lite-latest:generateContent?key={api_key}"
-    )
-    prompt = (
-        "你是一位台灣職業安全衛生領域的專業摘要助理。\n"
-        "以下是一篇台灣政府機關的新聞稿，請閱讀後用繁體中文完整寫出 2-3 句摘要。\n"
-        "摘要需包含：主要政策措施、適用對象或範圍、重要數字或日期（如有）。\n"
-        "重要：必須使用繁體中文，不得使用英文或簡體中文。只輸出摘要本身。\n\n"
-        f"標題：{title}\n\n"
-        f"內文：\n{text}"
-    )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 500, "temperature": 0.1},
-    }
-    for attempt in range(3):
-        try:
-            resp = requests.post(endpoint, json=payload, timeout=40)
-            if resp.status_code == 503:
-                wait = 10 * (attempt + 1)
-                print(f"  Gemini 服務忙碌，{wait}s 後重試…", file=sys.stderr)
-                time.sleep(wait)
-                continue
-            if resp.status_code == 429:
-                wait = 60
-                print(f"  Gemini 達到速率限制，等待 {wait}s…", file=sys.stderr)
-                time.sleep(wait)
-                continue
-            resp.raise_for_status()
-            data = resp.json()
-            candidates = data.get("candidates", [])
-            if not candidates:
-                print(f"  Gemini 無回應（可能被安全篩選器攔截）", file=sys.stderr)
-                return ""
-            parts = candidates[0].get("content", {}).get("parts", [])
-            if not parts:
-                print(f"  Gemini 回應無 parts（finishReason: {candidates[0].get('finishReason')}）", file=sys.stderr)
-                return ""
-            # 過濾掉 thinking model 的 thought/thoughtSignature 部分
-            for part in parts:
-                if (not part.get("thought") and not part.get("thoughtSignature")
-                        and part.get("text")):
-                    return part["text"].strip()
-            return parts[-1].get("text", "").strip()
-        except Exception as e:
-            print(f"  Gemini 摘要失敗（第{attempt+1}次）：{e}", file=sys.stderr)
-            if attempt < 2:
-                time.sleep(5)
-    return ""
-
-
-def load_cached_summaries(news: list[dict]) -> None:
-    """從快取讀取已有的摘要並附加到 news（不呼叫任何 API）"""
-    if not SUMMARY_CACHE.exists():
-        return
-    try:
-        cache = json.loads(SUMMARY_CACHE.read_text(encoding="utf-8"))
-    except Exception:
-        return
-    for item in news:
-        url = item.get("link", "")
-        if url and url in cache:
-            item["summary"] = cache[url]
-
-
-def enrich_news_summaries(news: list[dict], api_key: str) -> None:
-    """只對尚無摘要記錄的新文章呼叫 Gemini，更新快取檔"""
-    cache: dict = {}
-    if SUMMARY_CACHE.exists():
-        try:
-            cache = json.loads(SUMMARY_CACHE.read_text(encoding="utf-8"))
-        except Exception:
-            cache = {}
-
-    session = requests.Session()
-    updated = False
-
-    for item in news:
-        url = item.get("link", "")
-        if not url:
-            continue
-        if cache.get(url):  # 已有非空摘要 → 直接用
-            item["summary"] = cache[url]
-            continue
-        import time as _time; _time.sleep(3)  # 避免連續呼叫觸發速率限制
-        print(f"  AI摘要中：{item['title'][:45]}…")
-        text = fetch_article_text(url, session)
-        summary = summarize_with_gemini(item["title"], text, api_key) if text else ""
-        if summary:  # 只存非空摘要，空的下次重試
-            cache[url] = summary
-            item["summary"] = summary
-            updated = True
-        else:
-            print(f"  → 無法產生摘要（原文抓取失敗），下次重試。", file=sys.stderr)
-
-    if updated:
-        SUMMARY_CACHE.write_text(
-            json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        print(f"摘要快取已更新：{SUMMARY_CACHE}（{len(cache)} 筆）。")
-    else:
-        print("  所有新聞均有快取，未呼叫 Gemini API。")
 
 
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
@@ -5678,7 +5484,6 @@ def main():
     parser.add_argument("--history-budget", type=int, default=80, help="單次最多下載幾個歷史版本頁（避免排程逾時，未完成者次日接續）")
     parser.add_argument("--debug", action="store_true", help="印出每個新聞來源實際抓到的內容")
     parser.add_argument("--news-only", action="store_true", help="跳過法規 XML 解析，只更新新聞")
-    parser.add_argument("--gemini-key", default="", help="Google Gemini API key（也可設定環境變數 GEMINI_API_KEY）")
     args = parser.parse_args()
 
     all_news = []
@@ -5697,13 +5502,6 @@ def main():
     # 併入存檔後再去重：舊動態不會因為掉出 RSS 而消失，來源暫時失敗時也不會整批不見
     news = dedupe_and_filter_news(merge_news_archive(all_news))
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
-
-    load_cached_summaries(news)  # 永遠讀快取，不呼叫 API
-
-    gemini_key = args.gemini_key or os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
-        print("AI摘要：為尚無記錄的新文章呼叫 Gemini…")
-        enrich_news_summaries(news, gemini_key)
 
     XML_CACHE = Path("osh_xml_records.json")
 
@@ -5727,10 +5525,17 @@ def main():
                 if XML_CACHE.exists():
                     try:
                         _old = {r["name"]: r.get("最新異動日期_roc", "") for r in json.loads(XML_CACHE.read_text(encoding="utf-8"))}
-                        _changed = [r["name"] for r in all_xml_records if _old.get(r["name"]) != r.get("最新異動日期_roc", "")]
-                        _new_laws = [r["name"] for r in all_xml_records if r["name"] not in _old]
+                        # 快取裡沒有、但異動日期很舊的法規，是收錄規則改變才補進來的，不是新制定：只記錄、不通知
+                        _cutoff = (date.today() - timedelta(days=NEW_LAW_NOTIFY_DAYS)).isoformat()
+                        _rescoped = [r["name"] for r in all_xml_records
+                                     if r["name"] not in _old and (roc_to_iso(r.get("最新異動日期_roc", "")) or "") < _cutoff]
+                        _changed = [r["name"] for r in all_xml_records
+                                    if _old.get(r["name"]) != r.get("最新異動日期_roc", "") and r["name"] not in _rescoped]
+                        _new_laws = [r["name"] for r in all_xml_records if r["name"] not in _old and r["name"] not in _rescoped]
                         changed_laws = _changed
                         new_laws_detected = _new_laws
+                        if _rescoped:
+                            print(f"  ＋ 收錄規則新增 {len(_rescoped)} 筆（異動日期早於 {_cutoff}，不寄通知）：{'、'.join(_rescoped[:4])}{'…' if len(_rescoped) > 4 else ''}")
                         if _changed:
                             print(f"  ↑ 法規異動 {len(_changed)} 筆：{'、'.join(_changed[:6])}{'…' if len(_changed) > 6 else ''}")
                         if _new_laws:
