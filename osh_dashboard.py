@@ -76,6 +76,28 @@ CATEGORY_RULES = [
     ("作業環境", ("作業環境", "設施規則", "設施標準", "標示")),
     ("管理制度", ("管理", "檢查", "訓練", "顧問", "獎勵", "補助", "評核", "施行細則", "職業安全衛生法")),
 ]
+
+# 職災案例災害類型（由標題判斷，由上而下取第一個命中者）與對應的主要法規
+CASE_HAZARDS = [
+    {"type": "墜落滾落", "words": ("墜落", "跌落", "滾落", "跌倒"),
+     "laws": ["營造安全衛生設施標準", "職業安全衛生設施規則", "高架作業勞工保護措施標準"]},
+    {"type": "物體飛落", "words": ("飛落", "落下", "掉落"),
+     "laws": ["營造安全衛生設施標準", "起重升降機具安全規則", "職業安全衛生設施規則"]},
+    {"type": "倒塌崩塌", "words": ("倒塌", "崩塌", "坍塌", "倒崩"),
+     "laws": ["營造安全衛生設施標準", "職業安全衛生設施規則"]},
+    {"type": "被夾被捲", "words": ("被夾", "被捲", "捲入", "夾擊"),
+     "laws": ["職業安全衛生設施規則", "機械設備器具安全標準"]},
+    {"type": "感電", "words": ("感電", "觸電", "電擊"),
+     "laws": ["職業安全衛生設施規則"]},
+    {"type": "被撞交通", "words": ("被撞", "撞擊", "輾壓", "交通事故", "車禍"),
+     "laws": ["職業安全衛生設施規則", "起重升降機具安全規則"]},
+    {"type": "高溫熱危害", "words": ("高溫", "中暑", "熱危害", "燙傷", "灼傷"),
+     "laws": ["高溫作業勞工作息時間標準", "職業安全衛生設施規則"]},
+    {"type": "缺氧中毒", "words": ("缺氧", "中毒", "窒息", "局限空間"),
+     "laws": ["缺氧症預防規則", "有機溶劑中毒預防規則", "特定化學物質危害預防標準"]},
+    {"type": "火災爆炸", "words": ("火災", "爆炸", "燃燒"),
+     "laws": ["職業安全衛生設施規則", "危害性化學品標示及通識規則"]},
+]
 USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
@@ -1589,6 +1611,13 @@ def authority_from_category(law_type: str) -> str:
     return parts[1] if len(parts) > 1 else ""
 
 
+def classify_hazard(title: str) -> str:
+    for h in CASE_HAZARDS:
+        if any(w in title for w in h["words"]):
+            return h["type"]
+    return "其他"
+
+
 def guess_category(name: str) -> str:
     for cat, words in CATEGORY_RULES:
         if any(w in name for w in words):
@@ -1611,6 +1640,12 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
         # 靜態清單是人工挑選的，一律保留；XML 自動帶入的才套用範圍規則（快取資料也適用）
         if rec["name"] not in by_name and not in_osh_scope(rec["name"], law_type):
             continue
+        # 施行日：只保留尚未到的日期；快取的「未生效」過了施行日就視為現行
+        effective = roc_to_iso(rec.get("生效日期_roc", "")) or ""
+        if effective and effective <= date.today().isoformat():
+            effective = ""
+            if rec.get("status") == "未生效":
+                rec = {**rec, "status": "現行"}
         if rec["name"] in by_name:
             entry = by_name[rec["name"]]
             entry["src_type"] = "xml"  # XML 資料庫已確認
@@ -1631,6 +1666,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["authority"] = authority
             if rec.get("status"):
                 entry["status"] = rec["status"]
+            if effective:
+                entry["effective"] = effective
             if rec.get("scope"):
                 entry["scope"] = rec["scope"]
             if rec.get("penalty_articles"):
@@ -1667,6 +1704,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "has_table": rec.get("has_table", False),
                 "authority": authority,
                 "status": rec.get("status", "現行"),
+                "effective": effective,
                 "scope": rec.get("scope", ""),
                 "penalty_articles": rec.get("penalty_articles", []),
             })
@@ -2490,6 +2528,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .chg-controls select{{ width:auto; min-width:140px; cursor:pointer; }}
   .chg-controls input{{ flex:1; width:auto; min-width:200px; }}
   .scenario-search{{ margin-bottom:16px; }}
+  /* 施行提醒、修正草案、職災案例 */
+  .eff-notice{{ display:flex; gap:12px; align-items:flex-start; padding:12px 16px; margin:0 0 16px; border-radius:var(--radius);
+    background:var(--danger-bg); color:var(--danger); border-left:3px solid var(--danger); font-size:0.8125rem; line-height:1.6; }}
+  .eff-notice .ti{{ font-size:1.25rem; margin-top:1px; }}
+  .eff-notice div div{{ color:var(--text-2); }}
+  .hazard-bar{{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }}
+  .hazard-bar:empty{{ display:none; }}
+  .case-meta{{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; margin:4px 0; font-size:0.75rem; color:var(--text-2); }}
+  .case-laws .law-link{{ font-size:0.75rem; color:var(--blue); }}
+  .case-list{{ list-style:none; margin:0 0 8px; }}
+  .case-list li{{ display:flex; align-items:baseline; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; }}
+  .case-list li:last-child{{ border-bottom:none; }}
+  .case-list a{{ flex:1; color:var(--text); text-decoration:none; }}
+  .case-list a:hover{{ color:var(--blue); text-decoration:underline; }}
+  .case-date{{ color:var(--text-3); font-size:0.75rem; white-space:nowrap; font-variant-numeric:tabular-nums; }}
+  @media (max-width:767px){{ .hazard-bar{{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-left:-16px; margin-right:-16px; padding:0 16px; }} }}
 
   /* ════════ RWD ════════ */
   @media (max-width:1279px){{
@@ -2612,6 +2666,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <button class="src-filter-btn active" data-srctype="case">⚠️ 職災案例</button>
       <button class="src-filter-btn" data-srctype="event">📅 活動訊息</button>
     </div>
+    <div class="hazard-bar" id="hazardBar"></div>
     <div class="board-area" id="board-area" style="display:none">
       <span style="font-size:0.75rem;color:var(--ink-soft)">版板：</span>
       <div class="board-pills" id="board-pills"></div>
@@ -2651,6 +2706,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button data-lawfilter="unread">未讀<span id="unread-law-count" class="unread-law-count"></span></button>
         <button data-lawfilter="recent3m">近 3 月修正</button>
         <button data-lawfilter="recent">近 1 年修正</button>
+        <button data-lawfilter="upcoming"><i class="ti ti-calendar-event" aria-hidden="true"></i>即將施行<span id="upcoming-count" class="filter-badge"></span></button>
         <button data-lawfilter="starred"><i class="ti ti-star" aria-hidden="true"></i>已收藏</button>
         <span class="sep" aria-hidden="true"></span>
         <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()"><i class="ti ti-alert-triangle" aria-hidden="true"></i>有罰則</button>
@@ -2925,6 +2981,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const CHECKLISTS = {checklists_json};
   const APPLICABILITY = {applicability_json};
   const INSPECTION_FOCUS = {inspection_focus_json};
+  const CASE_HAZARDS = {case_hazards_json};
   const CNS_ISO = {cns_iso_json};
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
@@ -2962,6 +3019,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
   var srcTypeFilter = new Set(["news", "notice", "case"]); // 預設隱藏活動訊息
+  var hazardFilter = "";   // 職災案例：災害類型
+  var caseLawFilter = "";  // 職災案例：從法規抽屜帶過來的法規名稱
   var registryPage = 1;
   var REGISTRY_PAGE_SIZE = 30;
   var _regRows = [];
@@ -3041,6 +3100,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function isRecent3m(d) {{ return !!d && new Date(d) >= cutoff3m; }}
   function isNewLaw(r) {{ return !!(r.note && r.note.includes("新訂定")); }}
 
+  // ── 施行日：已公布、尚未施行的修正
+  function daysUntil(iso) {{ return Math.round((new Date(iso) - new Date(_isoDaysAgo(0))) / 86400000); }}
+  function effLabel(r) {{ var n = daysUntil(r.effective); return r.effective + ' 施行' + (n > 0 ? '（剩 ' + n + ' 天）' : ''); }}
+
+  // ── 修正草案 ↔ 法規（以草案標題「」內的法規名稱對應）
+  var _draftsByLaw = null;
+  function draftsOf(name) {{
+    if (!_draftsByLaw) {{
+      _draftsByLaw = {{}};
+      DRAFTS.forEach(function(d) {{
+        var law = _draftLaw(d.title);
+        if (law) (_draftsByLaw[law.name] = _draftsByLaw[law.name] || []).push(d);
+      }});
+      Object.keys(_draftsByLaw).forEach(function(k) {{
+        _draftsByLaw[k].sort(function(a, b) {{ return (b.publish || '').localeCompare(a.publish || ''); }});
+      }});
+    }}
+    return _draftsByLaw[name] || [];
+  }}
+  // 尚未反映到現行條文的草案：預告中，或預告日晚於法規最新修正日
+  function pendingDrafts(r) {{
+    return draftsOf(r.name).filter(function(d) {{ return _draftOpen(d) || !r.date || (d.publish || '') > r.date; }});
+  }}
+  // withDate：只有最近一筆已公布的草案能確定是哪次修正，才標日期
+  function draftStatusHtml(d, r, withDate) {{
+    if (_draftOpen(d)) {{
+      var left = daysUntil(d.offline);
+      return '<span class="draft-st open">預告中・' + (left > 0 ? '剩 ' + left + ' 天' : '今日截止') + '</span>';
+    }}
+    if (r && r.date && r.date >= (d.publish || ''))
+      return '<span class="draft-st done">' + (withDate ? '已於 ' + r.date + ' 修正公布' : '預告後已修正公布') + '</span>';
+    return '<span class="draft-st end">預告期結束・尚未公布</span>';
+  }}
+
+  // ── 職災案例 ↔ 法規（依災害類型對應；抽屜只算主要對應法規＝對應表第一部，避免通用法規對到幾乎所有案例）
+  var HAZARD_LAWS = {{}};
+  CASE_HAZARDS.forEach(function(h) {{ HAZARD_LAWS[h.type] = h.laws; }});
+  var _casesByLaw = null;
+  function casesOf(name) {{
+    if (!_casesByLaw) {{
+      _casesByLaw = {{}};
+      NEWS.forEach(function(n) {{
+        if (n.source_type !== 'case' || !n.hazard) return;
+        var main = (HAZARD_LAWS[n.hazard] || [])[0];
+        if (main) (_casesByLaw[main] = _casesByLaw[main] || []).push(n);
+      }});
+    }}
+    return _casesByLaw[name] || [];
+  }}
+  function lawByName(name) {{ return REGISTRY.find(function(r) {{ return r.name === name; }}); }}
+
   // ── 條文新舊對照
   function lawChanges(r) {{ var d = LAW_DIFFS[r.name]; return (d && d.changes) || []; }}
   function _chgCountChips(changes) {{
@@ -3075,7 +3185,40 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (list) list.innerHTML = '<div class="empty-state"><p style="color:red">JS錯誤：' + e.message + '</p></div>';
     }}
   }}
+  // 職災案例的災害類型統計列（點選可篩選）
+  function renderHazardBar() {{
+    var bar = document.getElementById('hazardBar');
+    var cases = NEWS.filter(function(n) {{ return n.source_type === 'case'; }});
+    if (!srcTypeFilter.has('case') || !cases.length) {{ bar.innerHTML = ''; hazardFilter = ''; caseLawFilter = ''; return; }}
+    var cnt = {{}};
+    cases.forEach(function(n) {{ var h = n.hazard || '其他'; cnt[h] = (cnt[h] || 0) + 1; }});
+    var types = Object.keys(cnt).sort(function(a, b) {{ return cnt[b] - cnt[a]; }});
+    var html = '<span class="src-filter-label">職災類型：</span>' +
+      '<button class="cat-btn' + (!hazardFilter ? ' active' : '') + '" data-hazard="">全部 ' + cases.length + '</button>' +
+      types.map(function(h) {{
+        return '<button class="cat-btn' + (hazardFilter === h ? ' active' : '') + '" data-hazard="' + h + '">' + h + ' ' + cnt[h] + '</button>';
+      }}).join('');
+    if (caseLawFilter) html += '<button class="cat-btn active" data-clearlaw="1">法規：' + caseLawFilter + ' ✕</button>';
+    bar.innerHTML = html;
+    bar.querySelectorAll('[data-hazard]').forEach(function(b) {{
+      b.onclick = function() {{ hazardFilter = b.dataset.hazard; renderNews(); }};
+    }});
+    var cl = bar.querySelector('[data-clearlaw]');
+    if (cl) cl.onclick = function() {{ caseLawFilter = ''; renderNews(); }};
+  }}
+  // 從法規抽屜跳到「最新動態」並只看與該法規相關的職災案例
+  function showCasesForLaw(name) {{
+    switchTab('news');
+    if (!srcTypeFilter.has('case')) {{
+      srcTypeFilter.add('case');
+      var b = document.querySelector('[data-srctype="case"]'); if (b) b.classList.add('active');
+    }}
+    hazardFilter = ''; caseLawFilter = name;
+    var all = document.querySelector('[data-filter="all"]');
+    if (all) all.click(); else renderNews();
+  }}
   function _renderNews() {{
+    renderHazardBar();
     const q = document.getElementById("newsSearch").value.trim();
     const qRe = q ? new RegExp(q.replace(/[.*+?^${{}}()|[\\]\\\\]/g,'\\\\$&'),'g') : null;
     function hl(text) {{
@@ -3097,6 +3240,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         if (state.mutedKeywords.some(function(kw) {{ return item.title.includes(kw); }})) return false;
       }}
       if (!srcTypeFilter.has(item.source_type || "news")) return false;
+      if (hazardFilter && item.hazard !== hazardFilter) return false;
+      if (caseLawFilter && (HAZARD_LAWS[item.hazard] || [])[0] !== caseLawFilter) return false;
       if (q && !item.title.includes(q)) return false;
       return true;
     }});
@@ -3125,6 +3270,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         '<div class="swipe-save-hint">★</div>' +
         '<div class="row"><span class="src">' + item.org + ' · ' + item.source + srcTypeBadge + '</span><span class="date">' + item.date + '</span></div>' +
         '<h3 data-date="' + item.date + '"><a href="' + item.link + '" target="_blank" rel="noopener">' + hl(item.title) + '</a></h3>' +
+        (item.source_type === 'case' && item.hazard ? '<div class="case-meta"><span class="badge badge-red">' + item.hazard + '</span>' +
+          ((HAZARD_LAWS[item.hazard] || []).filter(lawByName).length ? '<span class="case-laws">相關法規：' +
+            (HAZARD_LAWS[item.hazard] || []).filter(lawByName).map(function(l) {{
+              return '<button type="button" class="law-link" data-openlaw="' + l + '">' + l + '</button>';
+            }}).join('、') + '</span>' : '') + '</div>' : '') +
         also +
         '<div class="actions" style="position:relative">' +
           '<button data-act="read">' + (state.read[id] ? "已讀" : "標為已讀") + '</button>' +
@@ -3141,6 +3291,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }};
       el.querySelector('[data-act="board"]').onclick = function(e) {{ showBoardDropdown(e.currentTarget, item); }};
       el.querySelector('[data-act="share"]').onclick = function() {{ shareItem(item); }};
+      el.querySelectorAll('[data-openlaw]').forEach(function(b) {{
+        b.onclick = function() {{ var law = lawByName(b.dataset.openlaw); if (law) openDrawer(law); }};
+      }});
       setupLongPress(el, item);
       addSwipe(el, item);
       list.appendChild(el);
@@ -3658,6 +3811,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (lawFilter === "starred") rows = rows.filter(r => state.starredLaws[r.name]);
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
+    if (lawFilter === "upcoming") rows = rows.filter(r => r.effective);
     if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
@@ -3693,7 +3847,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
     }}
 
-    if (!fuseActive) {{
+    if (!fuseActive && lawFilter === "upcoming") {{
+      rows.sort((a, b) => a.effective.localeCompare(b.effective) || a.name.localeCompare(b.name, "zh-Hant"));  // 依施行日先後
+    }} else if (!fuseActive) {{
       if (sortMode === "date") {{
         rows.sort((a, b) => {{
           if (!a.date && !b.date) return a.name.localeCompare(b.name, "zh-Hant");
@@ -3763,8 +3919,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const starred = state.starredLaws[r.name];
       const hasUpdate = !!starred && state.lawLastSeen[r.name] && r.date && r.date > state.lawLastSeen[r.name];
       const isUnread = (isnew || recent || recent3m) && !state.readLaws[r.name];
-      const statusCls = r.status === '廢止' ? 'badge-gray' : r.status === '未生效' ? 'badge-red' : '';
-      const statusBadge = statusCls ? '<span class="badge ' + statusCls + '">' + r.status + '</span>' : '';
+      const statusBadge = r.effective ? '<span class="badge badge-red" title="已修正公布，尚未施行">' + effLabel(r) + '</span>'
+                        : r.status === '廢止' ? '<span class="badge badge-gray">廢止</span>'
+                        : r.status === '未生效' ? '<span class="badge badge-red">未生效</span>' : '';
+      const pend = pendingDrafts(r);
+      const draftBadge = pend.length
+        ? '<span class="meta-item meta-match" title="尚未反映到現行條文的修正草案"><i class="ti ti-file-pencil" aria-hidden="true"></i>修正草案 ' + pend.length + ' 筆' + (pend.some(_draftOpen) ? '・預告中' : '') + '</span>' : '';
       // ③ 全文搜尋：標示透過條文內容命中的法規
       var artMatchBadge = '';
       if (q && !r.name.includes(q) && ftHits[r.name]) {{
@@ -3804,7 +3964,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           inspBadge += '<span class="meta-item risk-dots risk-lvl-' + lvl + '" title="合規風險評分 ' + rs + '/100（點擊風險矩陣查看）">' + dots + '</span>';
         }}
       }})();
-      var metaLine = (chgSum ? '<span class="chg-summary">' + chgSum + '</span>' : '') + artMatchBadge + penBadge + inspBadge;
+      var metaLine = (chgSum ? '<span class="chg-summary">' + chgSum + '</span>' : '') + draftBadge + artMatchBadge + penBadge + inspBadge;
       return '<tr class="' + (isUnread ? 'law-unread' : '') + (hasUpdate ? ' law-updated' : '') + '">' +
         '<td data-label="" class="star-cell"><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏" aria-label="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
         '<td data-label="法規名稱" class="rname"><div class="rname-line">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge badge-blue">收藏後已更新</span>' : '') + '</div>' +
@@ -3942,7 +4102,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     // 主體 meta
     var statusCls = r.status === '廢止' ? 'status-off' : r.status === '未生效' ? 'status-pending' : 'status-now';
-    var statusLabel = r.status || '現行';
+    var statusLabel = r.effective ? effLabel(r) : (r.status || '現行');
     let html = noticeHtml + '<div class="drawer-meta">' +
       '<span>' + (TIER_LABEL[r.tier] || r.tier) + '</span>' +
       '<span class="' + statusCls + '">' + statusLabel + '</span>' +
@@ -3954,6 +4114,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     // 主管機關
     if (r.authority) {{
       html += '<div class="authority-row">主管機關：<span>' + r.authority + '</span></div>';
+    }}
+
+    // 施行提醒
+    if (r.effective) {{
+      var effDays = daysUntil(r.effective);
+      html += '<div class="eff-notice"><i class="ti ti-calendar-event" aria-hidden="true"></i><div>' +
+        '<b>本次修正將於 ' + r.effective + ' 施行' + (effDays > 0 ? '（剩 ' + effDays + ' 天）' : '') + '</b>' +
+        '<div>' + (LAW_DIFFS[r.name] ? '下方「修正條文對照」即施行後的新規定，' : '') + '請在施行日前完成準備。</div></div></div>';
     }}
 
     // 附表提示
@@ -4208,7 +4376,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       html += '</div>';
     }}
 
+    // 修正草案預告
+    var drs = draftsOf(r.name);
+    if (drs.length) {{
+      var lastDone = drs.find(function(d) {{ return !_draftOpen(d) && r.date && r.date >= (d.publish || ''); }});
+      html += '<div class="drawer-section"><h3>修正草案預告（' + drs.length + '）</h3>' + drs.map(function(d) {{
+        return '<div class="draft-card"><div class="draft-title">' + _escHtml(d.title.replace(/^.*?公告[：:]/, '')) + '</div>' +
+          '<div class="draft-meta">' + draftStatusHtml(d, r, d === lastDone) + '<span>公告 ' + (d.publish || '—') + '</span><span>意見截止 ' + (d.offline || '—') + '</span></div>' +
+          '<div class="draft-links"><a href="' + d.url + '" target="_blank" rel="noopener">前往公共政策平台 ↗</a></div></div>';
+      }}).join('') + '</div>';
+    }}
+
+    // 相關職災案例（依災害類型對應）
+    var cs = casesOf(r.name);
+    if (cs.length) {{
+      html += '<div class="drawer-section"><h3>相關職災案例（' + cs.length + '）</h3>' +
+        '<div class="diff-head">職安署職災案例宣導中，災害類型以本法規為主要對應法規者。</div><ul class="case-list">' +
+        cs.slice(0, 6).map(function(n) {{
+          return '<li><span class="badge badge-red">' + n.hazard + '</span><a href="' + n.link + '" target="_blank" rel="noopener">' + _escHtml(n.title) + '</a><span class="case-date">' + n.date + '</span></li>';
+        }}).join('') + '</ul>' +
+        (cs.length > 6 ? '<button type="button" class="art-copy-btn" id="case-more">在最新動態查看全部 ' + cs.length + ' 則</button>' : '') + '</div>';
+    }}
+
     document.getElementById("drawer-body").innerHTML = html;
+    var caseMore = document.getElementById('case-more');
+    if (caseMore) caseMore.onclick = function() {{ closeDrawer(); showCasesForLaw(r.name); }};
     _bindDiff(r);
     _bindHist(r);
 
@@ -4349,6 +4541,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var count = REGISTRY.filter(function(r) {{
       return (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name];
     }}).length;
+    var up = document.getElementById('upcoming-count');
+    if (up) up.textContent = REGISTRY.filter(function(r) {{ return r.effective; }}).length || '';
     var el = document.getElementById('unread-law-count');
     if (el) el.textContent = count > 0 ? count : '';
     var btn = document.getElementById('markAllReadBtn');
@@ -5274,6 +5468,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         checklists_json=json.dumps(CHECKLISTS, ensure_ascii=False),
         applicability_json=json.dumps(APPLICABILITY_DATA, ensure_ascii=False),
         inspection_focus_json=json.dumps(INSPECTION_FOCUS_LAWS, ensure_ascii=False),
+        case_hazards_json=json.dumps([{"type": h["type"], "laws": h["laws"]} for h in CASE_HAZARDS], ensure_ascii=False),
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
         xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
@@ -5502,6 +5697,9 @@ def main():
     # 併入存檔後再去重：舊動態不會因為掉出 RSS 而消失，來源暫時失敗時也不會整批不見
     news = dedupe_and_filter_news(merge_news_archive(all_news))
     print(f"新聞：去重、篩選後共 {len(news)} 則。")
+    for item in news:
+        if item.get("source_type") == "case":
+            item["hazard"] = classify_hazard(item["title"])
 
     XML_CACHE = Path("osh_xml_records.json")
 
