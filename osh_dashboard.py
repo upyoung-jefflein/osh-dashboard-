@@ -323,13 +323,13 @@ USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
 SOURCES = [
-    # type="rss"：解析 RSS 2.0 / Atom feed；type="osha_list"：職安署網站列表頁（無 RSS 的節點）
+    # type="osha_list"：勞動部／職安署網站列表頁（兩站 RSS 已於 2026-11-18 下架，改抓列表頁）；type="rss" 保留供日後其他來源使用
     # source_type：news/notice/event/case 決定前端預設顯示
-    {"name": "勞動部新聞稿",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/RssList",                          "type": "rss", "source_type": "news"},
-    {"name": "職安署新聞稿",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/RssList",                     "type": "rss", "source_type": "news"},
-    {"name": "職安署公布欄",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/RssList",                     "type": "rss", "source_type": "notice"},
-    {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/RssList",                     "type": "rss", "source_type": "event"},
-    {"name": "勞動部公布欄",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/2665/RssList",                          "type": "rss", "source_type": "notice"},
+    {"name": "勞動部新聞稿",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/1633/lpsimplelist?pageSize=40",                          "type": "osha_list", "source_type": "news"},
+    {"name": "職安署新聞稿",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48419/lpsimplelist?pageSize=40",                     "type": "osha_list", "source_type": "news"},
+    {"name": "職安署公布欄",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48423/lpsimplelist?pageSize=40",                     "type": "osha_list", "source_type": "notice"},
+    {"name": "職安署活動訊息",  "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48425/lpsimplelist?pageSize=40",                     "type": "osha_list", "source_type": "event"},
+    {"name": "勞動部公布欄",    "org": "勞動部",              "url": "https://www.mol.gov.tw/1607/1632/2665/lpsimplelist?pageSize=40",                          "type": "osha_list", "source_type": "notice"},
     # 原「教育訓練」節點已改為職災案例宣導且無 RSS；教育訓練改導向 trains.osha.gov.tw 報名系統，不再收錄
     {"name": "職災案例宣導",    "org": "勞動部職業安全衛生署", "url": "https://www.osha.gov.tw/48110/48417/48427/lpsimplelist?pageSize=40", "type": "osha_list", "source_type": "case"},
 ]
@@ -1136,7 +1136,7 @@ def fetch_html_source(source: dict, debug: bool = False) -> list[dict]:
 
 
 def fetch_osha_list_source(source: dict, debug: bool = False) -> list[dict]:
-    """職安署網站列表頁（lpsimplelist）：每筆為 div.item_list2，含標題連結與「發布日期：YYYY-MM-DD」。"""
+    """勞動部／職安署網站列表頁（lpsimplelist）：每筆為 div.item_list2，含標題連結與「發布日期：YYYY-MM-DD」。"""
     name, org, url = source["name"], source["org"], source["url"]
     print(f"處理列表來源：{name}（{url}）")
     try:
@@ -1148,12 +1148,14 @@ def fetch_osha_list_source(source: dict, debug: bool = False) -> list[dict]:
     soup = BeautifulSoup(resp.text, "html.parser")
     items = []
     for block in soup.select("div.item_list2"):
-        a = block.select_one(".item_title a[href]")
+        a = block.select_one(".item_title a[href], h3 a[href]")  # 職安署用 .item_title、勞動部用 h3
         m = re.search(r"發布日期：\s*(\S+)", block.get_text(" ", strip=True))
         date_str = extract_date(m.group(1)) if m else None
         if not a or not date_str:
             continue
-        items.append({"title": a.get_text(strip=True), "link": urljoin(url, a["href"]), "date": date_str,
+        # 列表頁連結為 …/ID/post，改成原 RSS 的 …/ID/ 形式（兩者同頁），存檔與讀取狀態才接得上
+        link = re.sub(r"/post$", "/", urljoin(url, a["href"]))
+        items.append({"title": a.get_text(strip=True), "link": link, "date": date_str,
                       "source": name, "org": org, "source_type": source.get("source_type", "news")})
     if debug:
         print(f"  [debug] 抓到 {len(items)} 筆")
@@ -5604,7 +5606,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function openDataStatus() {{
     var el = document.getElementById('ds-content');
     if (!el) return;
-    var html = '<div class="ds-section-hd">新聞 RSS 來源</div>';
+    var html = '<div class="ds-section-hd">新聞來源</div>';
     SOURCE_STATUS.forEach(function(s) {{
       var dotCls = s.ok ? 'ds-ok' : 'ds-fail';
       var label = s.ok ? '正常' : '失敗';
