@@ -2734,6 +2734,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   #drawer-header h2{{ font-size:1rem; }}
   #drawer-header h2 a{{ color:var(--text-heading); }}
   #drawer-close{{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); font-size:1rem; }}
+  /* 抽屜展開（電腦版）：寬度延伸到側欄右側，方便閱讀條文對照等長內容 */
+  #drawer-expand{{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--border);
+    border-radius:var(--radius); background:var(--surface); color:var(--text-2); cursor:pointer; transition:all .15s ease; }}
+  #drawer-expand:hover{{ background:var(--bg-muted); color:var(--text); }}
+  #drawer-expand .ti{{ font-size:1.125rem; }}
+  @media (min-width:768px){{
+    #law-drawer{{ transition:transform .28s cubic-bezier(.4,0,.2,1), width .28s ease; }}
+    #law-drawer.expanded{{ width:calc(100vw - var(--osh-sidebar-w)); }}
+    #law-drawer.expanded #drawer-header, #law-drawer.expanded #drawer-body{{ padding-left:40px; padding-right:40px; }}
+  }}
+  @media (max-width:767px){{ #drawer-expand{{ display:none; }} }}
   #drawer-body{{ padding:16px 20px 24px; }}
   .drawer-section h3{{ font-size:0.6875rem; letter-spacing:.07em; color:var(--text-3); }}
   .drawer-fulllink{{ background:var(--blue); border-radius:var(--radius); min-height:40px; display:inline-flex; align-items:center; }}
@@ -3254,6 +3265,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <div id="law-drawer">
   <div id="drawer-header">
     <h2 id="drawer-title"></h2>
+    <button id="drawer-expand" type="button" onclick="toggleDrawerExpand()" title="展開" aria-label="展開"><i class="ti ti-arrows-maximize" aria-hidden="true"></i></button>
     <button id="drawer-close" onclick="closeDrawer()" title="關閉">✕</button>
   </div>
   <div id="drawer-body"></div>
@@ -5019,6 +5031,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       updateUnreadLawCount();
     }}
   }}
+
+  // 抽屜展開／收合（電腦版），偏好記在瀏覽器
+  function _setDrawerExpanded(on) {{
+    document.getElementById("law-drawer").classList.toggle("expanded", on);
+    var b = document.getElementById("drawer-expand");
+    b.title = on ? "收合" : "展開"; b.setAttribute("aria-label", b.title);
+    b.innerHTML = '<i class="ti ti-arrows-' + (on ? 'minimize' : 'maximize') + '" aria-hidden="true"></i>';
+  }}
+  function toggleDrawerExpand() {{
+    var on = !document.getElementById("law-drawer").classList.contains("expanded");
+    _setDrawerExpanded(on);
+    try {{ localStorage.setItem("osh_drawer_expanded", on ? "1" : ""); }} catch (e) {{}}
+  }}
+  try {{ _setDrawerExpanded(localStorage.getItem("osh_drawer_expanded") === "1"); }} catch (e) {{}}
 
   function closeDrawer() {{
     document.getElementById("law-drawer").classList.remove("open");
