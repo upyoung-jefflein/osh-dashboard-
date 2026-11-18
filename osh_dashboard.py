@@ -98,6 +98,227 @@ CASE_HAZARDS = [
     {"type": "火災爆炸", "words": ("火災", "爆炸", "燃燒"),
      "laws": ["職業安全衛生設施規則", "危害性化學品標示及通識規則"]},
 ]
+# ============================================================
+# 事業義務試算：事業之分類（職業安全衛生管理辦法第2條附表一）
+# 附表為 PDF，不在法規 XML 內，須人工維護；ref 標附表一編號，alias 為現行行業名稱：
+#   第二、三類取自職安署「危害風險第二類及第三類參考事業一覽表」（111.01.06），
+#   第一類無官方對照，依行政院主計總處行業統計分類補常用名稱
+# ============================================================
+_C1, _C2, _C3 = "附表一 一、", "附表一 二、", "參考事業一覽表 第三類"
+BUSINESS_CLASSES = [
+    # ── 第一類（顯著風險）
+    {"cls": 1, "group": "礦業及土石採取業", "item": "煤礦業", "ref": _C1 + "(一)1", "alias": ["採礦", "礦場"]},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "石油、天然氣及地熱礦業", "ref": _C1 + "(一)2", "alias": ["油氣探勘", "地熱"]},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "金屬礦業", "ref": _C1 + "(一)3", "alias": []},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "土礦及石礦業", "ref": _C1 + "(一)4", "alias": ["石礦", "大理石開採"]},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "化學與肥料礦業", "ref": _C1 + "(一)5", "alias": []},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "其他礦業", "ref": _C1 + "(一)6", "alias": []},
+    {"cls": 1, "group": "礦業及土石採取業", "item": "土石採取業", "ref": _C1 + "(一)7", "alias": ["砂石採取", "砂石場"]},
+    {"cls": 1, "group": "製造業", "item": "紡織業", "ref": _C1 + "(二)1", "alias": ["紡紗", "織布", "染整", "不織布"]},
+    {"cls": 1, "group": "製造業", "item": "木竹製品及非金屬家具製造業", "ref": _C1 + "(二)2", "alias": ["木材加工", "木製品", "竹製品", "家具製造", "木製家具"]},
+    {"cls": 1, "group": "製造業", "item": "造紙、紙製品製造業", "ref": _C1 + "(二)3", "alias": ["紙漿", "紙箱", "紙容器", "造紙"]},
+    {"cls": 1, "group": "製造業", "item": "化學材料製造業", "ref": _C1 + "(二)4", "alias": ["石化原料", "石化", "合成樹脂", "人造纖維", "肥料製造", "工業氣體"]},
+    {"cls": 1, "group": "製造業", "item": "化學品製造業", "ref": _C1 + "(二)5", "alias": ["塗料製造", "油漆製造", "清潔用品製造", "化粧品製造", "接著劑", "油墨"]},
+    {"cls": 1, "group": "製造業", "item": "石油及煤製品製造業", "ref": _C1 + "(二)6", "alias": ["煉油", "石油煉製", "潤滑油"]},
+    {"cls": 1, "group": "製造業", "item": "橡膠製品製造業", "ref": _C1 + "(二)7", "alias": ["輪胎", "橡膠"]},
+    {"cls": 1, "group": "製造業", "item": "塑膠製品製造業", "ref": _C1 + "(二)8", "alias": ["塑膠射出", "塑膠製品", "塑膠袋"]},
+    {"cls": 1, "group": "製造業", "item": "水泥及水泥製品製造業", "ref": _C1 + "(二)9", "alias": ["預拌混凝土", "水泥"]},
+    {"cls": 1, "group": "製造業", "item": "金屬基本工業", "ref": _C1 + "(二)10", "alias": ["鋼鐵", "煉鋼", "軋鋼", "鑄造", "鋁材", "銅材"]},
+    {"cls": 1, "group": "製造業", "item": "金屬製品製造業", "ref": _C1 + "(二)11", "alias": ["金屬加工", "螺絲", "螺帽", "模具", "刀具", "鍛造", "電鍍", "金屬表面處理", "鋼構製造"]},
+    {"cls": 1, "group": "製造業", "item": "機械設備製造修配業", "ref": _C1 + "(二)12", "alias": ["機械製造", "工具機", "機械設備"]},
+    {"cls": 1, "group": "製造業", "item": "電力及電子機械器材製造修配業中之電力機械器材製造修配業", "ref": _C1 + "(二)13", "alias": ["電力設備製造", "電線電纜", "發電機", "馬達", "照明設備製造", "家用電器製造"]},
+    {"cls": 1, "group": "製造業", "item": "運輸工具製造修配業", "ref": _C1 + "(二)14", "alias": ["汽車製造", "汽車零件", "機車製造", "自行車製造", "造船", "航空器製造"]},
+    {"cls": 1, "group": "製造業", "item": "電力及電子機械器材製造修配業中之電子機械器材製造業及電池製造業", "ref": _C1 + "(二)15", "alias": ["電池製造", "電池"]},
+    {"cls": 1, "group": "製造業", "item": "食品製造業", "ref": _C1 + "(二)16", "alias": ["食品加工", "烘焙", "屠宰", "冷凍食品", "罐頭"]},
+    {"cls": 1, "group": "製造業", "item": "飲料及菸草製造業", "ref": _C1 + "(二)17", "alias": ["飲料製造", "酒類製造", "菸草"]},
+    {"cls": 1, "group": "製造業", "item": "皮革、毛皮及其製品製造業", "ref": _C1 + "(二)18", "alias": ["皮革", "鞋類製造", "製鞋"]},
+    {"cls": 1, "group": "製造業", "item": "電腦、電子產品及光學製品製造業", "ref": _C1 + "(二)19", "alias": ["電腦製造", "通訊設備製造", "電子產品製造"]},
+    {"cls": 1, "group": "製造業", "item": "電子零組件製造業", "ref": _C1 + "(二)20", "alias": ["半導體", "晶圓", "積體電路", "IC", "面板", "印刷電路板", "PCB", "被動元件", "LED"]},
+    {"cls": 1, "group": "製造業", "item": "其他非金屬礦物製品製造業", "ref": _C1 + "(二)21", "alias": ["石材加工", "耐火材料", "石灰"]},
+    {"cls": 1, "group": "營造業", "item": "土木工程業", "ref": _C1 + "(三)1", "alias": ["土木", "道路工程", "橋梁工程", "隧道工程"]},
+    {"cls": 1, "group": "營造業", "item": "建築工程業", "ref": _C1 + "(三)2", "alias": ["營造廠", "建築工程", "營建"]},
+    {"cls": 1, "group": "營造業", "item": "電路及管道工程業", "ref": _C1 + "(三)3", "alias": ["水電工程", "機電工程", "空調工程", "消防工程", "管線工程"]},
+    {"cls": 1, "group": "營造業", "item": "油漆、粉刷、裱蓆業", "ref": _C1 + "(三)4", "alias": ["油漆工程", "粉刷"]},
+    {"cls": 1, "group": "營造業", "item": "其他營造業", "ref": _C1 + "(三)5", "alias": ["室內裝修", "裝潢工程", "拆除工程", "整地", "鋼構工程"]},
+    {"cls": 1, "group": "水電燃氣業", "item": "電力供應業", "ref": _C1 + "(四)1", "alias": ["發電", "太陽能發電", "風力發電", "電廠", "輸配電"]},
+    {"cls": 1, "group": "水電燃氣業", "item": "氣體燃料供應業", "ref": _C1 + "(四)2", "alias": ["瓦斯", "天然氣供應"]},
+    {"cls": 1, "group": "水電燃氣業", "item": "暖氣及熱水供應業", "ref": _C1 + "(四)3", "alias": []},
+    {"cls": 1, "group": "運輸、倉儲及通信業", "item": "水上運輸業及航空運輸業", "ref": _C1 + "(五)1", "alias": ["航運", "海運", "航空公司"]},
+    {"cls": 1, "group": "運輸、倉儲及通信業", "item": "陸上運輸業及運輸服務業", "ref": _C1 + "(五)2", "alias": ["貨運", "客運", "物流", "計程車", "鐵路", "捷運", "報關", "貨運承攬"]},
+    {"cls": 1, "group": "運輸、倉儲及通信業", "item": "倉儲業", "ref": _C1 + "(五)3", "alias": ["倉庫", "冷凍倉儲", "物流中心"]},
+    {"cls": 1, "group": "機械設備租賃業", "item": "生產性機械設備租賃業", "ref": _C1 + "(六)", "alias": ["營建機械租賃", "吊車出租", "工程機械租賃"]},
+    {"cls": 1, "group": "環境衛生服務業", "item": "環境衛生服務業", "ref": _C1 + "(七)", "alias": ["廢棄物清除", "廢棄物處理", "污水處理"]},
+    {"cls": 1, "group": "洗染業", "item": "洗染業", "ref": _C1 + "(八)", "alias": ["洗衣", "乾洗", "布草洗滌"]},
+    {"cls": 1, "group": "批發零售業", "item": "建材批發業", "ref": _C1 + "(九)1", "alias": ["五金建材"]},
+    {"cls": 1, "group": "批發零售業", "item": "建材零售業", "ref": _C1 + "(九)2", "alias": ["建材行"]},
+    {"cls": 1, "group": "批發零售業", "item": "燃料批發業", "ref": _C1 + "(九)3", "alias": []},
+    {"cls": 1, "group": "批發零售業", "item": "燃料零售業", "ref": _C1 + "(九)4", "alias": ["加油站", "加氣站", "桶裝瓦斯行"]},
+    {"cls": 1, "group": "其他服務業", "item": "建築物清潔服務業", "ref": _C1 + "(十)1", "alias": ["清潔公司", "大樓清潔"]},
+    {"cls": 1, "group": "其他服務業", "item": "病媒防治業", "ref": _C1 + "(十)2", "alias": ["除蟲", "消毒"]},
+    {"cls": 1, "group": "其他服務業", "item": "環境衛生及污染防治服務業", "ref": _C1 + "(十)3", "alias": []},
+    # ── 第二類（中度風險）
+    {"cls": 2, "group": "農、林、漁、牧業", "item": "農藝及園藝業", "ref": _C2 + "(一)1", "alias": ["農作物栽培", "花卉栽培", "溫室栽培"]},
+    {"cls": 2, "group": "農、林、漁、牧業", "item": "農事服務業", "ref": _C2 + "(一)2", "alias": ["農產品整理", "休閒農業", "作物栽培服務"]},
+    {"cls": 2, "group": "農、林、漁、牧業", "item": "畜牧業", "ref": _C2 + "(一)3", "alias": ["養豬", "養雞", "養牛", "養鴨", "飼育"]},
+    {"cls": 2, "group": "農、林、漁、牧業", "item": "林業及伐木業", "ref": _C2 + "(一)4", "alias": ["造林", "伐木", "薪炭"]},
+    {"cls": 2, "group": "農、林、漁、牧業", "item": "漁業", "ref": _C2 + "(一)5", "alias": ["漁撈", "養殖"]},
+    {"cls": 2, "group": "礦業及土石採取業", "item": "鹽業", "ref": _C2 + "(二)", "alias": ["曬鹽"]},
+    {"cls": 2, "group": "製造業", "item": "普通及特殊陶瓷製造業", "ref": _C2 + "(三)1", "alias": ["陶瓷製品"]},
+    {"cls": 2, "group": "製造業", "item": "玻璃及玻璃製品製造業", "ref": _C2 + "(三)2", "alias": ["玻璃製造", "玻璃纖維"]},
+    {"cls": 2, "group": "製造業", "item": "精密器械製造業", "ref": _C2 + "(三)3", "alias": ["度量衡器", "光學儀器", "鐘錶製造", "醫療器材製造"]},
+    {"cls": 2, "group": "製造業", "item": "雜項工業製品製造業", "ref": _C2 + "(三)4", "alias": ["珠寶製造", "貴金屬製品", "樂器製造", "體育用品製造", "文具製造", "玩具製造"]},
+    {"cls": 2, "group": "製造業", "item": "成衣及服飾品製造業", "ref": _C2 + "(三)5", "alias": ["成衣", "服飾品製造"]},
+    {"cls": 2, "group": "製造業", "item": "印刷、出版及有關事業", "ref": _C2 + "(三)6", "alias": ["印刷", "製版", "裝訂", "報紙出版", "雜誌出版", "圖書出版", "有聲出版", "軟體出版"]},
+    {"cls": 2, "group": "製造業", "item": "藥品製造業", "ref": _C2 + "(三)7", "alias": ["西藥", "中藥", "動物用藥", "農藥製造", "環境用藥"]},
+    {"cls": 2, "group": "製造業", "item": "其它製造業", "ref": _C2 + "(三)8", "alias": ["眼鏡製造", "拉鍊", "鈕扣"]},
+    {"cls": 2, "group": "水電燃氣業", "item": "自來水供應業", "ref": _C2 + "(四)", "alias": ["用水供應", "自來水"]},
+    {"cls": 2, "group": "運輸、倉儲及通信業", "item": "電信業", "ref": _C2 + "(五)1", "alias": ["電信", "網路接取", "ISP", "有線電視系統"]},
+    {"cls": 2, "group": "運輸、倉儲及通信業", "item": "郵政業", "ref": _C2 + "(五)2", "alias": ["郵局"]},
+    {"cls": 2, "group": "餐旅業", "item": "飲食業", "ref": _C2 + "(六)1", "alias": ["餐廳", "餐館", "小吃", "外燴", "團膳", "飲酒店", "飲料店", "咖啡店"]},
+    {"cls": 2, "group": "餐旅業", "item": "旅館業", "ref": _C2 + "(六)2", "alias": ["飯店", "觀光旅館", "汽車旅館", "賓館"]},
+    {"cls": 2, "group": "機械設備租賃業", "item": "事務性機器設備租賃業", "ref": _C2 + "(七)1", "alias": ["影印機租賃", "辦公設備租賃"]},
+    {"cls": 2, "group": "機械設備租賃業", "item": "其他機械設備租賃業", "ref": _C2 + "(七)2", "alias": ["自動販賣機", "舞台音響租賃", "流動廁所租賃", "醫療設備租賃"]},
+    {"cls": 2, "group": "醫療保健服務業", "item": "醫院", "ref": _C2 + "(八)1", "alias": []},
+    {"cls": 2, "group": "醫療保健服務業", "item": "診所", "ref": _C2 + "(八)2", "alias": ["醫務室"]},
+    {"cls": 2, "group": "醫療保健服務業", "item": "衛生所及保健站", "ref": _C2 + "(八)3", "alias": []},
+    {"cls": 2, "group": "醫療保健服務業", "item": "醫事技術業", "ref": _C2 + "(八)4", "alias": ["醫學檢驗"]},
+    {"cls": 2, "group": "醫療保健服務業", "item": "助產業", "ref": _C2 + "(八)5", "alias": []},
+    {"cls": 2, "group": "醫療保健服務業", "item": "獸醫業", "ref": _C2 + "(八)6", "alias": ["動物醫院"]},
+    {"cls": 2, "group": "醫療保健服務業", "item": "其他醫療保健服務業", "ref": _C2 + "(八)7", "alias": ["產後護理", "月子中心", "物理治療所", "職能治療所", "救護車", "捐血"]},
+    {"cls": 2, "group": "修理服務業", "item": "鞋、傘、皮革品修理業", "ref": _C2 + "(九)1", "alias": []},
+    {"cls": 2, "group": "修理服務業", "item": "電器修理業", "ref": _C2 + "(九)2", "alias": ["電腦維修", "手機維修", "電子產品維修"]},
+    {"cls": 2, "group": "修理服務業", "item": "汽車及機踏車修理業", "ref": _C2 + "(九)3", "alias": ["汽車維修", "保養廠", "機車行", "機車維修"]},
+    {"cls": 2, "group": "修理服務業", "item": "鐘錶及首飾修理業", "ref": _C2 + "(九)4", "alias": []},
+    {"cls": 2, "group": "修理服務業", "item": "家具修理業", "ref": _C2 + "(九)5", "alias": []},
+    {"cls": 2, "group": "修理服務業", "item": "其他器物修理業", "ref": _C2 + "(九)6", "alias": ["自行車維修", "樂器維修", "衣服修改"]},
+    {"cls": 2, "group": "批發零售業", "item": "家庭電器批發業", "ref": _C2 + "(十)1", "alias": []},
+    {"cls": 2, "group": "批發零售業", "item": "機械器具批發業", "ref": _C2 + "(十)2", "alias": ["電腦週邊批發", "電子零件批發", "工業機械批發"]},
+    {"cls": 2, "group": "批發零售業", "item": "回收物料批發業", "ref": _C2 + "(十)3", "alias": ["資源回收", "廢紙回收", "廢五金"]},
+    {"cls": 2, "group": "批發零售業", "item": "家庭電器零售業", "ref": _C2 + "(十)4", "alias": ["家電行"]},
+    {"cls": 2, "group": "批發零售業", "item": "機械器具零售業", "ref": _C2 + "(十)5", "alias": ["3C 零售", "電器行", "電腦零售"]},
+    {"cls": 2, "group": "批發零售業", "item": "綜合商品零售業", "ref": _C2 + "(十)6", "alias": ["便利商店", "超商", "百貨公司", "超級市場", "量販店", "無店面零售", "電商"]},
+    {"cls": 2, "group": "不動產及租賃業", "item": "不動產投資業", "ref": _C2 + "(十一)1", "alias": ["建設公司", "建商", "都市更新"]},
+    {"cls": 2, "group": "不動產及租賃業", "item": "不動產管理業", "ref": _C2 + "(十一)2", "alias": ["物業管理", "房屋仲介", "代銷"]},
+    {"cls": 2, "group": "批發業", "item": "輸入、輸出或批發化學原料及其製品之事業", "ref": _C2 + "(十二)", "alias": ["化學原料批發", "化學製品批發", "漆料批發"]},
+    {"cls": 2, "group": "運輸工具設備租賃業", "item": "汽車租賃業", "ref": _C2 + "(十三)1", "alias": ["租車"]},
+    {"cls": 2, "group": "運輸工具設備租賃業", "item": "船舶租賃業", "ref": _C2 + "(十三)2", "alias": []},
+    {"cls": 2, "group": "運輸工具設備租賃業", "item": "貨櫃租賃業", "ref": _C2 + "(十三)3", "alias": []},
+    {"cls": 2, "group": "運輸工具設備租賃業", "item": "其他運輸工具設備租賃業", "ref": _C2 + "(十三)4", "alias": ["機車出租"]},
+    {"cls": 2, "group": "專業、科學及技術服務業", "item": "建築及工程技術服務業", "ref": _C2 + "(十四)1", "alias": ["建築師事務所", "工程顧問", "技術顧問"]},
+    {"cls": 2, "group": "專業、科學及技術服務業", "item": "廣告業", "ref": _C2 + "(十四)2", "alias": ["廣告"]},
+    {"cls": 2, "group": "專業、科學及技術服務業", "item": "環境檢測服務業", "ref": _C2 + "(十四)3", "alias": []},
+    {"cls": 2, "group": "其他服務業", "item": "保全服務業", "ref": _C2 + "(十五)1", "alias": ["保全"]},
+    {"cls": 2, "group": "其他服務業", "item": "汽車美容業", "ref": _C2 + "(十五)2", "alias": ["洗車"]},
+    {"cls": 2, "group": "其他服務業", "item": "浴室業", "ref": _C2 + "(十五)3", "alias": ["溫泉", "三溫暖"]},
+    {"cls": 2, "group": "個人服務業", "item": "停車場業", "ref": _C2 + "(十六)", "alias": ["停車場"]},
+    {"cls": 2, "group": "休閒服務業", "item": "休閒服務業", "ref": _C2 + "(二十二)", "alias": ["遊樂園", "電子遊戲場", "KTV", "視聽歌唱", "健身房", "網咖", "兒童遊戲場", "水域遊憩"]},
+    {"cls": 2, "group": "動物園業", "item": "動物園業", "ref": _C2 + "(二十三)", "alias": ["動物園"]},
+    # ── 第三類（低度風險）：附表一以「第一、二類以外」概括，以下為參考事業一覽表的例示
+    {"cls": 3, "group": "第三類例示", "item": "新聞業", "ref": _C3 + "(一)", "alias": ["新聞出版"]},
+    {"cls": 3, "group": "第三類例示", "item": "廣播及電視業", "ref": _C3 + "(二)", "alias": ["廣播", "電視台"]},
+    {"cls": 3, "group": "第三類例示", "item": "廣播及電視節目供應業", "ref": _C3 + "(三)", "alias": ["節目製作"]},
+    {"cls": 3, "group": "第三類例示", "item": "有聲出版業", "ref": _C3 + "(四)", "alias": ["唱片", "錄音"]},
+    {"cls": 3, "group": "第三類例示", "item": "電影業", "ref": _C3 + "(五)1", "alias": ["電影", "動畫"]},
+    {"cls": 3, "group": "第三類例示", "item": "技藝表演業", "ref": _C3 + "(五)2", "alias": ["藝術表演"]},
+    {"cls": 3, "group": "第三類例示", "item": "金融及保險業", "ref": _C3 + "(六)", "alias": ["銀行", "證券", "期貨", "保險", "投信", "投顧", "金控", "信用合作社"]},
+]
+
+# 附表一中以「工作場所／機關性質」認定的項目（無法由行業名稱判斷，由使用者勾選；符合者提高為該類）
+BUSINESS_SITES = [
+    {"cls": 1, "ref": _C1 + "(十一)1", "text": "公共行政業中從事營造作業之事業", "construction": True},
+    {"cls": 1, "ref": _C1 + "(十一)2", "text": "公共行政業中從事廢棄物清除、處理、廢（污）水處理之工作場所"},
+    {"cls": 1, "ref": _C1 + "(十二)", "text": "國防事業中之生產機構"},
+    {"cls": 1, "ref": _C1 + "(十三)", "text": "經中央主管機關指定達一定規模之事業（第一類）"},
+    {"cls": 2, "ref": _C2 + "(十七)", "text": "政府機關（構）、職業訓練、顧問服務、學術研究及服務業、大專院校、高中職等之實驗室、試驗室、實習工場或試驗工場"},
+    {"cls": 2, "ref": _C2 + "(十八)", "text": "組織任務為工程規劃、設計、施工、品管、進度管控及竣工驗收之工務機關（構）"},
+    {"cls": 2, "ref": _C2 + "(十九)", "text": "工程顧問業從事非破壞性檢測之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十)", "text": "零售化學原料，使勞工裝卸、搬運、分裝、保管之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十一)", "text": "批發、零售業具冷凍（藏）設備，並有荷重一公噸以上堆高機操作及儲存高度三公尺以上之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十四)", "text": "國防事業中之軍醫院、研究機構"},
+    {"cls": 2, "ref": _C2 + "(二十五)", "text": "零售車用燃料油（氣）、化學原料，使勞工裝卸、搬運、分裝、保管之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十六)", "text": "大專校院從事工程施工、品管、進度管控及竣工驗收之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十七)", "text": "國防部軍備局從事工程施工、品管、進度管控及竣工驗收之工作場所"},
+    {"cls": 2, "ref": _C2 + "(二十八)", "text": "經中央主管機關指定達一定規模之事業（第二類）"},
+]
+
+# 職業安全衛生管理辦法 附表二（第3條）、附表二之一（第6條）：至少應置之職業安全衛生人員
+# rows：[勞工人數下限, 上限(None=以上), 應置人員]
+OSH_STAFFING = {
+    "unit": [
+        {"cls": 1, "construction": True, "rows": [
+            [1, 29, "丙種職業安全衛生業務主管"],
+            [30, 99, "乙種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [100, 299, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [300, 499, "甲種職業安全衛生業務主管一人、職業安全（衛生）管理師一人及職業安全衛生管理員二人"],
+            [500, None, "甲種職業安全衛生業務主管一人、職業安全（衛生）管理師及職業安全衛生管理員各二人以上"]]},
+        {"cls": 1, "construction": False, "rows": [
+            [1, 29, "丙種職業安全衛生業務主管"],
+            [30, 99, "乙種職業安全衛生業務主管"],
+            [100, 299, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [300, 499, "甲種職業安全衛生業務主管一人、職業安全（衛生）管理師及職業安全衛生管理員各一人"],
+            [500, 999, "甲種職業安全衛生業務主管一人、職業安全（衛生）管理師一人及職業安全衛生管理員二人"],
+            [1000, None, "甲種職業安全衛生業務主管一人、職業安全（衛生）管理師及職業安全衛生管理員各二人以上"]]},
+        {"cls": 2, "rows": [
+            [1, 29, "丙種職業安全衛生業務主管"],
+            [30, 99, "乙種職業安全衛生業務主管"],
+            [100, 299, "甲種職業安全衛生業務主管"],
+            [300, 499, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [500, None, "甲種職業安全衛生業務主管、職業安全（衛生）管理師及職業安全衛生管理員各一人以上"]]},
+        {"cls": 3, "rows": [
+            [1, 29, "丙種職業安全衛生業務主管"],
+            [30, 99, "乙種職業安全衛生業務主管"],
+            [100, 499, "甲種職業安全衛生業務主管"],
+            [500, None, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人以上"]]},
+    ],
+    "hq": [
+        {"cls": 1, "rows": [
+            [500, 999, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [1000, None, "甲種職業安全衛生業務主管、職業安全（衛生）管理師及職業安全衛生管理員各一人以上"]]},
+        {"cls": 2, "rows": [
+            [500, 999, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人"],
+            [1000, None, "甲種職業安全衛生業務主管、職業安全（衛生）管理師及職業安全衛生管理員各一人以上"]]},
+        {"cls": 3, "rows": [
+            [3000, None, "甲種職業安全衛生業務主管及職業安全衛生管理員各一人以上"]]},
+    ],
+}
+
+# 試算資料是依下列官方附件（全國法規資料庫 FileId）人工整理；附件換檔代表附表可能已修正，需人工重新核對
+DUTY_ATTACHMENTS = {
+    "N0060027": {"law": "職業安全衛生管理辦法", "files": {"附表一": "0000174434", "附表二": "0000420300", "附表二之一": "0000420301"}},
+    "N0060022": {"law": "勞工健康保護規則", "files": {"附表二": "0000420147", "附表三": "0000420148", "附表四": "0000420149", "附表七": "0000420152"}},
+}
+ATTACH_CHECK = Path("osh_attachment_check.json")
+
+# 勞工健康保護規則（115.06.26 全文修正，117.01.01 施行）之勞工健康服務人力配置；
+# 依「未施行修正一律先預覽」原則，以 effective 標示施行日，前端以預覽呈現
+HEALTH_SERVICE_RULES = [{
+    "effective": "2028-01-01",
+    "law": "勞工健康保護規則",
+    # 附表二：醫師（勞工人數 300 人以上，依類別）；特別危害健康作業另列
+    "doctor_special": [[50, 99, "職業醫學科專科醫師 1 次/4 個月"], [100, None, "職業醫學科專科醫師 1 次/月"]],
+    "doctor": {
+        "1": [[300, 999, "1 次/月"], [1000, 1999, "3 次/月"], [2000, 2999, "6 次/月"], [3000, 3999, "9 次/月"],
+              [4000, 4999, "12 次/月"], [5000, 5999, "15 次/月"], [6000, None, "專任職業醫學科專科醫師一人或 18 次/月"]],
+        "2": [[300, 999, "1 次/2 個月"], [1000, 1999, "1 次/月"], [2000, 2999, "3 次/月"], [3000, 3999, "5 次/月"],
+              [4000, 4999, "7 次/月"], [5000, 5999, "9 次/月"], [6000, None, "12 次/月"]],
+        "3": [[300, 999, "1 次/3 個月"], [1000, 1999, "1 次/2 個月"], [2000, 2999, "1 次/月"], [3000, 3999, "2 次/月"],
+              [4000, 4999, "3 次/月"], [5000, 5999, "4 次/月"], [6000, None, "6 次/月"]],
+    },
+    "doctor_over6000_per1000": {"1": 3, "2": 2, "3": 1},
+    # 附表三：護理人員，列＝勞工人數，欄＝特別危害健康作業人數 0-99 / 100-299 / 300 以上（0＝未規定）
+    "nurse": [[1, 299, [0, 1, 0]], [300, 999, [1, 1, 2]], [1000, 2999, [2, 2, 2]], [3000, 5999, [3, 3, 4]], [6000, None, [4, 4, 4]]],
+    # 附表四：勞工人數 50 人以上未達 300 人
+    "small": {
+        "special_50_99": ["1 次/年", "1 次/月"],
+        "1": [[100, 199, "1 次/3 個月", "4 次/月"], [200, 299, "1 次/2 個月", "6 次/月"]],
+        "2": [[100, 199, "1 次/4 個月", "3 次/月"], [200, 299, "1 次/3 個月", "4 次/月"]],
+        "3": [[100, 199, "1 次/6 個月", "2 次/月"], [200, 299, "1 次/4 個月", "3 次/月"]],
+    },
+    # 附表七：第13條健康管理方案（第二、三類且無特別危害健康作業，工作場所分散或不在雇主設施內）
+    "art13": [[50, 299, "1 次/年", "1 次/3 個月"], [300, 999, "1 次/6 個月", "1 次/2 個月"],
+              [1000, 2999, "1 次/3 個月", "1 次/1 個月"], [3000, None, "1 次/2 個月", "1 次/1 個月"]],
+}]
+
 USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
@@ -1625,6 +1846,27 @@ def guess_category(name: str) -> str:
     return "其他"
 
 
+def check_duty_attachments() -> dict:
+    """比對法規頁上的附表附件 FileId 與試算資料的依據版本（法務部網站僅本機排程連得到）。"""
+    result = {"checked": date.today().isoformat(), "changed": [], "error": ""}
+    for pcode, spec in DUTY_ATTACHMENTS.items():
+        try:
+            resp = requests.get(f"https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode={pcode}",
+                                headers={"User-Agent": USER_AGENT}, timeout=20)
+            resp.raise_for_status()
+        except Exception as e:
+            result["error"] = f"{spec['law']}：{e}"
+            continue
+        found: dict[str, str] = {}
+        for fid, title in re.findall(r'LawGetFile\.ashx\?FileId=(\d+)[^"]*"[^>]*>\s*(附表[^\s<]+)', resp.text):
+            found.setdefault(title, fid)
+        for table, fid in spec["files"].items():
+            if found.get(table) != fid:
+                result["changed"].append({"law": spec["law"], "table": table, "was": fid, "now": found.get(table, "")})
+    ATTACH_CHECK.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
+    return result
+
+
 def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dict]:
     merged = [dict(item) for item in static_list]
     # 預設 src_type：guide 類保留 guide，其他靜態條目標記 static
@@ -2209,20 +2451,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .compare-art:last-child{{ border:none; }}
   .compare-art .art-no{{ font-weight:700; color:var(--stamp); margin-right:6px; }}
   /* ── 適用性判斷 modal ── */
-  .guide-modal{{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:600; display:none; align-items:center; justify-content:center; }}
-  .guide-modal.open{{ display:flex; }}
-  .guide-box{{ background:var(--card); border-radius:8px; padding:24px 28px; width:min(500px,95vw); }}
-  .guide-box h3{{ font-size:1rem; margin-bottom:18px; }}
-  .guide-q{{ margin-bottom:14px; }}
-  .guide-q label{{ display:block; font-size:0.8125rem; font-weight:600; margin-bottom:5px; }}
-  .guide-q select{{ width:100%; padding:7px 9px; border:1px solid var(--border); background:var(--paper); color:var(--ink); border-radius:6px; font-size:0.8125rem; }}
-  .guide-checks{{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }}
-  .guide-checks label{{ display:flex; align-items:center; gap:5px; font-size:0.8125rem; font-weight:400; cursor:pointer; }}
-  .guide-result-item{{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.8125rem; }}
-  .guide-result-item:last-child{{ border:none; }}
-  .guide-result-item button{{ background:none; border:none; cursor:pointer; color:var(--stamp); font-size:0.8125rem; text-decoration:underline; }}
-  .guide-result-item{{ flex-wrap:wrap; }}
-  .guide-result-item .guide-jump-btn{{ text-align:left; }}
   /* ── 合規稽核 Checklist ── */
   .checklist-section{{ margin-top:16px; }}
   .checklist-section h3{{ font-size:0.8125rem; font-weight:600; margin-bottom:8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }}
@@ -2489,11 +2717,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .tl-year-label{{ color:var(--text-heading); border-left-color:var(--blue); }}
   .tl-item:hover{{ border-color:var(--blue-mid) !important; }}
   /* ── 對話框 ── */
-  .settings-modal, .kbd-modal, .compare-modal, .guide-modal, .ds-modal{{ background:rgba(0,0,0,0.45); padding:24px; }}
-  .settings-box, .kbd-box, .compare-box, .guide-box, .ds-box{{ background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-level3); padding:20px 24px; animation:fadeInUp .2s ease; }}
-  .settings-box h3, .kbd-box h3, .compare-header h3, .guide-box h3, .ds-box h3{{ font-size:1rem; font-weight:600; color:var(--text-heading); margin-top:0; }}
-  .settings-box > button, .kbd-box > button, .guide-box button, .mute-input-row button{{ min-height:36px; border-radius:var(--radius) !important; font-size:0.8125rem !important; }}
-  .guide-q select, .compare-selects select, .compare-filter-input, .mute-input-row input{{ min-height:40px; border-radius:var(--radius) !important; background:var(--surface) !important; }}
+  .settings-modal, .kbd-modal, .compare-modal, .ds-modal{{ background:rgba(0,0,0,0.45); padding:24px; }}
+  .settings-box, .kbd-box, .compare-box, .ds-box{{ background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-level3); padding:20px 24px; animation:fadeInUp .2s ease; }}
+  .settings-box h3, .kbd-box h3, .compare-header h3, .ds-box h3{{ font-size:1rem; font-weight:600; color:var(--text-heading); margin-top:0; }}
+  .settings-box > button, .kbd-box > button, .mute-input-row button{{ min-height:36px; border-radius:var(--radius) !important; font-size:0.8125rem !important; }}
+  .compare-selects select, .compare-filter-input, .mute-input-row input{{ min-height:40px; border-radius:var(--radius) !important; background:var(--surface) !important; }}
   .mute-chip{{ background:var(--blue-light); border-color:var(--blue-light); color:var(--blue); }}
   .mute-chip button{{ color:var(--blue); }}
   .notif-toast{{ background:var(--surface); color:var(--text); border:1px solid var(--border); border-left:3px solid var(--blue); box-shadow:var(--shadow-level3); border-radius:var(--radius); }}
@@ -2528,6 +2756,56 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .chg-controls select{{ width:auto; min-width:140px; cursor:pointer; }}
   .chg-controls input{{ flex:1; width:auto; min-width:200px; }}
   .scenario-search{{ margin-bottom:16px; }}
+  /* 事業義務試算 */
+  .duty-layout{{ display:grid; grid-template-columns:minmax(300px, 400px) 1fr; gap:20px; align-items:start; }}
+  .duty-form{{ display:flex; flex-direction:column; gap:12px; }}
+  .duty-card{{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }}
+  .duty-step{{ display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:1rem; }}
+  .duty-step span{{ width:24px; height:24px; border-radius:50%; background:var(--blue-light); color:var(--blue); display:inline-flex; align-items:center; justify-content:center; font-size:0.8125rem; }}
+  .duty-label{{ display:block; font-size:0.8125rem; font-weight:600; margin:12px 0 4px; }}
+  .duty-label:first-of-type{{ margin-top:0; }}
+  .duty-input{{ width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); font-size:0.875rem; outline:none; }}
+  .duty-input:focus{{ border-color:var(--blue); box-shadow:var(--osh-focus); }}
+  .duty-hint{{ font-size:0.75rem; color:var(--text-2); line-height:1.6; margin-top:4px; }}
+  .duty-check{{ display:flex; gap:8px; align-items:flex-start; font-size:0.8125rem; line-height:1.6; margin-top:12px; cursor:pointer; }}
+  .duty-check input{{ margin-top:4px; accent-color:var(--blue); flex-shrink:0; }}
+  .duty-sub{{ margin-top:4px; padding-left:24px; }}
+  .duty-suggest{{ display:flex; flex-direction:column; margin-top:4px; border-radius:var(--radius); overflow:hidden; }}
+  .duty-suggest:not(:empty){{ border:1px solid var(--border); }}
+  .duty-opt{{ display:flex; align-items:center; gap:8px; padding:8px 12px; border:none; border-bottom:1px solid var(--border); background:var(--surface); text-align:left; cursor:pointer; font-size:0.8125rem; }}
+  .duty-opt:last-child{{ border-bottom:none; }}
+  .duty-opt:hover{{ background:var(--bg-muted); }}
+  .duty-opt-name{{ flex:1; display:flex; flex-direction:column; }}
+  .duty-opt small{{ color:var(--text-2); font-size:0.75rem; }}
+  .duty-opt-ref{{ white-space:nowrap; }}
+  .duty-chosen{{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin-top:8px; padding:8px 12px; background:var(--blue-light); border-radius:var(--radius); font-size:0.8125rem; }}
+  .duty-chosen small{{ color:var(--text-2); flex:1; }}
+  .duty-sites{{ margin-top:12px; font-size:0.8125rem; }}
+  .duty-sites summary{{ cursor:pointer; color:var(--blue); }}
+  .duty-result{{ display:flex; flex-direction:column; gap:12px; min-width:0; }}
+  .duty-class{{ background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--text-3); border-radius:var(--radius-lg); padding:16px 20px; }}
+  .duty-class-1{{ border-left-color:var(--danger); }} .duty-class-2{{ border-left-color:var(--warning); }} .duty-class-3{{ border-left-color:var(--success); }}
+  .duty-class-label{{ font-size:0.75rem; color:var(--text-2); }}
+  .duty-class-name{{ display:flex; align-items:center; gap:8px; font-size:1.25rem; font-weight:700; color:var(--text-heading); margin:2px 0 4px; }}
+  .duty-class-why{{ font-size:0.8125rem; color:var(--text-2); line-height:1.6; }}
+  .duty-list{{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }}
+  .duty-item{{ padding:12px 20px; border-bottom:1px solid var(--border); }}
+  .duty-item:last-child{{ border-bottom:none; }}
+  .duty-item.duty-st-no{{ opacity:.65; }}
+  .duty-range{{ font-size:0.75rem; color:var(--blue); margin-left:-4px; }}
+  .duty-item-head{{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }}
+  .duty-item-text{{ font-size:0.8125rem; line-height:1.7; margin-top:4px; }}
+  .duty-arts{{ margin-left:auto; display:inline-flex; flex-wrap:wrap; gap:8px; }}
+  .duty-arts .law-link{{ font-size:0.75rem; color:var(--blue); }}
+  .duty-health{{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 20px; }}
+  .duty-health.is-preview{{ border-style:dashed; border-color:var(--danger); }}
+  .duty-health-head{{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:4px; }}
+  .duty-dl{{ display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:12px 0 0; font-size:0.8125rem; }}
+  .duty-dl dt{{ color:var(--text-2); }}
+  .duty-dl dd{{ margin:0; }}
+  .duty-alt{{ display:flex; gap:8px; margin-top:12px; padding:8px 12px; background:var(--bg-muted); border-radius:var(--radius); font-size:0.8125rem; }}
+  .duty-disclaimer{{ font-size:0.75rem; color:var(--text-3); line-height:1.6; }}
+  @media (max-width:1023px){{ .duty-layout{{ grid-template-columns:1fr; }} }}
   /* 施行提醒、修正草案、職災案例 */
   .eff-notice{{ display:flex; gap:12px; align-items:flex-start; padding:12px 16px; margin:0 0 16px; border-radius:var(--radius);
     background:var(--danger-bg); color:var(--danger); border-left:3px solid var(--danger); font-size:0.8125rem; line-height:1.6; }}
@@ -2584,8 +2862,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .reg-bar-right{{ justify-content:space-between; flex-wrap:nowrap; }}
     .seg-label{{ display:none; }}
     .view-toggle{{ flex-wrap:wrap; }}
-    .settings-modal, .kbd-modal, .guide-modal, .ds-modal{{ padding:0; align-items:flex-end; }}
-    .settings-box, .kbd-box, .guide-box, .ds-box{{ width:100% !important; max-width:100% !important; border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; }}
+    .settings-modal, .kbd-modal, .ds-modal{{ padding:0; align-items:flex-end; }}
+    .settings-box, .kbd-box, .ds-box{{ width:100% !important; max-width:100% !important; border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; }}
   }}
   @media (max-width:639px){{
     /* 表格改為卡片堆疊 */
@@ -2636,6 +2914,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button class="sidebar-btn active" data-tab="registry" title="現行法規總覽"><span class="snav-icon"><i class="ti ti-list-details" aria-hidden="true"></i></span><span class="snav-label">現行法規總覽</span></button>
     <button class="sidebar-btn" data-tab="changes" title="異動與預告"><span class="snav-icon"><i class="ti ti-git-compare" aria-hidden="true"></i></span><span class="snav-label">異動與預告</span></button>
     <button class="sidebar-btn" data-tab="lookup" title="快速情境查詢"><span class="snav-icon"><i class="ti ti-compass" aria-hidden="true"></i></span><span class="snav-label">快速情境查詢</span></button>
+    <button class="sidebar-btn" data-tab="duty" title="事業義務試算"><span class="snav-icon"><i class="ti ti-building-factory-2" aria-hidden="true"></i></span><span class="snav-label">事業義務試算</span></button>
     <div class="sidebar-section-label">動態</div>
     <button class="sidebar-btn" data-tab="news" title="最新動態"><span class="snav-icon"><i class="ti ti-news" aria-hidden="true"></i></span><span class="snav-label">最新動態</span></button>
   </div>
@@ -2646,6 +2925,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <button data-tab="registry" class="active"><i class="ti ti-list-details" aria-hidden="true"></i><span>法規</span></button>
   <button data-tab="changes"><i class="ti ti-git-compare" aria-hidden="true"></i><span>異動</span></button>
   <button data-tab="lookup"><i class="ti ti-compass" aria-hidden="true"></i><span>情境</span></button>
+  <button data-tab="duty"><i class="ti ti-building-factory-2" aria-hidden="true"></i><span>義務</span></button>
   <button data-tab="news"><i class="ti ti-news" aria-hidden="true"></i><span>動態</span></button>
 </nav>
 
@@ -2722,7 +3002,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
         <div class="reg-tools">
           <button class="icon-btn" onclick="openCompare()" title="法規並排對比"><i class="ti ti-columns" aria-hidden="true"></i><span class="icon-btn-label">對比</span></button>
-          <button class="icon-btn" onclick="document.getElementById('guide-modal').classList.add('open')" title="法規適用性判斷"><i class="ti ti-list-check" aria-hidden="true"></i><span class="icon-btn-label">適用判斷</span></button>
+          <button class="icon-btn" onclick="switchTab('duty')" title="依事業分類試算應辦義務"><i class="ti ti-list-check" aria-hidden="true"></i><span class="icon-btn-label">義務試算</span></button>
           <button class="icon-btn" id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" title="圖例說明"><i class="ti ti-info-circle" aria-hidden="true"></i><span class="icon-btn-label">圖例</span></button>
         </div>
       </div>
@@ -2831,6 +3111,55 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
   </section>
 
+  <section class="tabpanel" id="tab-duty">
+    <h2>事業義務試算</h2>
+    <p class="section-note">依《職業安全衛生管理辦法》第 2 條附表一判定事業分類，再依勞工人數試算管理單位、人員配置等義務。結果僅供參考，實際認定以轄區勞動檢查機構為準。</p>
+    <div class="duty-layout">
+      <form class="duty-form" id="dutyForm" autocomplete="off" onsubmit="return false">
+        <div class="duty-card">
+          <h3 class="duty-step"><span>1</span>事業分類</h3>
+          <label class="duty-label" for="dutyIndustry">行業</label>
+          <div class="input-wrap">
+            <i class="ti ti-search input-icon" aria-hidden="true"></i>
+            <input id="dutyIndustry" class="duty-input" placeholder="例如：便利商店、餐廳、半導體、營造、銀行…">
+          </div>
+          <div class="duty-suggest" id="dutySuggest"></div>
+          <div class="duty-picked" id="dutyPicked"></div>
+          <details class="duty-sites">
+            <summary>特定工作場所（勾選任一項即提高為該類）</summary>
+            <div id="dutySites"></div>
+          </details>
+        </div>
+        <div class="duty-card">
+          <h3 class="duty-step"><span>2</span>規模</h3>
+          <label class="duty-label" for="dutyWorkers">本事業單位勞工人數</label>
+          <input id="dutyWorkers" class="duty-input" type="number" min="1" inputmode="numeric" placeholder="人數">
+          <div class="duty-hint">含承攬人、再承攬人之勞工及其他受指揮監督之人員，於同一期間、同一工作場所作業之總人數（管理辦法第 3-2 條）。</div>
+          <label class="duty-check"><input type="checkbox" id="dutyHasHQ"> 事業分散於不同地區，設有總機構</label>
+          <div id="dutyHQBox" class="duty-sub" hidden>
+            <label class="duty-label" for="dutyTotal">全事業勞工總人數（含各地區事業單位）</label>
+            <input id="dutyTotal" class="duty-input" type="number" min="1" inputmode="numeric">
+          </div>
+          <div id="dutyMfgBox" class="duty-sub" hidden>
+            <label class="duty-label" for="dutyMfgUnit">所屬從事製造之一級單位勞工人數（最大者）</label>
+            <input id="dutyMfgUnit" class="duty-input" type="number" min="0" inputmode="numeric">
+            <div class="duty-hint">第一類事業適用管理辦法第 3-1 條；沒有可留空。</div>
+          </div>
+        </div>
+        <div class="duty-card">
+          <h3 class="duty-step"><span>3</span>其他條件</h3>
+          <label class="duty-check"><input type="checkbox" id="dutyPetro"> 有從事石油裂解之石化工業工作場所</label>
+          <label class="duty-check"><input type="checkbox" id="dutyChem"> 製造、處置或使用危害性化學品，數量達中央主管機關規定量以上</label>
+          <label class="duty-label" for="dutySpecial">從事特別危害健康作業之勞工人數</label>
+          <input id="dutySpecial" class="duty-input" type="number" min="0" inputmode="numeric" placeholder="0">
+          <div class="duty-hint">用於勞工健康服務試算（勞工健康保護規則附表一所列作業）。</div>
+          <label class="duty-check"><input type="checkbox" id="dutyDispersed"> 工作場所分布不同地區，或勞工不在雇主設施內提供勞務</label>
+        </div>
+      </form>
+      <div class="duty-result" id="dutyResult"></div>
+    </div>
+  </section>
+
   <section class="tabpanel" id="tab-lookup">
     <h2>快速情境查詢</h2>
     <p class="scenario-intro">依作業類型或管理情境快速定位相關法規。點擊情境卡片展開相關法規，再點選法規名稱即可在右側抽屜查看詳情。</p>
@@ -2901,40 +3230,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
 </div>
 
-<div id="guide-modal" class="guide-modal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="guide-box">
-    <h3>⚖ 法規適用性判斷</h3>
-    <div class="guide-q">
-      <label>事業類別</label>
-      <select id="guide-industry">
-        <option value="">— 請選擇 —</option>
-        <option value="管理制度">管理制度（通用）</option>
-        <option value="營造工程">營造業</option>
-        <option value="作業環境">製造業</option>
-        <option value="化學品安全">化學品相關</option>
-        <option value="職業衛生">辦公室 / 服務業</option>
-        <option value="機械設備">機械設備操作</option>
-      </select>
-    </div>
-    <div class="guide-q">
-      <label>主要危害類型（可複選）</label>
-      <div class="guide-checks" id="guide-hazards">
-        <label><input type="checkbox" value="高溫"> 高溫作業</label>
-        <label><input type="checkbox" value="高架"> 高架/墜落</label>
-        <label><input type="checkbox" value="局限空間"> 局限空間/缺氧</label>
-        <label><input type="checkbox" value="化學品"> 危害性化學品</label>
-        <label><input type="checkbox" value="機械"> 危險性機械</label>
-        <label><input type="checkbox" value="環境監測"> 作業環境監測</label>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button onclick="runGuide()" style="background:var(--stamp);color:var(--white);border:none;padding:7px 20px;border-radius:6px;cursor:pointer;font-size:0.8125rem">判斷適用法規</button>
-      <button onclick="document.getElementById('guide-modal').classList.remove('open')" style="border:1px solid var(--border);background:transparent;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:0.8125rem">關閉</button>
-    </div>
-    <div id="guide-result" style="margin-top:16px"></div>
-  </div>
-</div>
-
 <div id="kbd-modal" class="kbd-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="kbd-box">
     <h3>鍵盤快捷鍵</h3>
@@ -2982,6 +3277,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const APPLICABILITY = {applicability_json};
   const INSPECTION_FOCUS = {inspection_focus_json};
   const CASE_HAZARDS = {case_hazards_json};
+  const BUSINESS_CLASSES = {business_classes_json};
+  const BUSINESS_SITES = {business_sites_json};
+  const OSH_STAFFING = {osh_staffing_json};
+  const HEALTH_RULES = {health_rules_json};
+  const ATTACH_CHECK = {attach_check_json};
   const CNS_ISO = {cns_iso_json};
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
@@ -3150,6 +3450,239 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     return _casesByLaw[name] || [];
   }}
   function lawByName(name) {{ return REGISTRY.find(function(r) {{ return r.name === name; }}); }}
+
+  // ─── 事業義務試算 ─────────────────────────────────────────────
+  // 判定規則全部集中在 dutyEvaluate()（純函式，便於測試）；畫面只負責收集輸入與呈現結果
+  var CLS_LABEL = {{1: '第一類事業（顯著風險）', 2: '第二類事業（中度風險）', 3: '第三類事業（低度風險）'}};
+  var MGMT_LAW = '職業安全衛生管理辦法', HEALTH_LAW = '勞工健康保護規則';
+  function _inRange(n, row) {{ return n >= row[0] && (row[1] === null || n <= row[1]); }}
+  function _pickRow(rows, n) {{ for (var i = 0; i < rows.length; i++) if (_inRange(n, rows[i])) return rows[i]; return null; }}
+
+  // 行業搜尋：比對附表一名稱、現行名稱（alias）與分類群組
+  function dutySearch(q) {{
+    q = (q || '').trim().toLowerCase();
+    if (!q) return [];
+    var out = [];
+    BUSINESS_CLASSES.forEach(function(b, i) {{
+      var hit = null;
+      if (b.item.toLowerCase().indexOf(q) >= 0) hit = b.item;
+      else b.alias.forEach(function(a) {{ if (!hit && (a.toLowerCase().indexOf(q) >= 0 || q.indexOf(a.toLowerCase()) >= 0)) hit = a; }});
+      if (!hit && b.group.indexOf(q) >= 0) hit = b.group;
+      if (hit) out.push({{i: i, b: b, hit: hit}});
+    }});
+    return out.slice(0, 10);
+  }}
+
+  // in: {{item: index|-1(推定第三類)|null, sites: [index], n, hasHQ, total, mfgUnit, petro, chem, special, dispersed}}
+  function dutyEvaluate(inp) {{
+    var item = inp.item >= 0 ? BUSINESS_CLASSES[inp.item] : null;
+    var sites = (inp.sites || []).map(function(i) {{ return BUSINESS_SITES[i]; }});
+    if (!item && inp.item !== -1 && !sites.length) return null;
+    var cls = item ? item.cls : 3;
+    sites.forEach(function(s) {{ if (s.cls < cls) cls = s.cls; }});
+    var construction = (item && item.group === '營造業' && item.cls === cls) || sites.some(function(s) {{ return s.construction; }});
+    var manufacturing = !!(item && item.group === '製造業' && cls === 1 && item.cls === 1);
+    var n = +inp.n || 0, total = inp.hasHQ ? (+inp.total || 0) : 0;
+    var res = {{cls: cls, construction: construction, manufacturing: manufacturing, item: item, sites: sites, items: [], health: null}};
+    function add(key, title, status, text, arts, law) {{ res.items.push({{key: key, title: title, status: status, text: text, law: law || MGMT_LAW, arts: arts}}); }}
+    if (!n) return res;
+
+    // 管理單位（§2-1）與委員會（§10）
+    var unitLv1 = cls === 1 && n >= 100 ? '應設直接隸屬雇主之專責一級管理單位' : cls === 2 && n >= 300 ? '應設直接隸屬雇主之一級管理單位' : '';
+    add('unit', '職業安全衛生管理單位', unitLv1 ? 'must' : 'no', unitLv1 || '未達設置一級管理單位門檻（第一類 100 人、第二類 300 人以上）', ['2-1']);
+
+    // 總機構（§6、附表二之一）
+    var hqUnit = '', hqStaff = null;
+    if (inp.hasHQ && total) {{
+      hqUnit = cls === 1 && total >= 500 ? '應另設直接隸屬雇主之專責一級管理單位' : cls === 2 && total >= 500 ? '應另設直接隸屬雇主之一級管理單位' : cls === 3 && total >= 3000 ? '應另設管理單位' : '';
+      var hqTab = OSH_STAFFING.hq.filter(function(h) {{ return h.cls === cls; }})[0];
+      hqStaff = hqTab ? _pickRow(hqTab.rows, total) : null;
+      add('hq', '總機構管理單位與人員', hqUnit ? 'must' : 'no',
+        hqUnit ? hqUnit + '；並置' + (hqStaff ? hqStaff[2] : '管理人員') + '（應為專職' + (cls === 1 ? '' : '，但業務主管不在此限') + '）'
+               : '全事業 ' + total + ' 人，未達總機構另設管理單位門檻（第一、二類 500 人、第三類 3,000 人以上）', ['6']);
+    }}
+    var committee = !!unitLv1 || !!hqUnit;
+    add('committee', '職業安全衛生委員會', committee ? 'must' : 'no',
+      committee ? '應設委員會：委員 7 人以上、勞工代表占三分之一以上，雇主為主任委員' : '未達應設門檻（同一級管理單位或總機構管理單位之設置條件）', committee ? ['10', '11'] : ['10']);
+
+    // 應置人員（§3、附表二）與專職（§3）
+    var tab = OSH_STAFFING.unit.filter(function(u) {{ return u.cls === cls && (u.construction === undefined || u.construction === construction); }})[0];
+    var row = _pickRow(tab.rows, n);
+    var fullTime = cls === 1 && n >= 100 ? '所置管理人員應為專職，並常駐廠場執行業務' : cls === 2 && n >= 300 ? '管理人員至少一人為專職，並常駐廠場執行業務' : '';
+    var staffText = '應置' + row[2] + (construction ? '（營造業之事業單位）' : '') + (fullTime ? '；' + fullTime : '');
+    // 附表二附註一：管理師二人以上時，至少一人為職業衛生管理師
+    if (/管理師及職業安全衛生管理員各二人/.test(row[2])) staffText += '；管理師二人以上者，其中至少一人應為職業衛生管理師';
+    add('staff', '應置職業安全衛生人員', 'must', staffText, ['3']);
+
+    // 製造一級單位加置（§3-1）、營造長距離工程
+    if (manufacturing && +inp.mfgUnit >= 100)
+      add('mfg', '製造一級單位加置人員', 'must', +inp.mfgUnit >= 300 ? '另置甲種業務主管一人，並再至少增置專職職業安全衛生管理員一人' : '另置甲種職業安全衛生業務主管一人', ['3-1']);
+    if (construction)
+      add('long', '長距離工程', 'cond', '橋樑、道路、隧道或輸配電等距離較長之工程，每十公里內應增置營造業丙種職業安全衛生業務主管一人', ['3-1']);
+
+    // 雇主兼任業務主管（§4）
+    if (n < 30)
+      add('owner', '雇主兼任業務主管', 'opt', (cls !== 1 && n <= 5)
+        ? '雇主或其代理人經丁種職業安全衛生業務主管教育訓練合格，得擔任業務主管'
+        : '雇主或其代理人經職業安全衛生業務主管安全衛生教育訓練合格，得擔任業務主管', ['4']);
+
+    // 管理計畫、規章（§12-1）
+    add('plan', '風險評估與職業安全衛生管理計畫', 'must',
+      '工作前實施風險評估；訂定職業安全衛生管理計畫' + (n < 30 ? '（未滿 30 人得以安全衛生管理執行紀錄或文件代替）' : '') +
+      (n >= 100 ? '；另應訂定職業安全衛生管理規章' : '') + '。執行紀錄保存三年', ['12-1']);
+
+    // 管理系統（§12-2 ~ §12-6）
+    var sysWhy = [];
+    if (cls === 1 && n >= 200) sysWhy.push('第一類 200 人以上');
+    if (cls === 2 && n >= 500) sysWhy.push('第二類 500 人以上');
+    if (inp.petro) sysWhy.push('有石油裂解之石化工業工作場所');
+    if (inp.chem) sysWhy.push('危害性化學品達規定量');
+    add('system', '職業安全衛生管理系統（CNS 45001）', sysWhy.length ? 'must' : 'no',
+      sysWhy.length ? '因' + sysWhy.join('、') + '，應建置管理系統，並建立變更管理、採購管理、承攬管理及緊急應變程序'
+                    : '未達強制建置門檻（第一類 200 人、第二類 500 人以上，或石化裂解、危化品達規定量）', sysWhy.length ? ['12-2', '12-3', '12-4', '12-5', '12-6'] : ['12-2']);
+    if (cls === 1 && (unitLv1 || hqUnit))
+      add('exempt', '專責、專職之例外', 'opt', '已實施管理系統且績效經中央主管機關審查通過者，得不受一級管理單位應為專責、業務主管應為專職之限制', ['6-1']);
+
+    res.health = dutyHealth(cls, n, +inp.special || 0, !!inp.dispersed);
+    return res;
+  }}
+
+  // 勞工健康服務（每一版規則各算一次；未施行者前端以預覽呈現）
+  function dutyHealth(cls, n, special, dispersed) {{
+    return HEALTH_RULES.map(function(R) {{
+      var out = {{effective: R.effective, law: R.law, lines: [], arts: []}};
+      function line(label, text) {{ out.lines.push({{label: label, text: text}}); }}
+      var big = n >= 300 || special >= 50;
+      if (big) {{
+        out.arts = ['3'];
+        var docRow = _pickRow(R.doctor[String(cls)], n), sp = special >= 50 ? _pickRow(R.doctor_special, special) : null;
+        if (docRow) {{
+          var extra = n > 6000 ? Math.floor((n - 6000) / 1000) * R.doctor_over6000_per1000[String(cls)] : 0;
+          line('醫師臨場服務', docRow[2] + (extra ? '，另依超過 6,000 人部分每 1,000 人增加 ' + R.doctor_over6000_per1000[String(cls)] + ' 次/月（共增 ' + extra + ' 次/月）' : ''));
+        }}
+        if (sp) line('特別危害健康作業', sp[2] + (docRow ? '（與上列依勞工人數之頻率如何併計，建議洽詢主管機關）' : ''));
+        var col = special >= 300 ? 2 : special >= 100 ? 1 : 0, nr = _pickRow(R.nurse, n), nurses = nr ? nr[2][col] : 0;
+        if (n > 6000) nurses += Math.floor((n - 6000) / 6000);
+        line('護理人員', nurses ? '僱用 ' + nurses + ' 人' + (nurses >= 3 ? '（得置護理主管一人）' : '') : '附表三未規定');
+        line('每次臨場服務', '醫師至少 3 小時');
+      }} else if (n >= 50) {{
+        out.arts = ['4'];
+        if (n <= 99) {{
+          if (special >= 1) {{ line('醫師臨場服務', R.small.special_50_99[0]); line('護理人員臨場服務', R.small.special_50_99[1]); }}
+          else line('臨場服務', '50–99 人且無特別危害健康作業者，附表四未列臨場服務頻率');
+        }} else {{
+          var sr = _pickRow(R.small[String(cls)], n);
+          if (sr) {{ line('醫師臨場服務', sr[2]); line('護理人員臨場服務', sr[3]); }}
+        }}
+        line('每次臨場服務', '至少 2 小時，每日不得超過 2 場次；每年會同職安人員現場訪視 1 次');
+      }} else {{
+        line('勞工健康服務', '勞工人數未滿 50 人，未達應辦理臨場健康服務之規模');
+      }}
+      // 第13條健康管理方案（第二、三類且無特別危害健康作業）
+      if (cls !== 1 && special === 0 && dispersed && n >= 100) {{
+        var a = _pickRow(R.art13, n);
+        if (a) {{
+          out.arts.push('13');
+          out.alt = '可改訂勞工健康管理方案（第 13 條）：醫師 ' + a[2] + '、護理人員 ' + a[3] + (n >= 3000 ? '，並另僱護理人員一人綜理健康服務' : '');
+        }}
+      }}
+      return out;
+    }});
+  }}
+
+  // ── 畫面
+  var dutyState = {{item: null, sites: [], n: '', hasHQ: false, total: '', mfgUnit: '', petro: false, chem: false, special: '', dispersed: false}};
+  try {{ Object.assign(dutyState, JSON.parse(localStorage.getItem('osh_duty') || '{{}}')); }} catch (e) {{}}
+  function _dutySave() {{ try {{ localStorage.setItem('osh_duty', JSON.stringify(dutyState)); }} catch (e) {{}} }}
+  // 連續多條（如 §12-2～12-6）只連第一條並標示範圍，避免一排連結擠掉內文
+  function _artLinks(law, arts) {{
+    return arts.length > 2 ? _artLink(law, arts[0]) + '<span class="duty-range">～' + arts[arts.length - 1] + '</span>' : arts.map(function(a) {{ return _artLink(law, a); }}).join('');
+  }}
+  function _artLink(law, no) {{ return '<button type="button" class="law-link" data-dlaw="' + law + '">' + law.replace('職業安全衛生', '職安') + ' §' + no + '</button>'; }}
+
+  function renderDutyForm() {{
+    var siteBox = document.getElementById('dutySites');
+    siteBox.innerHTML = BUSINESS_SITES.map(function(s, i) {{
+      return '<label class="duty-check"><input type="checkbox" data-site="' + i + '"' + (dutyState.sites.indexOf(i) >= 0 ? ' checked' : '') + '> ' +
+        '<span><span class="badge ' + (s.cls === 1 ? 'badge-red' : 'badge-yellow') + '">第' + (s.cls === 1 ? '一' : '二') + '類</span> ' + s.text + '</span></label>';
+    }}).join('');
+    ['n:dutyWorkers', 'total:dutyTotal', 'mfgUnit:dutyMfgUnit', 'special:dutySpecial'].forEach(function(p) {{
+      var k = p.split(':')[0], el = document.getElementById(p.split(':')[1]);
+      el.value = dutyState[k];
+      el.oninput = function() {{ dutyState[k] = el.value; _dutySave(); renderDutyResult(); }};
+    }});
+    ['hasHQ:dutyHasHQ', 'petro:dutyPetro', 'chem:dutyChem', 'dispersed:dutyDispersed'].forEach(function(p) {{
+      var k = p.split(':')[0], el = document.getElementById(p.split(':')[1]);
+      el.checked = !!dutyState[k];
+      el.onchange = function() {{ dutyState[k] = el.checked; _dutySave(); renderDutyResult(); }};
+    }});
+    siteBox.onchange = function(e) {{
+      var i = +e.target.dataset.site;
+      dutyState.sites = dutyState.sites.filter(function(x) {{ return x !== i; }});
+      if (e.target.checked) dutyState.sites.push(i);
+      _dutySave(); renderDutyResult();
+    }};
+    var q = document.getElementById('dutyIndustry'), sug = document.getElementById('dutySuggest');
+    q.oninput = function() {{
+      var hits = dutySearch(q.value);
+      sug.innerHTML = q.value.trim() ? hits.map(function(h) {{
+        return '<button type="button" class="duty-opt" data-i="' + h.i + '"><span class="badge ' + ['', 'badge-red', 'badge-yellow', 'badge-gray'][h.b.cls] + '">第' + '一二三'[h.b.cls - 1] + '類</span>' +
+          '<span class="duty-opt-name">' + h.b.item + (h.hit !== h.b.item ? '<small>符合「' + h.hit + '」</small>' : '') + '</span><small class="duty-opt-ref">' + h.b.ref + '</small></button>';
+      }}).join('') + '<button type="button" class="duty-opt" data-i="-1"><span class="badge badge-gray">第三類</span><span class="duty-opt-name">找不到我的行業<small>未列於第一、二類者推定為第三類</small></span></button>' : '';
+    }};
+    sug.onclick = function(e) {{
+      var b = e.target.closest('.duty-opt'); if (!b) return;
+      dutyState.item = +b.dataset.i; _dutySave();
+      q.value = ''; sug.innerHTML = ''; renderDutyResult();
+    }};
+    renderDutyResult();
+  }}
+
+  function renderDutyResult() {{
+    var picked = document.getElementById('dutyPicked'), box = document.getElementById('dutyResult');
+    var it = dutyState.item >= 0 && dutyState.item !== null ? BUSINESS_CLASSES[dutyState.item] : null;
+    picked.innerHTML = it ? '<div class="duty-chosen"><b>' + it.item + '</b><small>' + it.group + '・' + it.ref + '</small><button type="button" class="art-copy-btn" id="dutyClear">更換</button></div>'
+      : dutyState.item === -1 ? '<div class="duty-chosen"><b>未列於第一、二類之行業</b><small>推定為第三類</small><button type="button" class="art-copy-btn" id="dutyClear">更換</button></div>' : '';
+    var clr = document.getElementById('dutyClear');
+    if (clr) clr.onclick = function() {{ dutyState.item = null; _dutySave(); renderDutyResult(); document.getElementById('dutyIndustry').focus(); }};
+    var r = dutyEvaluate(dutyState);
+    document.getElementById('dutyHQBox').hidden = !dutyState.hasHQ;
+    document.getElementById('dutyMfgBox').hidden = !(r && r.manufacturing);
+    if (!r) {{ box.innerHTML = '<div class="empty-state"><i class="ti ti-building-factory-2 icon" aria-hidden="true"></i><p>先在左側搜尋並選擇行業，或勾選特定工作場所。</p></div>'; return; }}
+    var why = [];
+    if (r.item) why.push(r.item.ref + '「' + r.item.item + '」');
+    else if (dutyState.item === -1) why.push('附表一第一、二類未列，推定第三類');
+    r.sites.forEach(function(s) {{ why.push(s.ref + '「' + s.text + '」'); }});
+    var html = '<div class="duty-class duty-class-' + r.cls + '"><div class="duty-class-label">事業分類</div><div class="duty-class-name">' + CLS_LABEL[r.cls] +
+      (r.construction ? '<span class="badge badge-gray">營造業</span>' : '') + '</div><div class="duty-class-why">依據：' + why.join('；') + '　' + _artLink(MGMT_LAW, '2') + '</div></div>';
+    if (ATTACH_CHECK.changed && ATTACH_CHECK.changed.length)
+      html += '<div class="eff-notice"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><b>官方附表已更新，試算資料待核對</b><div>' +
+        ATTACH_CHECK.changed.map(function(c) {{ return c.law + c.table; }}).join('、') + '（' + ATTACH_CHECK.checked + ' 偵測），結果可能與現行附表不符。</div></div></div>';
+    var mg = lawByName(MGMT_LAW);
+    if (mg && mg.effective) html += '<div class="eff-notice"><i class="ti ti-calendar-event" aria-hidden="true"></i><div><b>' + MGMT_LAW + '有修正將於 ' + mg.effective + ' 施行</b><div>以下依目前公布之最新條文試算（預覽）。</div></div></div>';
+    if (!+dutyState.n) {{ box.innerHTML = html + '<div class="duty-hint">輸入勞工人數後即可試算應辦義務。</div>'; _bindDutyLinks(box); return; }}
+    var ST = {{must: ['應辦理', 'badge-red'], cond: ['視情況', 'badge-yellow'], opt: ['得適用', 'badge-blue'], no: ['不適用', 'badge-gray']}};
+    html += '<div class="duty-list">' + r.items.map(function(x) {{
+      return '<div class="duty-item duty-st-' + x.status + '"><div class="duty-item-head"><span class="badge ' + ST[x.status][1] + '">' + ST[x.status][0] + '</span><b>' + x.title + '</b>' +
+        '<span class="duty-arts">' + _artLinks(x.law, x.arts) + '</span></div><div class="duty-item-text">' + x.text + '</div></div>';
+    }}).join('') + '</div>';
+    (r.health || []).forEach(function(h) {{
+      var future = h.effective > _isoDaysAgo(0), law = lawByName(h.law);
+      html += '<div class="duty-health' + (future ? ' is-preview' : '') + '"><div class="duty-health-head"><b>勞工健康服務人力配置</b>' +
+        (future ? '<span class="badge badge-red">' + h.effective + ' 施行（預覽）</span>' : '') + '<span class="duty-arts">' + _artLinks(h.law, h.arts) + '</span></div>' +
+        (future ? '<div class="duty-hint">依' + h.law + '修正條文（' + h.effective + ' 施行）試算，供提前規劃醫護人力；施行前仍適用現行規定。</div>' : '') +
+        '<dl class="duty-dl">' + h.lines.map(function(l) {{ return '<dt>' + l.label + '</dt><dd>' + l.text + '</dd>'; }}).join('') + '</dl>' +
+        (h.alt ? '<div class="duty-alt"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>' + h.alt + '</div>' : '') + '</div>';
+    }});
+    html += '<p class="duty-disclaimer">本試算依附表一、危害風險第二類及第三類參考事業一覽表與相關條文整理，僅供參考；事業分類及義務之認定，以轄區勞動檢查機構為準。</p>';
+    box.innerHTML = html;
+    _bindDutyLinks(box);
+  }}
+  function _bindDutyLinks(box) {{
+    box.querySelectorAll('[data-dlaw]').forEach(function(b) {{
+      b.onclick = function() {{ var law = lawByName(b.dataset.dlaw); if (law) openDrawer(law); }};
+    }});
+  }}
 
   // ── 條文新舊對照
   function lawChanges(r) {{ var d = LAW_DIFFS[r.name]; return (d && d.changes) || []; }}
@@ -3740,51 +4273,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       return h + '</div>';
     }}
     cols.innerHTML = colHtml(selA) + colHtml(selB);
-  }}
-
-  // ─── 適用性判斷助手 ───────────────────────────────────────────
-  function runGuide() {{
-    var industry = document.getElementById('guide-industry').value;
-    var hazards = [...document.querySelectorAll('#guide-hazards input:checked')].map(function(i) {{ return i.value; }});
-    var result = document.getElementById('guide-result');
-    var relevant = REGISTRY.filter(function(r) {{
-      if (industry && r.cat !== industry) return false;
-      return true;
-    }});
-    // 危害類型細篩
-    if (hazards.length) {{
-      var hazardMap = {{
-        '高溫': ['高溫', '熱危害'],
-        '高架': ['高架', '墜落', '營造'],
-        '局限空間': ['缺氧', '局限空間'],
-        '化學品': ['化學品', '有機溶劑', '危害性'],
-        '機械': ['機械', '鍋爐', '壓力容器', '起重'],
-        '環境監測': ['監測', '容許暴露', '作業環境'],
-      }};
-      relevant = relevant.filter(function(r) {{
-        return hazards.some(function(h) {{
-          var kws = hazardMap[h] || [h];
-          return kws.some(function(kw) {{ return r.name.includes(kw) || (r.cat||'').includes(kw); }});
-        }});
-      }});
-    }}
-    if (!relevant.length) {{
-      result.innerHTML = '<p style="color:var(--ink-soft);font-size:0.8125rem">找不到符合條件的法規，請放寬篩選條件。</p>';
-      return;
-    }}
-    result.innerHTML = '<p style="font-size:0.8125rem;color:var(--ink-soft);margin-bottom:8px">找到 ' + relevant.length + ' 筆可能適用的法規：</p>' +
-      relevant.map(function(r) {{
-        return '<div class="guide-result-item" data-law="' + r.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">' +
-          '<span class="cat-tag">' + (r.cat||'') + '</span>' +
-          '<button class="guide-jump-btn" type="button">' + r.name + '</button>' +
-          '</div>';
-      }}).join('');
-    result.querySelectorAll('.guide-jump-btn').forEach(function(btn) {{
-      btn.onclick = function() {{
-        document.getElementById('guide-modal').classList.remove('open');
-        jumpToLaw(btn.parentNode.dataset.law);
-      }};
-    }});
   }}
 
   function buildCatFilters() {{
@@ -4585,7 +5073,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (e.key === 'Escape') {{
       kbdModal.classList.remove('open');
       document.getElementById('compare-modal').classList.remove('open');
-      document.getElementById('guide-modal').classList.remove('open');
       closeDrawer();
       document.querySelectorAll('.board-dropdown').forEach(function(d) {{ d.remove(); }});
       return;
@@ -5141,6 +5628,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }} else {{
       html += '<div class="ds-xml-row"><span class="data-status-dot ds-warn"></span><span>尚無法規快取，請執行 --fetch-xml</span></div>';
     }}
+    html += '<div class="ds-section-hd">事業義務試算附表</div>';
+    if (!ATTACH_CHECK.checked) {{
+      html += '<div class="ds-xml-row"><span class="data-status-dot ds-warn"></span><span>尚未檢查（由本機排程執行）</span></div>';
+    }} else if (ATTACH_CHECK.changed && ATTACH_CHECK.changed.length) {{
+      html += '<div class="ds-xml-row"><span class="data-status-dot ds-fail"></span><span style="flex:1">附表已換檔，試算資料需人工核對：' +
+        ATTACH_CHECK.changed.map(function(c) {{ return c.law + c.table; }}).join('、') + '</span><span class="ds-ts">' + ATTACH_CHECK.checked + '</span></div>';
+    }} else {{
+      html += '<div class="ds-xml-row"><span class="data-status-dot ' + (ATTACH_CHECK.error ? 'ds-warn' : 'ds-ok') + '"></span><span style="flex:1">' +
+        (ATTACH_CHECK.error ? '部分附表檢查失敗：' + _escHtml(ATTACH_CHECK.error) : '與官方附表版本一致') + '</span><span class="ds-ts">' + ATTACH_CHECK.checked + '</span></div>';
+    }}
     html += '<div style="margin-top:14px;font-size:0.75rem;color:var(--ink-soft)">資料於每次重新生成時更新。可於 GitHub Actions 手動觸發以取得最新資料。</div>';
     el.innerHTML = html;
     document.getElementById('ds-modal').classList.add('open');
@@ -5432,6 +5929,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   renderRegistry();
   renderDirectives();
   renderScenarios();
+  renderDutyForm();
 </script>
 </body>
 </html>
@@ -5469,6 +5967,11 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         applicability_json=json.dumps(APPLICABILITY_DATA, ensure_ascii=False),
         inspection_focus_json=json.dumps(INSPECTION_FOCUS_LAWS, ensure_ascii=False),
         case_hazards_json=json.dumps([{"type": h["type"], "laws": h["laws"]} for h in CASE_HAZARDS], ensure_ascii=False),
+        business_classes_json=json.dumps(BUSINESS_CLASSES, ensure_ascii=False),
+        business_sites_json=json.dumps(BUSINESS_SITES, ensure_ascii=False),
+        osh_staffing_json=json.dumps(OSH_STAFFING, ensure_ascii=False),
+        health_rules_json=json.dumps(HEALTH_SERVICE_RULES, ensure_ascii=False),
+        attach_check_json=json.dumps(_read_json(ATTACH_CHECK), ensure_ascii=False),
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
         xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
@@ -5711,6 +6214,9 @@ def main():
         if args.fetch_xml:
             all_xml_records: list[dict] = []
             any_ok = False
+            _attach = check_duty_attachments()
+            if _attach["changed"]:
+                print("  ⚠ 事業義務試算依據的附表已換檔，需人工核對：" + "、".join(c["law"] + c["table"] for c in _attach["changed"]))
             for url, fname in LAW_XML_URLS:
                 dest = Path(fname)
                 if _download_law_xml(url, dest):
