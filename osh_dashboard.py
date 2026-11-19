@@ -2818,6 +2818,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .duty-dl dd{{ margin:0; }}
   .duty-alt{{ display:flex; gap:8px; margin-top:12px; padding:8px 12px; background:var(--bg-muted); border-radius:var(--radius); font-size:0.8125rem; }}
   .duty-disclaimer{{ font-size:0.75rem; color:var(--text-3); line-height:1.6; }}
+  /* 多地區（總機構＋分部） */
+  .duty-mode {{ margin-bottom:12px; }}
+  .duty-branch {{ border:1px solid var(--border); border-radius:var(--radius); padding:8px; margin-top:8px; background:var(--bg); }}
+  .duty-branch-row {{ display:grid; grid-template-columns:1fr 96px 36px; gap:8px; align-items:center; }}
+  .duty-branch-row .icon-btn:disabled {{ opacity:.4; cursor:not-allowed; }}
+  .duty-branch-more {{ margin-top:4px; font-size:0.8125rem; }}
+  .duty-branch-more summary {{ cursor:pointer; color:var(--blue); padding:4px 0; }}
+  .duty-add {{ margin-top:8px; width:100%; justify-content:center; }}
+  .duty-total {{ margin-top:8px; font-size:0.8125rem; color:var(--text-2); }}
+  .duty-sec {{ display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; margin:8px 0 0; font-size:1rem; }}
+  .duty-sec small {{ font-size:0.75rem; font-weight:400; color:var(--text-2); }}
+  .duty-branch-list {{ display:flex; flex-direction:column; gap:8px; }}
+  .duty-branch-res {{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); }}
+  .duty-branch-res > summary {{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:12px 16px; cursor:pointer; list-style:none; }}
+  .duty-branch-res > summary::-webkit-details-marker {{ display:none; }}
+  .duty-branch-res > summary::before {{ content:"▸"; color:var(--text-3); }}
+  .duty-branch-res[open] > summary::before {{ content:"▾"; }}
+  .duty-branch-res > .duty-list, .duty-branch-res > .duty-health, .duty-branch-res > .duty-hint {{ margin:0 12px 12px; }}
+  .duty-branch-name {{ font-weight:600; color:var(--text-heading); }}
+  .duty-branch-n {{ font-size:0.8125rem; color:var(--text-2); font-variant-numeric:tabular-nums; }}
+  .duty-branch-staff {{ flex-basis:100%; font-size:0.75rem; color:var(--text-2); padding-left:18px; }}
+  .duty-chip {{ font-size:0.75rem; padding:1px 8px; border-radius:9999px; background:var(--bg-muted); color:var(--text-3); white-space:nowrap; }}
+  .duty-chip.on {{ background:var(--danger-bg); color:var(--danger); }}
+  .duty-notes {{ font-size:0.8125rem; line-height:1.7; padding:12px 16px; border-radius:var(--radius); background:var(--warning-bg); color:var(--text); }}
+  .duty-notes ul {{ margin:4px 0 0 18px; }}
   @media (max-width:1023px){{ .duty-layout{{ grid-template-columns:1fr; }} }}
   /* 施行提醒、修正草案、職災案例 */
   .eff-notice{{ display:flex; gap:12px; align-items:flex-start; padding:12px 16px; margin:0 0 16px; border-radius:var(--radius);
@@ -3145,21 +3170,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
         <div class="duty-card">
           <h3 class="duty-step"><span>2</span>規模</h3>
-          <label class="duty-label" for="dutyWorkers">本事業單位勞工人數</label>
-          <input id="dutyWorkers" class="duty-input" type="number" min="1" inputmode="numeric" placeholder="人數">
-          <div class="duty-hint">含承攬人、再承攬人之勞工及其他受指揮監督之人員，於同一期間、同一工作場所作業之總人數（管理辦法第 3-2 條）。</div>
-          <label class="duty-check"><input type="checkbox" id="dutyHasHQ"> 事業分散於不同地區，設有總機構</label>
-          <div id="dutyHQBox" class="duty-sub" hidden>
-            <label class="duty-label" for="dutyTotal">全事業勞工總人數（含各地區事業單位）</label>
-            <input id="dutyTotal" class="duty-input" type="number" min="1" inputmode="numeric">
+          <div class="seg seg-sm duty-mode" role="group" aria-label="事業型態">
+            <button type="button" data-dmode="single">單一事業單位</button>
+            <button type="button" data-dmode="multi">總機構＋分部</button>
           </div>
-          <div id="dutyMfgBox" class="duty-sub" hidden>
-            <label class="duty-label" for="dutyMfgUnit">所屬從事製造之一級單位勞工人數（最大者）</label>
-            <input id="dutyMfgUnit" class="duty-input" type="number" min="0" inputmode="numeric">
-            <div class="duty-hint">第一類事業適用管理辦法第 3-1 條；沒有可留空。</div>
+          <div id="dutySingleBox">
+            <label class="duty-label" for="dutyWorkers">本事業單位勞工人數</label>
+            <input id="dutyWorkers" class="duty-input" type="number" min="1" inputmode="numeric" placeholder="人數">
+            <div class="duty-hint">含承攬人、再承攬人之勞工及其他受指揮監督之人員，於同一期間、同一工作場所作業之總人數（管理辦法第 3-2 條）。</div>
+            <div id="dutyMfgBox" class="duty-sub" hidden>
+              <label class="duty-label" for="dutyMfgUnit">所屬從事製造之一級單位勞工人數（最大者）</label>
+              <input id="dutyMfgUnit" class="duty-input" type="number" min="0" inputmode="numeric">
+              <div class="duty-hint">第一類事業適用管理辦法第 3-1 條；沒有可留空。</div>
+            </div>
+          </div>
+          <div id="dutyMultiBox" hidden>
+            <div class="duty-hint">各據點依自身勞工人數辦理（管理辦法第 6 條第 1 項）；總機構另依全事業總人數辦理（第 6 條第 2 項、第 3-2 條第 2 項）。總機構本身有作業勞工時，也列為一個據點。</div>
+            <div id="dutyBranches"></div>
+            <button type="button" class="icon-btn duty-add" id="dutyAddBranch"><i class="ti ti-plus" aria-hidden="true"></i><span>新增據點</span></button>
+            <div class="duty-total" id="dutyTotalLine"></div>
           </div>
         </div>
-        <div class="duty-card">
+        <div class="duty-card" id="dutyOtherCard">
           <h3 class="duty-step"><span>3</span>其他條件</h3>
           <label class="duty-check"><input type="checkbox" id="dutyPetro"> 有從事石油裂解之石化工業工作場所</label>
           <label class="duty-check"><input type="checkbox" id="dutyChem"> 製造、處置或使用危害性化學品，數量達中央主管機關規定量以上</label>
@@ -3466,7 +3498,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function lawByName(name) {{ return REGISTRY.find(function(r) {{ return r.name === name; }}); }}
 
   // ─── 事業義務試算 ─────────────────────────────────────────────
-  // 判定規則全部集中在 dutyEvaluate()（純函式，便於測試）；畫面只負責收集輸入與呈現結果
+  // 判定規則集中在 dutyClassify / dutyUnit / dutyHQ / dutyEvaluate（純函式，便於測試）；畫面只負責收集輸入與呈現結果
   var CLS_LABEL = {{1: '第一類事業（顯著風險）', 2: '第二類事業（中度風險）', 3: '第三類事業（低度風險）'}};
   var MGMT_LAW = '職業安全衛生管理辦法', HEALTH_LAW = '勞工健康保護規則';
   function _inRange(n, row) {{ return n >= row[0] && (row[1] === null || n <= row[1]); }}
@@ -3487,39 +3519,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     return out.slice(0, 10);
   }}
 
-  // in: {{item: index|-1(推定第三類)|null, sites: [index], n, hasHQ, total, mfgUnit, petro, chem, special, dispersed}}
-  function dutyEvaluate(inp) {{
-    var item = inp.item >= 0 ? BUSINESS_CLASSES[inp.item] : null;
-    var sites = (inp.sites || []).map(function(i) {{ return BUSINESS_SITES[i]; }});
-    if (!item && inp.item !== -1 && !sites.length) return null;
+  // 分類：主行業＋特定工作場所（特定工作場所只提高、不降低類別）
+  function dutyClassify(itemIdx, siteIdxs) {{
+    var item = itemIdx >= 0 ? BUSINESS_CLASSES[itemIdx] : null;
+    var sites = (siteIdxs || []).map(function(i) {{ return BUSINESS_SITES[i]; }});
+    if (!item && itemIdx !== -1 && !sites.length) return null;
     var cls = item ? item.cls : 3;
     sites.forEach(function(s) {{ if (s.cls < cls) cls = s.cls; }});
-    var construction = (item && item.group === '營造業' && item.cls === cls) || sites.some(function(s) {{ return s.construction; }});
-    var manufacturing = !!(item && item.group === '製造業' && cls === 1 && item.cls === 1);
-    var n = +inp.n || 0, total = inp.hasHQ ? (+inp.total || 0) : 0;
-    var res = {{cls: cls, construction: construction, manufacturing: manufacturing, item: item, sites: sites, items: [], health: null}};
-    function add(key, title, status, text, arts, law) {{ res.items.push({{key: key, title: title, status: status, text: text, law: law || MGMT_LAW, arts: arts}}); }}
-    if (!n) return res;
+    return {{
+      cls: cls, item: item, sites: sites,
+      construction: (item && item.group === '營造業' && item.cls === cls) || sites.some(function(s) {{ return s.construction; }}),
+      manufacturing: !!(item && item.group === '製造業' && cls === 1 && item.cls === 1)
+    }};
+  }}
 
-    // 管理單位（§2-1）與委員會（§10）
+  // 一個事業單位（多地區時為一個據點）依自身勞工人數之義務：§2-1、§3、§3-1、§4、§10、§12-1、§12-2；健康服務另計
+  // o: {{n, mfgUnit, petro, chem, special, dispersed}}
+  function dutyUnit(cl, o) {{
+    var cls = cl.cls, construction = cl.construction, n = +o.n || 0, items = [];
+    function add(key, title, status, text, arts, law) {{ items.push({{key: key, title: title, status: status, text: text, law: law || MGMT_LAW, arts: arts}}); }}
+    if (!n) return {{items: items, health: null}};
+
     var unitLv1 = cls === 1 && n >= 100 ? '應設直接隸屬雇主之專責一級管理單位' : cls === 2 && n >= 300 ? '應設直接隸屬雇主之一級管理單位' : '';
     add('unit', '職業安全衛生管理單位', unitLv1 ? 'must' : 'no', unitLv1 || '未達設置一級管理單位門檻（第一類 100 人、第二類 300 人以上）', ['2-1']);
+    add('committee', '職業安全衛生委員會', unitLv1 ? 'must' : 'no',
+      unitLv1 ? '應設委員會：委員 7 人以上、勞工代表占三分之一以上，雇主為主任委員' : '未達應設門檻（同一級管理單位之設置條件）', unitLv1 ? ['10', '11'] : ['10']);
 
-    // 總機構（§6、附表二之一）
-    var hqUnit = '', hqStaff = null;
-    if (inp.hasHQ && total) {{
-      hqUnit = cls === 1 && total >= 500 ? '應另設直接隸屬雇主之專責一級管理單位' : cls === 2 && total >= 500 ? '應另設直接隸屬雇主之一級管理單位' : cls === 3 && total >= 3000 ? '應另設管理單位' : '';
-      var hqTab = OSH_STAFFING.hq.filter(function(h) {{ return h.cls === cls; }})[0];
-      hqStaff = hqTab ? _pickRow(hqTab.rows, total) : null;
-      add('hq', '總機構管理單位與人員', hqUnit ? 'must' : 'no',
-        hqUnit ? hqUnit + '；並置' + (hqStaff ? hqStaff[2] : '管理人員') + '（應為專職' + (cls === 1 ? '' : '，但業務主管不在此限') + '）'
-               : '全事業 ' + total + ' 人，未達總機構另設管理單位門檻（第一、二類 500 人、第三類 3,000 人以上）', ['6']);
-    }}
-    var committee = !!unitLv1 || !!hqUnit;
-    add('committee', '職業安全衛生委員會', committee ? 'must' : 'no',
-      committee ? '應設委員會：委員 7 人以上、勞工代表占三分之一以上，雇主為主任委員' : '未達應設門檻（同一級管理單位或總機構管理單位之設置條件）', committee ? ['10', '11'] : ['10']);
-
-    // 應置人員（§3、附表二）與專職（§3）
     var tab = OSH_STAFFING.unit.filter(function(u) {{ return u.cls === cls && (u.construction === undefined || u.construction === construction); }})[0];
     var row = _pickRow(tab.rows, n);
     var fullTime = cls === 1 && n >= 100 ? '所置管理人員應為專職，並常駐廠場執行業務' : cls === 2 && n >= 300 ? '管理人員至少一人為專職，並常駐廠場執行業務' : '';
@@ -3528,36 +3553,77 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (/管理師及職業安全衛生管理員各二人/.test(row[2])) staffText += '；管理師二人以上者，其中至少一人應為職業衛生管理師';
     add('staff', '應置職業安全衛生人員', 'must', staffText, ['3']);
 
-    // 製造一級單位加置（§3-1）、營造長距離工程
-    if (manufacturing && +inp.mfgUnit >= 100)
-      add('mfg', '製造一級單位加置人員', 'must', +inp.mfgUnit >= 300 ? '另置甲種業務主管一人，並再至少增置專職職業安全衛生管理員一人' : '另置甲種職業安全衛生業務主管一人', ['3-1']);
+    if (cl.manufacturing && +o.mfgUnit >= 100)
+      add('mfg', '製造一級單位加置人員', 'must', +o.mfgUnit >= 300 ? '另置甲種業務主管一人，並再至少增置專職職業安全衛生管理員一人' : '另置甲種職業安全衛生業務主管一人', ['3-1']);
     if (construction)
       add('long', '長距離工程', 'cond', '橋樑、道路、隧道或輸配電等距離較長之工程，每十公里內應增置營造業丙種職業安全衛生業務主管一人', ['3-1']);
 
-    // 雇主兼任業務主管（§4）
     if (n < 30)
       add('owner', '雇主兼任業務主管', 'opt', (cls !== 1 && n <= 5)
         ? '雇主或其代理人經丁種職業安全衛生業務主管教育訓練合格，得擔任業務主管'
         : '雇主或其代理人經職業安全衛生業務主管安全衛生教育訓練合格，得擔任業務主管', ['4']);
 
-    // 管理計畫、規章（§12-1）
     add('plan', '風險評估與職業安全衛生管理計畫', 'must',
       '工作前實施風險評估；訂定職業安全衛生管理計畫' + (n < 30 ? '（未滿 30 人得以安全衛生管理執行紀錄或文件代替）' : '') +
       (n >= 100 ? '；另應訂定職業安全衛生管理規章' : '') + '。執行紀錄保存三年', ['12-1']);
 
-    // 管理系統（§12-2 ~ §12-6）
     var sysWhy = [];
     if (cls === 1 && n >= 200) sysWhy.push('第一類 200 人以上');
     if (cls === 2 && n >= 500) sysWhy.push('第二類 500 人以上');
-    if (inp.petro) sysWhy.push('有石油裂解之石化工業工作場所');
-    if (inp.chem) sysWhy.push('危害性化學品達規定量');
+    if (o.petro) sysWhy.push('有石油裂解之石化工業工作場所');
+    if (o.chem) sysWhy.push('危害性化學品達規定量');
     add('system', '職業安全衛生管理系統（CNS 45001）', sysWhy.length ? 'must' : 'no',
       sysWhy.length ? '因' + sysWhy.join('、') + '，應建置管理系統，並建立變更管理、採購管理、承攬管理及緊急應變程序'
                     : '未達強制建置門檻（第一類 200 人、第二類 500 人以上，或石化裂解、危化品達規定量）', sysWhy.length ? ['12-2', '12-3', '12-4', '12-5', '12-6'] : ['12-2']);
-    if (cls === 1 && (unitLv1 || hqUnit))
+    if (cls === 1 && unitLv1)
       add('exempt', '專責、專職之例外', 'opt', '已實施管理系統且績效經中央主管機關審查通過者，得不受一級管理單位應為專責、業務主管應為專職之限制', ['6-1']);
 
-    res.health = dutyHealth(cls, n, +inp.special || 0, !!inp.dispersed);
+    return {{items: items, health: dutyHealth(cls, n, +o.special || 0, !!o.dispersed),
+            unitLv1: !!unitLv1, system: sysWhy.length > 0, staff: row[2]}};
+  }}
+
+  // 總機構（綜理全事業）之義務：§6 第2項、附表二之一（人數依 §3-2 第2項加總各地區）、§5-1、§10
+  function dutyHQ(cl, total) {{
+    var cls = cl.cls, items = [];
+    function add(key, title, status, text, arts) {{ items.push({{key: key, title: title, status: status, text: text, law: MGMT_LAW, arts: arts}}); }}
+    var hqUnit = cls === 1 && total >= 500 ? '應設直接隸屬雇主之專責一級管理單位' : cls === 2 && total >= 500 ? '應設直接隸屬雇主之一級管理單位' : cls === 3 && total >= 3000 ? '應設管理單位' : '';
+    add('hq', '綜理全事業之管理單位', hqUnit ? 'must' : 'no',
+      hqUnit ? hqUnit + '（得設於總機構或其地區事業單位），並依第 5-1 條辦理全事業安全衛生管理事項'
+             : '全事業 ' + total + ' 人，未達另設門檻（第一、二類 500 人、第三類 3,000 人以上）；各據點仍應依自身人數辦理', hqUnit ? ['6', '5-1'] : ['6']);
+    if (hqUnit) {{
+      var hqTab = OSH_STAFFING.hq.filter(function(h) {{ return h.cls === cls; }})[0], hqStaff = _pickRow(hqTab.rows, total);
+      add('hqstaff', '綜理全事業之管理人員', 'must', '應置' + (hqStaff ? hqStaff[2] : '管理人員') + '；應為專職' + (cls === 1 ? '' : '，但業務主管不在此限') + '（附表二之一）', ['6']);
+    }}
+    add('hqcommittee', '全事業職業安全衛生委員會', hqUnit ? 'must' : 'no',
+      hqUnit ? '應設委員會：委員 7 人以上、勞工代表占三分之一以上，雇主為主任委員' : '未達應設門檻（同總機構管理單位之設置條件）', hqUnit ? ['10', '11'] : ['10']);
+    if (cls === 1 && hqUnit)
+      add('hqexempt', '專責、專職之例外', 'opt', '總機構已實施管理系統且績效經中央主管機關審查通過者，得不受一級管理單位應為專責、業務主管應為專職之限制', ['6-1']);
+    return {{items: items, hqUnit: !!hqUnit, total: total}};
+  }}
+
+  // 單一：{{item, sites, n, mfgUnit, petro, chem, special, dispersed}}
+  // 多地區：{{mode:'multi', item, sites, branches:[{{name, n, item(''＝沿用主分類), special, mfgUnit, petro, chem}}]}}
+  function dutyEvaluate(inp) {{
+    var cl = dutyClassify(inp.item, inp.sites);
+    if (!cl) return null;
+    var res = Object.assign({{mode: inp.mode === 'multi' ? 'multi' : 'single'}}, cl);
+    if (res.mode === 'single') {{
+      var u = dutyUnit(cl, inp);
+      res.items = u.items; res.health = u.health;
+      return res;
+    }}
+    var total = 0;
+    res.branches = (inp.branches || []).map(function(b, i) {{
+      var own = b.item !== '' && b.item !== null && b.item !== undefined;
+      var bcl = own ? dutyClassify(+b.item, []) : cl;
+      var n = +b.n || 0;
+      total += n;
+      // 據點分散於不同地區，健康服務可適用第 13 條健康管理方案
+      var u = dutyUnit(bcl, {{n: n, mfgUnit: b.mfgUnit, petro: b.petro, chem: b.chem, special: b.special, dispersed: true}});
+      return {{name: b.name || '據點 ' + (i + 1), n: n, cl: bcl, own: own, unit: u}};
+    }});
+    res.total = total;
+    res.hq = total ? dutyHQ(cl, total) : null;
     return res;
   }}
 
@@ -3605,27 +3671,72 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   // ── 畫面
-  var dutyState = {{item: null, sites: [], n: '', hasHQ: false, total: '', mfgUnit: '', petro: false, chem: false, special: '', dispersed: false}};
+  function _newBranch(name) {{ return {{name: name, n: '', item: '', special: '', mfgUnit: '', petro: false, chem: false}}; }}
+  var dutyState = {{item: null, sites: [], mode: 'single', n: '', mfgUnit: '', petro: false, chem: false, special: '', dispersed: false,
+                   branches: [_newBranch('總機構'), _newBranch('分部 1')]}};
   try {{ Object.assign(dutyState, JSON.parse(localStorage.getItem('osh_duty') || '{{}}')); }} catch (e) {{}}
+  // 舊版只有「設有總機構」勾選＋全事業人數：轉成多地區模式，原本的人數當第一個據點
+  if (dutyState.hasHQ) {{
+    dutyState.mode = 'multi';
+    if (dutyState.n && !dutyState.branches[0].n) dutyState.branches[0].n = dutyState.n;
+    delete dutyState.hasHQ; delete dutyState.total;
+  }}
   function _dutySave() {{ try {{ localStorage.setItem('osh_duty', JSON.stringify(dutyState)); }} catch (e) {{}} }}
   // 連續多條（如 §12-2～12-6）只連第一條並標示範圍，避免一排連結擠掉內文
   function _artLinks(law, arts) {{
     return arts.length > 2 ? _artLink(law, arts[0]) + '<span class="duty-range">～' + arts[arts.length - 1] + '</span>' : arts.map(function(a) {{ return _artLink(law, a); }}).join('');
   }}
   function _artLink(law, no) {{ return '<button type="button" class="law-link" data-dlaw="' + law + '">' + law.replace('職業安全衛生', '職安') + ' §' + no + '</button>'; }}
+  function _clsBadge(cls) {{ return '<span class="badge ' + ['', 'badge-red', 'badge-yellow', 'badge-gray'][cls] + '">第' + '一二三'[cls - 1] + '類</span>'; }}
+
+  // 據點行業下拉：依類別分組
+  var _branchItemOptions = (function() {{
+    var html = '<option value="">沿用主分類</option>';
+    [1, 2, 3].forEach(function(c) {{
+      html += '<optgroup label="' + CLS_LABEL[c] + '">';
+      BUSINESS_CLASSES.forEach(function(b, i) {{ if (b.cls === c) html += '<option value="' + i + '">' + b.group + '｜' + b.item + '</option>'; }});
+      if (c === 3) html += '<option value="-1">其他（未列於第一、二類）</option>';
+      html += '</optgroup>';
+    }});
+    return html;
+  }})();
+
+  function renderDutyBranches() {{
+    var box = document.getElementById('dutyBranches');
+    box.innerHTML = dutyState.branches.map(function(b, i) {{
+      var v = function(k) {{ return b[k] === undefined || b[k] === null ? '' : String(b[k]).replace(/"/g, '&quot;'); }};
+      return '<div class="duty-branch" data-b="' + i + '">' +
+        '<div class="duty-branch-row">' +
+          '<input class="duty-input" data-f="name" value="' + v('name') + '" placeholder="據點名稱" aria-label="據點名稱">' +
+          '<input class="duty-input" data-f="n" type="number" min="0" inputmode="numeric" value="' + v('n') + '" placeholder="人數" aria-label="勞工人數">' +
+          '<button type="button" class="icon-btn" data-del title="刪除據點" aria-label="刪除據點"' + (dutyState.branches.length <= 1 ? ' disabled' : '') + '><i class="ti ti-trash" aria-hidden="true"></i></button>' +
+        '</div>' +
+        '<details class="duty-branch-more"><summary>行業與其他條件</summary>' +
+          '<label class="duty-label">行業（與主分類不同時再選）</label>' +
+          '<select class="duty-input" data-f="item">' + _branchItemOptions + '</select>' +
+          '<label class="duty-label">從事特別危害健康作業之勞工人數</label>' +
+          '<input class="duty-input" data-f="special" type="number" min="0" inputmode="numeric" value="' + v('special') + '" placeholder="0">' +
+          '<label class="duty-label">所屬製造一級單位勞工人數（第一類製造業，最大者）</label>' +
+          '<input class="duty-input" data-f="mfgUnit" type="number" min="0" inputmode="numeric" value="' + v('mfgUnit') + '">' +
+          '<label class="duty-check"><input type="checkbox" data-f="petro"' + (b.petro ? ' checked' : '') + '> 有從事石油裂解之石化工業工作場所</label>' +
+          '<label class="duty-check"><input type="checkbox" data-f="chem"' + (b.chem ? ' checked' : '') + '> 危害性化學品達中央主管機關規定量以上</label>' +
+        '</details></div>';
+    }}).join('');
+    box.querySelectorAll('select[data-f="item"]').forEach(function(s, i) {{ s.value = dutyState.branches[i].item === null ? '' : String(dutyState.branches[i].item); }});
+  }}
 
   function renderDutyForm() {{
     var siteBox = document.getElementById('dutySites');
     siteBox.innerHTML = BUSINESS_SITES.map(function(s, i) {{
       return '<label class="duty-check"><input type="checkbox" data-site="' + i + '"' + (dutyState.sites.indexOf(i) >= 0 ? ' checked' : '') + '> ' +
-        '<span><span class="badge ' + (s.cls === 1 ? 'badge-red' : 'badge-yellow') + '">第' + (s.cls === 1 ? '一' : '二') + '類</span> ' + s.text + '</span></label>';
+        '<span>' + _clsBadge(s.cls) + ' ' + s.text + '</span></label>';
     }}).join('');
-    ['n:dutyWorkers', 'total:dutyTotal', 'mfgUnit:dutyMfgUnit', 'special:dutySpecial'].forEach(function(p) {{
+    ['n:dutyWorkers', 'mfgUnit:dutyMfgUnit', 'special:dutySpecial'].forEach(function(p) {{
       var k = p.split(':')[0], el = document.getElementById(p.split(':')[1]);
       el.value = dutyState[k];
       el.oninput = function() {{ dutyState[k] = el.value; _dutySave(); renderDutyResult(); }};
     }});
-    ['hasHQ:dutyHasHQ', 'petro:dutyPetro', 'chem:dutyChem', 'dispersed:dutyDispersed'].forEach(function(p) {{
+    ['petro:dutyPetro', 'chem:dutyChem', 'dispersed:dutyDispersed'].forEach(function(p) {{
       var k = p.split(':')[0], el = document.getElementById(p.split(':')[1]);
       el.checked = !!dutyState[k];
       el.onchange = function() {{ dutyState[k] = el.checked; _dutySave(); renderDutyResult(); }};
@@ -3636,11 +3747,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (e.target.checked) dutyState.sites.push(i);
       _dutySave(); renderDutyResult();
     }};
+    // 事業型態切換
+    document.querySelectorAll('[data-dmode]').forEach(function(b) {{
+      b.onclick = function() {{ dutyState.mode = b.dataset.dmode; _dutySave(); renderDutyResult(); }};
+    }});
+    // 據點清單：輸入只更新結果，不重畫清單（避免游標跳掉）
+    var bbox = document.getElementById('dutyBranches');
+    function onBranchField(e) {{
+      var row = e.target.closest('[data-b]'), f = e.target.dataset.f;
+      if (!row || !f) return;
+      dutyState.branches[+row.dataset.b][f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+      _dutySave(); renderDutyResult();
+    }}
+    bbox.oninput = onBranchField;
+    bbox.onchange = onBranchField;
+    bbox.onclick = function(e) {{
+      var del = e.target.closest('[data-del]');
+      if (!del || dutyState.branches.length <= 1) return;
+      dutyState.branches.splice(+del.closest('[data-b]').dataset.b, 1);
+      _dutySave(); renderDutyBranches(); renderDutyResult();
+    }};
+    document.getElementById('dutyAddBranch').onclick = function() {{
+      dutyState.branches.push(_newBranch('分部 ' + dutyState.branches.length));
+      _dutySave(); renderDutyBranches(); renderDutyResult();
+      var rows = bbox.querySelectorAll('[data-f="name"]'); rows[rows.length - 1].focus();
+    }};
+    renderDutyBranches();
     var q = document.getElementById('dutyIndustry'), sug = document.getElementById('dutySuggest');
     q.oninput = function() {{
       var hits = dutySearch(q.value);
       sug.innerHTML = q.value.trim() ? hits.map(function(h) {{
-        return '<button type="button" class="duty-opt" data-i="' + h.i + '"><span class="badge ' + ['', 'badge-red', 'badge-yellow', 'badge-gray'][h.b.cls] + '">第' + '一二三'[h.b.cls - 1] + '類</span>' +
+        return '<button type="button" class="duty-opt" data-i="' + h.i + '">' + _clsBadge(h.b.cls) +
           '<span class="duty-opt-name">' + h.b.item + (h.hit !== h.b.item ? '<small>符合「' + h.hit + '」</small>' : '') + '</span><small class="duty-opt-ref">' + h.b.ref + '</small></button>';
       }}).join('') + '<button type="button" class="duty-opt" data-i="-1"><span class="badge badge-gray">第三類</span><span class="duty-opt-name">找不到我的行業<small>未列於第一、二類者推定為第三類</small></span></button>' : '';
     }};
@@ -3652,7 +3789,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     renderDutyResult();
   }}
 
+  var DUTY_ST = {{must: ['應辦理', 'badge-red'], cond: ['視情況', 'badge-yellow'], opt: ['得適用', 'badge-blue'], no: ['不適用', 'badge-gray']}};
+  function _dutyListHtml(items) {{
+    return '<div class="duty-list">' + items.map(function(x) {{
+      return '<div class="duty-item duty-st-' + x.status + '"><div class="duty-item-head"><span class="badge ' + DUTY_ST[x.status][1] + '">' + DUTY_ST[x.status][0] + '</span><b>' + x.title + '</b>' +
+        '<span class="duty-arts">' + _artLinks(x.law, x.arts) + '</span></div><div class="duty-item-text">' + x.text + '</div></div>';
+    }}).join('') + '</div>';
+  }}
+  function _dutyHealthHtml(list) {{
+    return (list || []).map(function(h) {{
+      var future = h.effective > _isoDaysAgo(0);
+      return '<div class="duty-health' + (future ? ' is-preview' : '') + '"><div class="duty-health-head"><b>勞工健康服務人力配置</b>' +
+        (future ? '<span class="badge badge-red">' + h.effective + ' 施行（預覽）</span>' : '') + '<span class="duty-arts">' + _artLinks(h.law, h.arts) + '</span></div>' +
+        (future ? '<div class="duty-hint">依' + h.law + '修正條文（' + h.effective + ' 施行）試算，供提前規劃醫護人力；施行前仍適用現行規定。</div>' : '') +
+        '<dl class="duty-dl">' + h.lines.map(function(l) {{ return '<dt>' + l.label + '</dt><dd>' + l.text + '</dd>'; }}).join('') + '</dl>' +
+        (h.alt ? '<div class="duty-alt"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>' + h.alt + '</div>' : '') + '</div>';
+    }}).join('');
+  }}
+
   function renderDutyResult() {{
+    var multi = dutyState.mode === 'multi';
+    document.querySelectorAll('[data-dmode]').forEach(function(b) {{ b.classList.toggle('active', b.dataset.dmode === dutyState.mode); }});
+    document.getElementById('dutySingleBox').hidden = multi;
+    document.getElementById('dutyMultiBox').hidden = !multi;
+    document.getElementById('dutyOtherCard').hidden = multi;
     var picked = document.getElementById('dutyPicked'), box = document.getElementById('dutyResult');
     var it = dutyState.item >= 0 && dutyState.item !== null ? BUSINESS_CLASSES[dutyState.item] : null;
     picked.innerHTML = it ? '<div class="duty-chosen"><b>' + it.item + '</b><small>' + it.group + '・' + it.ref + '</small><button type="button" class="art-copy-btn" id="dutyClear">更換</button></div>'
@@ -3660,34 +3820,44 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var clr = document.getElementById('dutyClear');
     if (clr) clr.onclick = function() {{ dutyState.item = null; _dutySave(); renderDutyResult(); document.getElementById('dutyIndustry').focus(); }};
     var r = dutyEvaluate(dutyState);
-    document.getElementById('dutyHQBox').hidden = !dutyState.hasHQ;
     document.getElementById('dutyMfgBox').hidden = !(r && r.manufacturing);
+    document.getElementById('dutyTotalLine').innerHTML = multi
+      ? '全事業勞工總人數：<b>' + (r ? r.total : dutyState.branches.reduce(function(s, b) {{ return s + (+b.n || 0); }}, 0)) + '</b> 人（各據點加總）' : '';
     if (!r) {{ box.innerHTML = '<div class="empty-state"><i class="ti ti-building-factory-2 icon" aria-hidden="true"></i><p>先在左側搜尋並選擇行業，或勾選特定工作場所。</p></div>'; return; }}
+
     var why = [];
     if (r.item) why.push(r.item.ref + '「' + r.item.item + '」');
     else if (dutyState.item === -1) why.push('附表一第一、二類未列，推定第三類');
     r.sites.forEach(function(s) {{ why.push(s.ref + '「' + s.text + '」'); }});
-    var html = '<div class="duty-class duty-class-' + r.cls + '"><div class="duty-class-label">事業分類</div><div class="duty-class-name">' + CLS_LABEL[r.cls] +
+    var html = '<div class="duty-class duty-class-' + r.cls + '"><div class="duty-class-label">事業分類' + (multi ? '（總機構層級依此分類）' : '') + '</div><div class="duty-class-name">' + CLS_LABEL[r.cls] +
       (r.construction ? '<span class="badge badge-gray">營造業</span>' : '') + '</div><div class="duty-class-why">依據：' + why.join('；') + '　' + _artLink(MGMT_LAW, '2') + '</div></div>';
     if (ATTACH_CHECK.changed && ATTACH_CHECK.changed.length)
       html += '<div class="eff-notice"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><b>官方附表已更新，試算資料待核對</b><div>' +
         ATTACH_CHECK.changed.map(function(c) {{ return c.law + c.table; }}).join('、') + '（' + ATTACH_CHECK.checked + ' 偵測），結果可能與現行附表不符。</div></div></div>';
     var mg = lawByName(MGMT_LAW);
     if (mg && mg.effective) html += '<div class="eff-notice"><i class="ti ti-calendar-event" aria-hidden="true"></i><div><b>' + MGMT_LAW + '有修正將於 ' + mg.effective + ' 施行</b><div>以下依目前公布之最新條文試算（預覽）。</div></div></div>';
-    if (!+dutyState.n) {{ box.innerHTML = html + '<div class="duty-hint">輸入勞工人數後即可試算應辦義務。</div>'; _bindDutyLinks(box); return; }}
-    var ST = {{must: ['應辦理', 'badge-red'], cond: ['視情況', 'badge-yellow'], opt: ['得適用', 'badge-blue'], no: ['不適用', 'badge-gray']}};
-    html += '<div class="duty-list">' + r.items.map(function(x) {{
-      return '<div class="duty-item duty-st-' + x.status + '"><div class="duty-item-head"><span class="badge ' + ST[x.status][1] + '">' + ST[x.status][0] + '</span><b>' + x.title + '</b>' +
-        '<span class="duty-arts">' + _artLinks(x.law, x.arts) + '</span></div><div class="duty-item-text">' + x.text + '</div></div>';
-    }}).join('') + '</div>';
-    (r.health || []).forEach(function(h) {{
-      var future = h.effective > _isoDaysAgo(0), law = lawByName(h.law);
-      html += '<div class="duty-health' + (future ? ' is-preview' : '') + '"><div class="duty-health-head"><b>勞工健康服務人力配置</b>' +
-        (future ? '<span class="badge badge-red">' + h.effective + ' 施行（預覽）</span>' : '') + '<span class="duty-arts">' + _artLinks(h.law, h.arts) + '</span></div>' +
-        (future ? '<div class="duty-hint">依' + h.law + '修正條文（' + h.effective + ' 施行）試算，供提前規劃醫護人力；施行前仍適用現行規定。</div>' : '') +
-        '<dl class="duty-dl">' + h.lines.map(function(l) {{ return '<dt>' + l.label + '</dt><dd>' + l.text + '</dd>'; }}).join('') + '</dl>' +
-        (h.alt ? '<div class="duty-alt"><i class="ti ti-arrows-exchange" aria-hidden="true"></i>' + h.alt + '</div>' : '') + '</div>';
-    }});
+
+    if (!multi) {{
+      if (!+dutyState.n) {{ box.innerHTML = html + '<div class="duty-hint">輸入勞工人數後即可試算應辦義務。</div>'; _bindDutyLinks(box); return; }}
+      html += _dutyListHtml(r.items) + _dutyHealthHtml(r.health);
+    }} else {{
+      if (!r.total) {{ box.innerHTML = html + '<div class="duty-hint">在左側輸入各據點勞工人數後即可試算。</div>'; _bindDutyLinks(box); return; }}
+      html += '<h3 class="duty-sec">全事業（總機構）<small>' + r.branches.length + ' 個據點，共 ' + r.total + ' 人</small></h3>' + _dutyListHtml(r.hq.items);
+      html += '<h3 class="duty-sec">各據點<small>依各自勞工人數辦理（第 6 條第 1 項）；點開查看完整義務</small></h3><div class="duty-branch-list">';
+      r.branches.forEach(function(b) {{
+        var u = b.unit, has = !!b.n;
+        var chip = function(on, label) {{ return '<span class="duty-chip' + (on ? ' on' : '') + '">' + (on ? '✓' : '—') + ' ' + label + '</span>'; }};
+        html += '<details class="duty-branch-res"><summary>' +
+          '<span class="duty-branch-name">' + _escHtml(b.name) + '</span><span class="duty-branch-n">' + (has ? b.n + ' 人' : '未填人數') + '</span>' + _clsBadge(b.cl.cls) +
+          (b.own ? '<span class="duty-chip">另選行業：' + (b.cl.item ? b.cl.item.item : '其他') + '</span>' : '') +
+          (has ? chip(u.unitLv1, '一級管理單位') + chip(u.unitLv1, '委員會') + chip(u.system, '管理系統') + '<span class="duty-branch-staff">' + u.staff + '</span>' : '') +
+          '</summary>' + (has ? _dutyListHtml(u.items) + _dutyHealthHtml(u.health) : '<div class="duty-hint">輸入人數後試算。</div>') + '</details>';
+      }});
+      html += '</div><div class="duty-notes"><b>需留意的認定問題</b><ul>' +
+        '<li>據點行業與事業主要經濟活動不同時，據點依自選行業分類、總機構依主分類試算；實際認定有疑義請洽轄區勞動檢查機構。</li>' +
+        '<li>管理系統（第 12-2 條）之勞工人數門檻係依各據點人數判斷；全事業是否合併計算，條文未明，建議確認。</li>' +
+        '<li>「不同地區」未有明確定義（例如同一縣市內的多個廠區），請依主管機關認定。</li></ul></div>';
+    }}
     html += '<p class="duty-disclaimer">本試算依附表一、危害風險第二類及第三類參考事業一覽表與相關條文整理，僅供參考；事業分類及義務之認定，以轄區勞動檢查機構為準。</p>';
     box.innerHTML = html;
     _bindDutyLinks(box);
