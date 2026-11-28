@@ -319,6 +319,27 @@ HEALTH_SERVICE_RULES = [{
               [1000, 2999, "1 次/3 個月", "1 次/1 個月"], [3000, None, "1 次/2 個月", "1 次/1 個月"]],
 }]
 
+# 可調整的參數放在 osh_config.json（缺少的欄位用下列預設值補上；命令列參數可再覆寫）
+CONFIG_PATH = Path("osh_config.json")
+DEFAULT_CONFIG = {
+    "dashboard_url": "https://upyoung-jefflein.github.io/osh-dashboard-/",
+    "detect_days_options": [7, 14, 30, 60],   # 「近 N 天偵測到異動」可選天數
+    "detect_days_default": 14,
+    "email_max_changed_laws": 12,              # 通知信最多詳列幾部異動法規
+    "email_max_articles_per_law": 8,           # 每部法規最多列幾條條文差異
+}
+
+
+def load_config(path: Path = CONFIG_PATH) -> dict:
+    cfg = dict(DEFAULT_CONFIG)
+    if path.exists():
+        try:
+            cfg.update(json.loads(path.read_text(encoding="utf-8")))
+        except Exception as e:
+            print(f"設定檔 {path} 讀取失敗，改用預設值：{e}", file=sys.stderr)
+    return cfg
+
+
 USER_AGENT = "OSHDashboardBot/1.0 (+local personal use script)"
 DATE_PATTERN = re.compile(r"(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})")
 
@@ -1910,6 +1931,8 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 entry["authority"] = authority
             if rec.get("status"):
                 entry["status"] = rec["status"]
+            if rec.get("異動偵測日期"):
+                entry["detected"] = rec["異動偵測日期"]
             if effective:
                 entry["effective"] = effective
             if rec.get("scope"):
@@ -1949,6 +1972,7 @@ def merge_registry(static_list: list[dict], xml_records: list[dict]) -> list[dic
                 "authority": authority,
                 "status": rec.get("status", "現行"),
                 "effective": effective,
+                "detected": rec.get("異動偵測日期", ""),
                 "scope": rec.get("scope", ""),
                 "penalty_articles": rec.get("penalty_articles", []),
             })
@@ -2818,6 +2842,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .duty-dl dd{{ margin:0; }}
   .duty-alt{{ display:flex; gap:8px; margin-top:12px; padding:8px 12px; background:var(--bg-muted); border-radius:var(--radius); font-size:0.8125rem; }}
   .duty-disclaimer{{ font-size:0.75rem; color:var(--text-3); line-height:1.6; }}
+  .detect-days{{ display:inline-flex; align-items:center; gap:4px; font-size:0.8125rem; color:var(--text-2); white-space:nowrap; }}
+  .detect-days[hidden]{{ display:none; }}
+  .detect-days select{{ min-height:32px; padding:2px 8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); }}
   /* 多地區（總機構＋分部） */
   .duty-mode {{ margin-bottom:12px; }}
   .duty-branch {{ border:1px solid var(--border); border-radius:var(--radius); padding:8px; margin-top:8px; background:var(--bg); }}
@@ -3025,6 +3052,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button data-lawfilter="recent3m">近 3 月修正</button>
         <button data-lawfilter="recent">近 1 年修正</button>
         <button data-lawfilter="upcoming"><i class="ti ti-calendar-event" aria-hidden="true"></i>即將施行<span id="upcoming-count" class="filter-badge"></span></button>
+        <button data-lawfilter="detected" title="依觀測站偵測到新版本的日期（官方公開資料常晚於修正發布日）"><i class="ti ti-radar" aria-hidden="true"></i>近期偵測<span id="detected-count" class="filter-badge"></span></button>
+        <label class="detect-days" id="detectDaysBox" hidden>近 <select id="detectDays" aria-label="偵測天數"></select> 天</label>
         <button data-lawfilter="starred"><i class="ti ti-star" aria-hidden="true"></i>已收藏</button>
         <span class="sep" aria-hidden="true"></span>
         <button class="penalty-filter-btn" id="penaltyFilterBtn" onclick="togglePenaltyFilter()"><i class="ti ti-alert-triangle" aria-hidden="true"></i>有罰則</button>
@@ -3041,7 +3070,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="reg-tools">
           <button class="icon-btn" onclick="openCompare()" title="法規並排對比"><i class="ti ti-columns" aria-hidden="true"></i><span class="icon-btn-label">對比</span></button>
           <button class="icon-btn" onclick="switchTab('duty')" title="依事業分類試算應辦義務"><i class="ti ti-list-check" aria-hidden="true"></i><span class="icon-btn-label">義務試算</span></button>
-          <button class="icon-btn" id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active')" title="圖例說明"><i class="ti ti-info-circle" aria-hidden="true"></i><span class="icon-btn-label">圖例</span></button>
+          <button class="icon-btn" id="legend-toggle-btn" onclick="document.getElementById('legend-panel').classList.toggle('open');this.classList.toggle('active');saveUiPrefs()" title="圖例說明"><i class="ti ti-info-circle" aria-hidden="true"></i><span class="icon-btn-label">圖例</span></button>
         </div>
       </div>
     </div>
@@ -3328,6 +3357,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const OSH_STAFFING = {osh_staffing_json};
   const HEALTH_RULES = {health_rules_json};
   const ATTACH_CHECK = {attach_check_json};
+  const UI_CONFIG = {ui_config_json};
+  var _uiRestoring = true;  // 載入還原完成前不存介面選擇（見 restoreUiPrefs）
   const CNS_ISO = {cns_iso_json};
   const SOURCE_STATUS = {source_status_json};
   const XML_CACHE_INFO = {xml_cache_json};
@@ -3362,6 +3393,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   let newsFilter = "unread", lawFilter = "all", catFilter = "all", sortMode = "date";
   let regViewMode = "table", penaltyFilter = false, inspectFilter = false;
+  var detectDays = UI_CONFIG.detect_days_default;
+  function isDetectedRecent(r) {{ return !!r.detected && r.detected >= _isoDaysAgo(detectDays); }}
   let _fuseIndex = null, _graphSim = null;
   var currentBoard = null;
   var srcTypeFilter = new Set(["news", "notice", "case"]); // 預設隱藏活動訊息
@@ -3935,6 +3968,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (all) all.click(); else renderNews();
   }}
   function _renderNews() {{
+    saveUiPrefs();
     renderHazardBar();
     const q = document.getElementById("newsSearch").value.trim();
     const qRe = q ? new RegExp(q.replace(/[.*+?^${{}}()|[\\]\\\\]/g,'\\\\$&'),'g') : null;
@@ -4464,10 +4498,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     function makeBtn(label, value) {{
       const btn = document.createElement("button");
       btn.className = "cat-btn" + (value === "all" ? " active" : "");
+      btn.dataset.cat = value;
       btn.textContent = label;
       btn.onclick = () => {{
         catFilter = value;
-        document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll("#catFilters .cat-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         registryPage = 1; renderRegistry();
       }};
@@ -4478,12 +4513,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   function renderRegistry() {{
+    saveUiPrefs();
     let rows = REGISTRY.slice();
     if (catFilter !== "all") rows = rows.filter(r => r.cat === catFilter);
     if (lawFilter === "starred") rows = rows.filter(r => state.starredLaws[r.name]);
     if (lawFilter === "recent")   rows = rows.filter(r => isRecent(r.date));
     if (lawFilter === "recent3m") rows = rows.filter(r => isRecent3m(r.date));
     if (lawFilter === "upcoming") rows = rows.filter(r => r.effective);
+    if (lawFilter === "detected") rows = rows.filter(isDetectedRecent);
+    document.getElementById("detectDaysBox").hidden = lawFilter !== "detected";
     if (lawFilter === "unread")   rows = rows.filter(r => (isNewLaw(r) || isRecent(r.date) || isRecent3m(r.date)) && !state.readLaws[r.name]);
     if (penaltyFilter) rows = rows.filter(r => r.penalty_articles && r.penalty_articles.length > 0);
     if (inspectFilter) rows = rows.filter(r => INSPECTION_FOCUS.hasOwnProperty(r.name));
@@ -4519,7 +4557,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }}
     }}
 
-    if (!fuseActive && lawFilter === "upcoming") {{
+    if (!fuseActive && lawFilter === "detected") {{
+      rows.sort((a, b) => b.detected.localeCompare(a.detected) || a.name.localeCompare(b.name, "zh-Hant"));  // 最近偵測在前
+    }} else if (!fuseActive && lawFilter === "upcoming") {{
       rows.sort((a, b) => a.effective.localeCompare(b.effective) || a.name.localeCompare(b.name, "zh-Hant"));  // 依施行日先後
     }} else if (!fuseActive) {{
       if (sortMode === "date") {{
@@ -4594,6 +4634,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const statusBadge = r.effective ? '<span class="badge badge-red" title="已修正公布，尚未施行">' + effLabel(r) + '</span>'
                         : r.status === '廢止' ? '<span class="badge badge-gray">廢止</span>'
                         : r.status === '未生效' ? '<span class="badge badge-red">未生效</span>' : '';
+      const detBadge = isDetectedRecent(r)
+        ? '<span class="badge badge-blue" title="官方修正發布 ' + (r.date || '') + '，觀測站於 ' + r.detected + ' 偵測到新版本">新偵測 ' + r.detected.slice(5).replace('-', '/') + '</span>' : '';
       const pend = pendingDrafts(r);
       const draftBadge = pend.length
         ? '<span class="meta-item meta-match" title="尚未反映到現行條文的修正草案"><i class="ti ti-file-pencil" aria-hidden="true"></i>修正草案 ' + pend.length + ' 筆' + (pend.some(_draftOpen) ? '・預告中' : '') + '</span>' : '';
@@ -4639,7 +4681,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       var metaLine = (chgSum ? '<span class="chg-summary">' + chgSum + '</span>' : '') + draftBadge + artMatchBadge + penBadge + inspBadge;
       return '<tr class="' + (isUnread ? 'law-unread' : '') + (hasUpdate ? ' law-updated' : '') + '">' +
         '<td data-label="" class="star-cell"><button class="star-btn' + (starred ? ' on' : '') + '" data-law="' + r.name.replace(/"/g, '&quot;') + '" title="收藏" aria-label="收藏">' + (starred ? '★' : '☆') + '</button></td>' +
-        '<td data-label="法規名稱" class="rname"><div class="rname-line">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + (hasUpdate ? '<span class="badge badge-blue">收藏後已更新</span>' : '') + '</div>' +
+        '<td data-label="法規名稱" class="rname"><div class="rname-line">' + (isUnread ? '<span class="unread-dot" title="未讀"></span>' : '') + '<button class="rname-btn" data-idx="' + idx + '">' + r.name + '</button>' + badge + statusBadge + detBadge + (hasUpdate ? '<span class="badge badge-blue">收藏後已更新</span>' : '') + '</div>' +
           (metaLine ? '<div class="rmeta">' + metaLine + '</div>' : '') + '</td>' +
         '<td data-label="分類" class="rcat">' + (r.cat || '—') + '</td>' +
         '<td data-label="位階"><span class="tier-tag ' + r.tier + '">' + TIER_LABEL[r.tier] + '</span></td>' +
@@ -4753,6 +4795,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   function openDrawer(r) {{
+    try {{ history.replaceState(null, '', '#law=' + encodeURIComponent(lawKey(r))); }} catch (e) {{}}
     const pcode = r.pcode || "";
     const artBase = pcode ? "https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=" + pcode + "&flno=" : "";
     const isStar = !!state.starredLaws[r.name];
@@ -4780,6 +4823,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       '<span class="' + statusCls + '">' + statusLabel + '</span>' +
       (r.cat ? '<span>' + r.cat + '</span>' : '') +
       (r.date ? '<span>最新修正 ' + r.date + '</span>' : '<span style="color:var(--text-3)">日期待確認</span>') +
+      (r.detected ? '<span title="觀測站偵測到這一版的日期">偵測 ' + r.detected + '</span>' : '') +
       (r.has_table ? '<span style="background:var(--warning-bg);color:var(--warning)">含附表</span>' : '') +
       '</div>';
 
@@ -5217,6 +5261,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   try {{ _setDrawerExpanded(localStorage.getItem("osh_drawer_expanded") === "1"); }} catch (e) {{}}
 
   function closeDrawer() {{
+    if (/^#law=/.test(location.hash)) try {{ history.replaceState(null, '', location.pathname + location.search); }} catch (e) {{}}
     document.getElementById("law-drawer").classList.remove("open");
     document.getElementById("drawer-overlay").classList.remove("open");
     document.body.style.overflow = "";
@@ -5229,6 +5274,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}).length;
     var up = document.getElementById('upcoming-count');
     if (up) up.textContent = REGISTRY.filter(function(r) {{ return r.effective; }}).length || '';
+    var dc = document.getElementById('detected-count');
+    if (dc) dc.textContent = REGISTRY.filter(isDetectedRecent).length || '';
     var el = document.getElementById('unread-law-count');
     if (el) el.textContent = count > 0 ? count : '';
     var btn = document.getElementById('markAllReadBtn');
@@ -5313,6 +5360,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   function renderScenarios() {{
+    saveUiPrefs();
     const grid = document.getElementById("scenarioGrid");
     SCENARIOS.forEach(function(s) {{
       const card = document.createElement("div");
@@ -5477,6 +5525,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   var _chgView = [];
   function renderChanges() {{
+    saveUiPrefs();
     var days = +document.getElementById('chgDays').value, cat = document.getElementById('chgCat').value;
     var q = document.getElementById('chgSearch').value.trim();
     var cutoff = _isoDaysAgo(days);
@@ -5532,6 +5581,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   function _draftOpen(d) {{ return !!d.offline && d.offline >= _isoDaysAgo(0); }}
   function renderDrafts() {{
+    saveUiPrefs();
     var range = document.getElementById('draftRange').value, today = _isoDaysAgo(0);
     var cutoff = (range === 'open' || range === 'all') ? '' : _isoDaysAgo(+range);
     var list = DRAFTS.filter(function(d) {{ return range === 'open' ? _draftOpen(d) : (d.publish || '') >= cutoff; }});
@@ -5590,6 +5640,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       p.classList.remove("active");
     }});
     document.getElementById("tab-" + tabName).classList.add("active");
+    saveUiPrefs();
     if (tabName === "changes") {{
       if (document.getElementById('chgPaneDrafts').style.display === 'none') renderChanges(); else renderDrafts();
     }}
@@ -6111,7 +6162,88 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     registryPage = 1; renderRegistry();
   }}
 
+  // ── 近期偵測天數（選項來自設定檔 osh_config.json）
+  function initDetectDays() {{
+    var sel = document.getElementById('detectDays');
+    sel.innerHTML = UI_CONFIG.detect_days_options.map(function(d) {{ return '<option value="' + d + '">' + d + '</option>'; }}).join('');
+    sel.value = String(detectDays);
+    sel.onchange = function() {{ detectDays = +sel.value; registryPage = 1; renderRegistry(); }};
+  }}
+
+  // ── 介面選擇記憶：各分頁的搜尋、篩選、排序、檢視方式
+  // 每次重繪就存（關閉頁面時再存一次）；載入還原期間不存，避免還原到一半就覆寫
+  var UI_KEY = 'osh_ui';
+  function saveUiPrefs() {{
+    if (_uiRestoring) return;
+    var v = function(id) {{ var el = document.getElementById(id); return el ? el.value : ''; }};
+    var p = {{
+      tab: (document.querySelector('.tabpanel.active') || {{}}).id || '',
+      lawSearch: v('lawSearch'), catFilter: catFilter, lawFilter: lawFilter, sortMode: sortMode, regViewMode: regViewMode,
+      registryPage: registryPage, penaltyFilter: penaltyFilter, inspectFilter: inspectFilter, detectDays: detectDays,
+      legendOpen: document.getElementById('legend-panel').classList.contains('open'),
+      newsSearch: v('newsSearch'), newsFilter: newsFilter, srcTypes: Array.from(srcTypeFilter),
+      hazardFilter: hazardFilter, caseLawFilter: caseLawFilter,
+      chgMode: document.getElementById('chgPaneDrafts').style.display === 'none' ? 'changes' : 'drafts',
+      chgDays: v('chgDays'), chgCat: v('chgCat'), chgSearch: v('chgSearch'), draftRange: v('draftRange'),
+      scenarioSearch: v('scenarioSearch')
+    }};
+    try {{ localStorage.setItem(UI_KEY, JSON.stringify(p)); }} catch (e) {{}}
+  }}
+  function _uiPrefs() {{ try {{ return JSON.parse(localStorage.getItem(UI_KEY) || 'null') || {{}}; }} catch (e) {{ return {{}}; }} }}
+  // 還原篩選狀態；已不存在的選項（例如設定檔拿掉的天數）就維持預設，不影響其他欄位
+  function restoreUiPrefs() {{
+    var p = _uiPrefs();
+    var setVal = function(id, val) {{
+      var el = document.getElementById(id);
+      if (!el || val === undefined || val === null) return;
+      if (el.tagName === 'SELECT' && !Array.from(el.options).some(function(o) {{ return o.value === String(val); }})) return;
+      el.value = val;
+    }};
+    var has = function(sel) {{ return !!document.querySelector(sel); }};
+    setVal('lawSearch', p.lawSearch); setVal('newsSearch', p.newsSearch); setVal('chgSearch', p.chgSearch); setVal('scenarioSearch', p.scenarioSearch);
+    setVal('chgDays', p.chgDays); setVal('chgCat', p.chgCat); setVal('draftRange', p.draftRange);
+    if (p.catFilter && has('#catFilters [data-cat="' + p.catFilter + '"]')) catFilter = p.catFilter;
+    if (p.lawFilter && has('[data-lawfilter="' + p.lawFilter + '"]')) lawFilter = p.lawFilter;
+    if (p.sortMode && has('[data-sort="' + p.sortMode + '"]')) sortMode = p.sortMode;
+    if (p.regViewMode && has('[data-regview="' + p.regViewMode + '"]')) regViewMode = p.regViewMode;
+    if (UI_CONFIG.detect_days_options.indexOf(p.detectDays) >= 0) detectDays = p.detectDays;
+    registryPage = +p.registryPage || 1;
+    penaltyFilter = !!p.penaltyFilter; inspectFilter = !!p.inspectFilter;
+    if (p.newsFilter && has('[data-filter="' + p.newsFilter + '"]')) newsFilter = p.newsFilter;
+    if (Array.isArray(p.srcTypes)) {{
+      srcTypeFilter.clear();
+      p.srcTypes.forEach(function(t) {{ if (has('[data-srctype="' + t + '"]')) srcTypeFilter.add(t); }});
+    }}
+    hazardFilter = p.hazardFilter || ''; caseLawFilter = p.caseLawFilter || '';
+    // 按鈕狀態同步
+    document.querySelectorAll('#catFilters .cat-btn').forEach(function(b) {{ b.classList.toggle('active', b.dataset.cat === catFilter); }});
+    document.querySelectorAll('[data-lawfilter]').forEach(function(b) {{ b.classList.toggle('active', b.dataset.lawfilter === lawFilter); }});
+    document.querySelectorAll('[data-sort]').forEach(function(b) {{ b.classList.toggle('active', b.dataset.sort === sortMode); }});
+    document.querySelectorAll('[data-regview]').forEach(function(b) {{ b.classList.toggle('active', b.dataset.regview === regViewMode); }});
+    document.querySelectorAll('[data-filter]').forEach(function(b) {{ b.classList.toggle('active', b.dataset.filter === newsFilter); }});
+    document.querySelectorAll('[data-srctype]').forEach(function(b) {{ b.classList.toggle('active', srcTypeFilter.has(b.dataset.srctype)); }});
+    document.getElementById('penaltyFilterBtn').classList.toggle('active', penaltyFilter);
+    document.getElementById('inspectFocusBtn').classList.toggle('active', inspectFilter);
+    document.getElementById('detectDays').value = String(detectDays);
+    document.getElementById('legend-panel').classList.toggle('open', !!p.legendOpen);
+    document.getElementById('legend-toggle-btn').classList.toggle('active', !!p.legendOpen);
+    if (p.chgMode === 'drafts' && has('[data-chgmode="drafts"]')) document.querySelector('[data-chgmode="drafts"]').click();
+  }}
+
+  // ── 直達網址：#law=<pcode 或法規名稱> 直接開啟該法規（通知信連結、分享用）
+  function lawKey(r) {{ return r.pcode || r.name; }}
+  function lawFromHash() {{
+    var m = location.hash.match(/^#law=(.+)$/);
+    if (!m) return null;
+    var key = decodeURIComponent(m[1]);
+    return REGISTRY.find(function(r) {{ return r.pcode === key || r.name === key; }}) || null;
+  }}
+  function openLawFromHash() {{ var r = lawFromHash(); if (r) {{ switchTab('registry'); openDrawer(r); }} }}
+  window.addEventListener('hashchange', openLawFromHash);
+
   buildCatFilters();
+  initDetectDays();
+  restoreUiPrefs();
   initTheme();
   initFontSize();
   applyView();
@@ -6128,6 +6260,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   renderDirectives();
   renderScenarios();
   renderDutyForm();
+  // 還原上次所在分頁；網址帶 #law= 時優先開啟該法規
+  (function() {{ var tab = (_uiPrefs().tab || '').replace(/^tab-/, ''); if (tab && document.getElementById('tab-' + tab)) switchTab(tab); }})();
+  _uiRestoring = false;
+  openLawFromHash();
+  saveUiPrefs();
+  window.addEventListener('beforeunload', saveUiPrefs);
 </script>
 </body>
 </html>
@@ -6137,8 +6275,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def build_html(news: list[dict], registry: list[dict], directives: list[dict], output_path: Path,
                source_status: list[dict] | None = None, xml_cache_info: dict | None = None,
                law_diffs: dict | None = None, hist_counts: dict | None = None,
-               drafts: list | None = None):
+               drafts: list | None = None, config: dict | None = None):
     from urllib.parse import quote as _urlq
+    config = config or load_config()
     _base_urls = {"https://law.moj.gov.tw/", "https://law.moj.gov.tw"}
 
     def _fix_source(item: dict) -> dict:
@@ -6170,6 +6309,7 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
         osh_staffing_json=json.dumps(OSH_STAFFING, ensure_ascii=False),
         health_rules_json=json.dumps(HEALTH_SERVICE_RULES, ensure_ascii=False),
         attach_check_json=json.dumps(_read_json(ATTACH_CHECK), ensure_ascii=False),
+        ui_config_json=json.dumps({k: config[k] for k in ("detect_days_options", "detect_days_default")}, ensure_ascii=False),
         cns_iso_json=json.dumps(CNS_ISO_MAP, ensure_ascii=False),
         source_status_json=json.dumps(source_status or [], ensure_ascii=False),
         xml_cache_json=json.dumps(xml_cache_info or {}, ensure_ascii=False),
@@ -6186,10 +6326,20 @@ def build_html(news: list[dict], registry: list[dict], directives: list[dict], o
 # main
 # ============================================================
 
+def law_deep_link(dashboard_url: str, rec: dict | None, name: str) -> str:
+    """觀測站直達網址：#law=<pcode>（無 pcode 用法規名稱），開啟後直接顯示該法規。"""
+    from urllib.parse import quote
+    key = (rec or {}).get("pcode") or name
+    return dashboard_url.rstrip("/") + "/#law=" + quote(key, safe="")
+
+
 def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
                           law_diffs: dict | None, dashboard_url: str,
-                          new_drafts: list | None = None) -> tuple[str, str]:
+                          new_drafts: list | None = None, law_info: dict | None = None,
+                          config: dict | None = None) -> tuple[str, str]:
     """組出 Email 主旨與 HTML 內文（不寄送）。"""
+    config = config or load_config()
+    law_info = law_info or {}
     today = datetime.now().strftime("%Y-%m-%d")
     parts = []
     if new_laws:
@@ -6228,10 +6378,24 @@ def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
                 break
         return "".join(out)
 
-    def law_detail(name, max_arts=8):
+    def law_meta(name):
+        """修正發布日、施行日、偵測日（官方公開資料常晚於發布日，註明落差），以及直達觀測站的連結。"""
+        r = law_info.get(name) or {}
+        bits = []
+        if r.get("date"):
+            bits.append(f"修正發布 <b>{esc(r['date'])}</b>")
+        if r.get("effective"):
+            bits.append(f"<span style='color:#b91c1c'>施行 <b>{esc(r['effective'])}</b>（尚未施行）</span>")
+        if r.get("date"):
+            lag = (date.today() - date.fromisoformat(r["date"])).days
+            bits.append(f"本次偵測 {today}" + (f"（官方公開資料晚 {lag} 天）" if lag > 0 else ""))
+        link = law_deep_link(dashboard_url, r, name)
+        return (f"<div style='font-size:12px;color:#475569;margin-bottom:6px'>{'｜'.join(bits)}"
+                f"{'　' if bits else ''}<a href='{esc(link)}' style='color:#1d4ed8'>在觀測站查看 →</a></div>")
+    def law_detail(name, max_arts=config["email_max_articles_per_law"]):
         ent = (law_diffs or {}).get(name) or {}
         changes = ent.get("changes") or []
-        head = f"<div style='font-weight:700;font-size:14px;margin-bottom:4px'>{esc(name)}</div>"
+        head = f"<div style='font-weight:700;font-size:14px;margin-bottom:4px'>{esc(name)}</div>" + law_meta(name)
         if not changes:
             return (f"<div style='margin:0 0 16px;padding:10px 12px;background:#f8fafc;border-radius:6px'>{head}"
                     "<div style='color:#6b7280;font-size:12.5px'>條文差異尚未同步（官方歷史版本稍後才會更新），請至觀測站查看。</div></div>")
@@ -6252,10 +6416,10 @@ def _compose_update_email(changed_laws: list, new_laws: list, news_items: list,
         return (f"<div style='margin:0 0 16px;padding:10px 12px;background:#f8fafc;border-radius:6px'>{head}"
                 f"<div style='font-size:12px;margin-bottom:6px'>{chips}<span style='color:#9ca3af'> {prev}</span></div>{rows}</div>")
 
-    def law_list(items, max_show=12):
+    def law_list(items, max_show=config["email_max_changed_laws"]):
         shown = items[:max_show]
         rest = len(items) - max_show
-        rows = "".join(f"<li style='margin-bottom:4px'>{n}</li>" for n in shown)
+        rows = "".join(f"<li style='margin-bottom:8px'>{esc(n)}{law_meta(n)}</li>" for n in shown)
         if rest > 0:
             rows += f"<li style='color:#6b7280'>…另有 {rest} 筆</li>"
         return f"<ul style='margin:0 0 16px;padding-left:20px'>{rows}</ul>"
@@ -6276,7 +6440,7 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
 
     changed_only = [n for n in changed_laws if n not in set(new_laws)]
     if changed_only:
-        shown = changed_only[:12]
+        shown = changed_only[:config["email_max_changed_laws"]]
         html += f"""
   <h3 style="color:#92400e;font-size:15px;margin:0 0 10px">↑ 法規異動（{len(changed_only)} 筆）</h3>
   {''.join(law_detail(n) for n in shown)}"""
@@ -6331,7 +6495,8 @@ margin:0 auto;color:#1e293b;background:#f8fafc;padding:16px">
 
 
 def send_update_email(changed_laws: list, new_laws: list, news_items: list,
-                      law_diffs: dict | None = None, new_drafts: list | None = None) -> None:
+                      law_diffs: dict | None = None, new_drafts: list | None = None,
+                      law_info: dict | None = None, config: dict | None = None) -> None:
     """當法規有異動時發送 Email 通知。設定由環境變數提供，未設定則略過。"""
     import smtplib
     from email.mime.multipart import MIMEMultipart
@@ -6344,15 +6509,15 @@ def send_update_email(changed_laws: list, new_laws: list, news_items: list,
     notify_to_raw = os.environ.get("NOTIFY_EMAIL", smtp_user)
     notify_to_list = [e.strip() for e in notify_to_raw.split(",") if e.strip()]
     notify_to = ", ".join(notify_to_list)
-    dashboard_url = os.environ.get(
-        "DASHBOARD_URL", "https://upyoung-jefflein.github.io/osh-dashboard-/"
-    )
+    config = config or load_config()
+    dashboard_url = os.environ.get("DASHBOARD_URL") or config["dashboard_url"]
 
     if not smtp_user or not smtp_pass or not notify_to:
         print("  Email 通知：未設定 SMTP_USER / SMTP_PASS，略過。")
         return
 
-    subject, html = _compose_update_email(changed_laws, new_laws, news_items, law_diffs, dashboard_url, new_drafts)
+    subject, html = _compose_update_email(changed_laws, new_laws, news_items, law_diffs, dashboard_url, new_drafts,
+                                          law_info=law_info, config=config)
 
     try:
         msg = MIMEMultipart("alternative")
@@ -6379,8 +6544,17 @@ def main():
     parser.add_argument("-o", "--output", type=Path, default=Path("osh_dashboard.html"))
     parser.add_argument("--history-budget", type=int, default=80, help="單次最多下載幾個歷史版本頁（避免排程逾時，未完成者次日接續）")
     parser.add_argument("--debug", action="store_true", help="印出每個新聞來源實際抓到的內容")
+    parser.add_argument("--config", type=Path, default=CONFIG_PATH, help="設定檔路徑（預設 osh_config.json）")
+    parser.add_argument("--detect-days", type=int, help="「近 N 天偵測到異動」的預設天數（覆寫設定檔）")
+    parser.add_argument("--dashboard-url", help="通知信中觀測站網址（覆寫設定檔與 DASHBOARD_URL 環境變數）")
     parser.add_argument("--news-only", action="store_true", help="跳過法規 XML 解析，只更新新聞")
     args = parser.parse_args()
+    config = load_config(args.config)
+    if args.detect_days:
+        config["detect_days_default"] = args.detect_days
+        if args.detect_days not in config["detect_days_options"]:
+            config["detect_days_options"] = sorted(config["detect_days_options"] + [args.detect_days])
+    config["dashboard_url"] = args.dashboard_url or os.environ.get("DASHBOARD_URL") or config["dashboard_url"]
 
     all_news = []
     source_status: list[dict] = []
@@ -6426,7 +6600,8 @@ def main():
                 # ① 自動更新偵測：比對舊快取的異動日期，列出有變動的法規
                 if XML_CACHE.exists():
                     try:
-                        _old = {r["name"]: r.get("最新異動日期_roc", "") for r in json.loads(XML_CACHE.read_text(encoding="utf-8"))}
+                        _old_recs = {r["name"]: r for r in json.loads(XML_CACHE.read_text(encoding="utf-8"))}
+                        _old = {n: r.get("最新異動日期_roc", "") for n, r in _old_recs.items()}
                         # 快取裡沒有、但異動日期很舊的法規，是收錄規則改變才補進來的，不是新制定：只記錄、不通知
                         _cutoff = (date.today() - timedelta(days=NEW_LAW_NOTIFY_DAYS)).isoformat()
                         _rescoped = [r["name"] for r in all_xml_records
@@ -6436,6 +6611,14 @@ def main():
                         _new_laws = [r["name"] for r in all_xml_records if r["name"] not in _old and r["name"] not in _rescoped]
                         changed_laws = _changed
                         new_laws_detected = _new_laws
+                        # 異動偵測日期：官方公開資料常比發布日晚數天，記下「我們哪天抓到這一版」，網站與通知信才對得起來
+                        _today = date.today().isoformat()
+                        for r in all_xml_records:
+                            o = _old_recs.get(r["name"])
+                            if o and o.get("最新異動日期_roc", "") == r.get("最新異動日期_roc", ""):
+                                r["異動偵測日期"] = o.get("異動偵測日期", "")
+                            else:
+                                r["異動偵測日期"] = "" if r["name"] in _rescoped else _today
                         if _rescoped:
                             print(f"  ＋ 收錄規則新增 {len(_rescoped)} 筆（異動日期早於 {_cutoff}，不寄通知）：{'、'.join(_rescoped[:4])}{'…' if len(_rescoped) > 4 else ''}")
                         if _changed:
@@ -6512,11 +6695,12 @@ def main():
 
     build_html(news, registry, STATIC_DIRECTIVES, args.output,
                source_status=source_status, xml_cache_info=xml_cache_info, law_diffs=law_diffs,
-               hist_counts=load_history_counts(args.output.parent / "history"), drafts=drafts)
+               hist_counts=load_history_counts(args.output.parent / "history"), drafts=drafts, config=config)
     print(f"已產生 {args.output}，用瀏覽器打開即可查看。")
 
     if args.fetch_xml and (changed_laws or new_laws_detected or new_drafts):
-        send_update_email(changed_laws, new_laws_detected, news, law_diffs, new_drafts)
+        send_update_email(changed_laws, new_laws_detected, news, law_diffs, new_drafts,
+                          law_info={r["name"]: r for r in registry}, config=config)
 
 
 if __name__ == "__main__":

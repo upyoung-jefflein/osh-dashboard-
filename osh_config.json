@@ -1,0 +1,7 @@
+{
+  "dashboard_url": "https://upyoung-jefflein.github.io/osh-dashboard-/",
+  "detect_days_options": [7, 14, 30, 60],
+  "detect_days_default": 14,
+  "email_max_changed_laws": 12,
+  "email_max_articles_per_law": 8
+}
